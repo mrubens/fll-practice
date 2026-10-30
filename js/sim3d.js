@@ -223,23 +223,26 @@ export class Sim3D {
     this.buildObstacles();
     world.onChange((what) => {
       if (what === 'mat') this.matTex.needsUpdate = true;
-      if (what === 'season') this.loadHiResMat();
+      if (what === 'season') this.loadMatTexture();
       if (what === 'season') this.buildObstacles();
     });
   }
 
   /**
-   * On a capable GPU (desktops, most laptops) swap the mat texture for the full-resolution image: four times the
-   * detail of the sensor canvas. Phones and tablets keep the canvas texture, which already fits their limits.
+   * Texture the mat from the season image itself rather than the sensor canvas: the 16 px/cm image everywhere,
+   * and the full-resolution copy on GPUs that can take it (desktops and most laptops). The practice field, which is
+   * drawn on the canvas, keeps the canvas texture.
    */
-  loadHiResMat() {
-    const url = this.world.season && this.world.season.matHi;
-    if (!url || this.hiResUrl === url) return;
+  loadMatTexture() {
+    const season = this.world.season;
+    if (!season) { this.hiResUrl = null; this.matMesh.material.map = this.matTex; this.matMesh.material.needsUpdate = true; return; }
     const maxTex = this.renderer.capabilities.maxTextureSize || 0;
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    if (maxTex < 8192 || coarse) return;
+    const url = (season.matHi && maxTex >= 8192 && !coarse) ? season.matHi : season.mat;
+    if (!url || this.hiResUrl === url) return;
     this.hiResUrl = url;
     new THREE.TextureLoader().load(url, (tex) => {
+      if (this.hiResUrl !== url) return;
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
       tex.generateMipmaps = true;

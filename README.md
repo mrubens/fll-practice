@@ -88,7 +88,7 @@ python3 serve.py 8794
 ```
 
 then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, Rapier, JSZip) and the
-Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the whole table; `mat/season-hi.jpg` is an optional 32 px/cm copy used as the 3D texture on desktop GPUs), edit
+Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the whole table; the color sensor samples it at 8 px/cm, the 3D view shows it as is, and `mat/season-hi.jpg` is an optional 32 px/cm copy used on desktop GPUs), edit
 `mat/season.json` (model boxes, poses, launch pose) and add packed LDraw models to `models/` (see
 `models/ATTRIBUTION.md`); without a season file the simulator falls back to a plain practice mat.
 
