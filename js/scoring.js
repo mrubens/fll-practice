@@ -24,6 +24,7 @@ export class Scoring {
     this.missionPoints = {};
     this.match = { launched: false, ended: false, tokens: FIELD.tokens.start, inspection: 0, interruptions: 0, final: null };
     this.score = 0;
+    this.primed = false;     // the first evaluation after a reset is the baseline: no "done" fanfare for what is met at the start
     this.emit({ type: 'reset' });
   }
 
@@ -100,10 +101,14 @@ export class Scoring {
           if (t.count) { count = t.count(c); met = count > 0; } else met = !!t.met(c);
         } catch { met = false; }
         if (met !== s.met || count !== s.count) changed = true;
-        if (met && !s.everMet) { s.everMet = true; this.emit({ type: 'done', mission: m, task: t, obstacle: this.world.obstacles.find((o) => m.models.includes(o.id)) }); }
+        if (met && !s.everMet) {
+          s.everMet = true;
+          if (this.primed && (!t.bonusOf || this.isDone(m.id, t.bonusOf))) this.emit({ type: 'done', mission: m, task: t, obstacle: this.world.obstacles.find((o) => m.models.includes(o.id)) });
+        }
         s.met = met; s.count = count;
       }
     }
+    this.primed = true;
     if (changed) this.recompute();
   }
 

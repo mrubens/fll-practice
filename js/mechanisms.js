@@ -38,7 +38,7 @@ export function inHome(x, y) {
 export const MECHANISMS = {
   // ---- M01: the drone rig (lying along the south wall) + the pilot stand with the LiDAR map ----
   'M01 Drone Survey': {
-    base: [{ box: [56, 1, 6], at: [0, 0, 8.5] }],
+    base: [{ box: [56, 0.8, 6], at: [0, -0.2, 8.5] }],   // the strings lie flat; the robot drives over them
     pieces: {
       drone: { kind: 'lift', anchor: [-0.4, 0, 8.8], drivenBy: { model: 'M01 Drone stand', piece: 'lever', ratio: 10 / 55 },
         shape: [{ box: [4, 3, 4], at: [0, 1.6, 0] }], parts: (p) => Math.abs(p.c[0]) < 2.6 && p.c[2] > 5 },
@@ -49,8 +49,8 @@ export const MECHANISMS = {
     pieces: {
       lever: { kind: 'hinge', axis: [0, 0, -1], anchor: [10.8, 3.3, -7.5], range: [0, 55], damp: 2, gravity: false, mass: 0.03,
         shape: [{ box: [3.4, 1.4, 1.4], at: [-1.8, 0, 0] }], parts: (p) => p.c[0] < 10.6 },
-      map: { kind: 'hinge', axis: [1, 0, 0], anchor: [15.8, 0.9, -6.6], range: [0, 180], mass: 0.05,
-        shape: [{ box: [1.2, 1.2, 1.2], at: [0, 1.4, 0.35] }, { box: [5, 1.2, 2.6], at: [0, 0.6, 1.4] }], parts: (p) => p.c[0] > 10.6 && p.c[2] > -6.7 && p.c[1] > 0.7 },
+      map: { kind: 'hinge', axis: [-1, 0, 0], anchor: [15.8, 3.8, -6.6], range: [0, 180], mass: 0.05,
+        shape: [{ box: [1.2, 1.2, 1.2], at: [0, 0.3, 0.35] }, { box: [5, 1.2, 2.6], at: [0, 0, 1.4] }], parts: (p) => p.c[0] > 10.6 && p.c[2] > -6.7 && p.c[1] > 0.7 },
     },
   },
   // ---- M02: push the stalk, seeds fly off the pod ----
@@ -94,7 +94,7 @@ export const MECHANISMS = {
   },
   // ---- M05: the plant root slides through the frame when its red ball end is pushed ----
   'M05 Reaching Roots': {
-    base: [{ box: [4, 9.5, 5], at: [0, 4.75, 1.5] }, { box: [4, 2, 6], at: [0, 1, 4.8] }],
+    base: [{ box: [4, 8.8, 5], at: [0, 4.4, 1.5] }, { box: [4, 2, 6], at: [0, 1, 4.8] }],
     pieces: {
       root: { kind: 'slider', axis: [0, 0, 1], anchor: [0, 10.3, 3.5], range: [0, 7.5], damp: 1.2, gravity: false, mass: 0.05,
         shape: [{ box: [9, 2.4, 5], at: [-1.2, 0, 0] }], parts: (p) => p.c[1] > 5.2 && (p.color === '4' || (p.c[0] < -1.2) || ['14', '10', '353', '15', '84'].includes(p.color)) },
@@ -160,10 +160,10 @@ export const MECHANISMS = {
   'M12 Forest Elder post': { base: [{ box: [7, 4, 2.6], at: [6, 2, 8.8] }], pieces: {} },
   // ---- M13: push the front bar in and the young trees rise; the keystone species must be on the platform ----
   'Dock farm (M13-15)': {
-    base: [{ box: [14, 6, 8], at: [0, 3, 0] }],
+    base: [{ box: [14, 6, 6], at: [0, 3, 0] }],
     pieces: {
       bar: { kind: 'slider', axis: [0, 0, -1], anchor: [0, 3.2, 5.8], range: [0, 2.6], damp: 1.5, gravity: false, mass: 0.05,
-        shape: [{ box: [13, 2, 1.6], at: [0, 0, 0] }], parts: (p) => p.c[2] > 4.3 && p.c[1] > 1.8 && p.c[1] < 4.6 },
+        shape: [{ box: [13, 6, 1.6], at: [0, 1, 0] }], parts: (p) => p.c[2] > 4.3 && p.c[1] > 1.8 && p.c[1] < 4.6 },
       trees: { kind: 'lift', anchor: [0, 0, 0], drivenBy: { piece: 'bar', ratio: 1.3 },
         shape: [], parts: (p) => p.c[1] > 4.2 && ['2', '4', '10', '14', '27', '70'].includes(p.color) },
     },

@@ -14,8 +14,8 @@ export const MISSIONS = [
     tasks: [
       { id: 'drone', label: 'Drone is no longer touching the mat', points: 20, how: 'Lift the pilot lever on the stand with the attachment; the drone winds up its string.',
         met: (c) => c.p('M01 Drone Survey').drone.height > 0.5 },
-      { id: 'map', label: 'Bonus: the LiDAR map is completely flipped over, scan marker in the survey area', points: 10, bonusOf: 'drone', how: 'Lift the front edge of the map plate on the stand so it flips over onto the mat.',
-        met: (c) => c.p('M01 Drone stand').map.angle > 150 },
+      { id: 'map', label: 'Bonus: the LiDAR map is completely flipped over, scan marker in the survey area', points: 10, bonusOf: 'drone', how: 'Slide the attachment under the free edge of the map plate on the stand and lift until it flips over.',
+        met: (c) => Math.abs(c.p('M01 Drone stand').map.angle) > 150 },
     ] },
   { id: 'M02', name: 'Exploding Seeds', models: ['M02 Exploding Seeds'],
     text: 'Release the seeds from the seed pod, propelling them to new ground.',
@@ -111,7 +111,7 @@ export const MISSIONS = [
     text: 'Build and deliver a keystone species to this newly protected habitat.',
     tasks: [
       { id: 'keystone', label: 'Your keystone species is on the restoration platform, and the young trees are raised', points: 30, how: 'Carry the keystone species (the pink block from home) onto the platform, then push the front bar in to raise the trees.',
-        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock farm (M13-15)'); if (!k || !d.bar) return false; const l = c.local('Dock farm (M13-15)', k.pos); return d.bar.ext > 2.0 && l[0] > -5 && l[0] < 5 && l[2] > -4 && l[2] < 3 && l[1] > 4.5; } },
+        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock farm (M13-15)'); if (!k || !d.bar) return false; const l = c.local('Dock farm (M13-15)', k.pos); return d.bar.ext > 1.7 && l[0] > -5.5 && l[0] < 5.5 && l[2] > -6 && l[2] < 4 && l[1] > 4.5; } },
     ] },
   { id: 'M14', name: 'Seeds of Renewal', models: ['Dock city (M13-15)'],
     text: 'Place the seeds your team has collected in the soil and watch them take root.',

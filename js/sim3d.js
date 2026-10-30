@@ -387,16 +387,18 @@ export class Sim3D {
       const strut = new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat); strut.position.set(2, 0, 0);
       this.armPivot.add(blade, strut);
     } else if (a.module === 'basket') {
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat); floor.position.set(5, -0.4, 0);
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red); back.position.set(0.4, 2, 0);
-      const sideL = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideL.position.set(5, 2, -5.6);
-      const sideR = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideR.position.set(5, 2, 5.6);
-      const lip = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red); lip.position.set(9.6, 0.8, 0);
+      // The basket tips about its front lip (like a dump truck), so the lip stays high while the load slides out.
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat); floor.position.set(-5, -0.4, 0);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red); back.position.set(-9.6, 2, 0);
+      const sideL = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideL.position.set(-5, 2, -5.6);
+      const sideR = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideR.position.set(-5, 2, 5.6);
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red); lip.position.set(0, 0.8, 0);
       this.armMoving.add(floor, back, sideL, sideR, lip);
-      this.armPivot.add(new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
+      const motor = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat); motor.position.set(-10, 0, 0);
+      this.armPivot.add(motor);
     }
     this.armPivot.visible = a.module !== 'none';
-    this.armPivot.position.set(a.fwd, 6, a.lat);
+    this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), 6, a.lat);
     this.armPivot.rotation.y = -a.angle * DEG;
     body.add(this.armPivot);
 

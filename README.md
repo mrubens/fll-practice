@@ -23,10 +23,24 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **See what scores.** Click a mission model and the camera flies to it with a card: the mission's rulebook
   points, its tasks, and how the simulator detects each one (drive into it, lower the attachment onto it, lower
   then lift, or keep away). When the robot does it the model pulses green, the task ticks off and the points
-  chip in the view updates. Mission mechanics are scripted, so it tells you whether the robot got to the right
-  place and did the right motion, not whether a lever would really flip. Collisions are real, though: the robot
-  and its attachment stop at the walls and models, a motor pressing the arm into something stalls (and its
-  "run for" block gives up after a moment, like the hub), and loose practice boxes get shoved around.
+  chip in the view updates. The models are physical: every mission has real moving parts (hinges, sliders,
+  loose pieces, things that drop when touched) built on Rapier physics, and points come from where those parts
+  end up, worded like the Robot Game Rulebook. The rock flips over on its hinge and drops the flag; the seeds
+  pop off the pod when the stalk is pushed; the leaves lift out of the nest by their loops; the vine falls when
+  touched; the root and mycelium slide; the platform, cane, canopy and camera trap latch when raised; the
+  hatch and root cover swing down; the ant cart rolls to the nest (ram it and the leaf fragments fly out); the
+  habitats are only standing on the mat, so bumping them costs the points. Collisions are real too: the robot
+  and its attachment stop at walls and models, a motor pressing the arm into something stalls (its "run for"
+  block gives up after a moment, like the hub), and the whole thing runs at 200 Hz with substeps.
+- **Play a match like a referee scores it.** Launch starts a 2:30 match: the robot must be completely inside a
+  launch area (the quarter circles in home), the equipment inspection bonus (20) is awarded if it fits there, and
+  the team's loose equipment (the keystone species and four seeds) is loaded into the robot's basket attachment,
+  or left in home when there is none. Stop while the robot is outside home and a precision token is lost (six
+  tokens are worth 50, then 50/35/25/15/10). Relaunching needs the robot back in a launch area. When time is up
+  the sheet freezes, and missions marked with the no-equipment constraint score nothing if their model is
+  touching the robot. Run (the play button) is free practice with no match rules.
+- **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
+  keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
 - **Practice one mission.** "Practice this" on a mission card resets the robot to the launch area, marks the
   first target with a green ring and draws the robot's path; when the program stops it reports how far from the
   target the robot ended and how far it was turned. That is the loop kids actually iterate on.
@@ -81,9 +95,9 @@ Nunito font. For another season: replace `mat/season.jpg` (8 px/cm covering the 
 | `js/blocks.js`, `js/myblocks.js` | Blockly setup, custom fields, theme, toolbox; My Blocks (Scratch procedures) |
 | `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behavior |
 | `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
-| `js/world.js`, `js/physics.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier collision layer (kinematic robot, collide-and-slide, arm stall, pushable boxes) |
+| `js/world.js`, `js/physics.js`, `js/mechanisms.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier layer (kinematic robot, collide-and-slide, arm stall) and the per-model mechanisms (pieces, joints, which LEGO parts move) |
 | `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
-| `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Mission definitions and rulebook points, scripted trigger engine, mission card |
+| `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Missions with rulebook wording and points read from the physical state, the referee (match rules, tokens, end-of-match freeze), mission card |
 | `js/hub.js` | Hub strip UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
 | `js/python.js`, `js/ble.js` | SPIKE Python compiler and the Web Bluetooth hub client |

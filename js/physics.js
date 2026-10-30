@@ -252,7 +252,7 @@ export class Physics {
         if (!pc.released && pc.def.releaseWhen && pc.def.releaseWhen(st)) this.releasePiece(pc);
       }
       if (pc.def.latch && pc.joint && !pc.latched) {
-        const atEnd = pc.def.kind === 'hinge' ? pc.angle >= pc.def.range[1] - 3 : pc.ext >= pc.def.range[1] - 0.3;
+        const atEnd = pc.def.kind === 'hinge' ? Math.abs(pc.angle) >= Math.max(Math.abs(pc.def.range[0]), Math.abs(pc.def.range[1])) - 3 : pc.ext >= pc.def.range[1] - 0.3;
         if (atEnd) { pc.latched = true; this._jointLimits(pc, false, true); }
       }
       if (pc.def.kind === 'lift' && pc.def.drivenBy) {
@@ -352,7 +352,7 @@ export class Physics {
     const root = new THREE.Object3D();
     const pivot = new THREE.Object3D();
     const moving = new THREE.Object3D();
-    pivot.position.set(a.fwd, a.height, a.lat);
+    pivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), a.height, a.lat);   // the basket pivots about its front lip
     pivot.rotation.y = -a.angle * DEG;
     pivot.add(moving);
     root.add(pivot);
@@ -377,12 +377,12 @@ export class Physics {
       part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle (a little narrower than it looks, so it fits the loops)
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
     } else if (a.module === 'basket') {
-      part(moving, [10, 0.8, 12], [5, -0.4, 0]);        // floor
-      part(moving, [0.8, 4, 12], [0.4, 2, 0]);          // back
-      part(moving, [10, 4, 0.8], [5, 2, -5.6]);         // sides
-      part(moving, [10, 4, 0.8], [5, 2, 5.6]);
-      part(moving, [0.8, 1.6, 12], [9.6, 0.8, 0]);      // front lip
-      part(pivot, [4, 4, 3.6], [0, 0, 0]);
+      part(moving, [10, 0.8, 12], [-5, -0.4, 0]);       // floor
+      part(moving, [0.8, 4, 12], [-9.6, 2, 0]);         // back
+      part(moving, [10, 4, 0.8], [-5, 2, -5.6]);        // sides
+      part(moving, [10, 4, 0.8], [-5, 2, 5.6]);
+      part(moving, [0.8, 1.6, 12], [0, 0.8, 0]);        // front lip
+      part(pivot, [4, 4, 3.6], [-10, 0, 0]);            // motor block at the mount
     } else if (a.module === 'lift') {
       part(pivot, [1.6, 16, 6], [1, 3, 0]);             // mast
       part(moving, [8, 0.8, 7], [5, 0, 0]);             // fork
@@ -478,7 +478,7 @@ export class Physics {
     const touched = new Set();
     const speed = Math.hypot(move.x, move.z) / S / dt;   // cm/s
     const pass = (collider) => {
-      this.cc.computeColliderMovement(collider, move, R.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, notRobot);
+      this.cc.computeColliderMovement(collider, move, R.QueryFilterFlags.EXCLUDE_DYNAMIC | R.QueryFilterFlags.EXCLUDE_KINEMATIC, undefined, notRobot);
       const m = this.cc.computedMovement();
       move = { x: m.x, y: 0, z: m.z };
       for (let i = 0; i < this.cc.numComputedCollisions(); i++) {
