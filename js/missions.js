@@ -94,10 +94,8 @@ export const MISSIONS = [
   { id: 'M11', name: 'Window to the Past', models: ['M11 Window to the Past'],
     text: 'Open the root window and document what you see.',
     tasks: [
-      { id: 'seed', label: 'The seed is no longer touching the tree', points: 10, how: 'Knock the seed hanging on the red stalk at the front of the tree; it drops to the mat.',
-        met: (c) => { const s = c.p('M11 Window to the Past').seed; return s.released && (s.height < -3 || s.moved > 2); } },
-      { id: 'cover', label: 'The root cover is down, touching the mat', points: 20, how: 'Push the button on the left side of the tree in; the root cover on top swings down to the mat. (This is what the Guided Mission does.)',
-        met: (c) => { const v = c.p('M11 Window to the Past').cover; return v.angle > 25 && v.bottom < 1; } },
+      { id: 'cover', label: 'The root cover is down, touching the mat', points: 20, how: 'Flip the lever with the hand on it up; the root cover in front of the window falls forward and lies on the mat. (This is what the Guided Mission does.)',
+        met: (c) => { const v = c.p('M11 Window to the Past').cover; return v.angle > 70 && v.bottom < 1.5; } },
     ] },
   { id: 'M12', name: 'Forest Elder', models: ['M12 Forest Elder', 'M12 Forest Elder post'], noEquipment: true,
     text: 'Add a support to stabilize the aging tree.',

@@ -57,12 +57,19 @@ function isDrivingBase(build) {
   return build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright' && (a.module === 'none' || a.module === 'arm');
 }
 
-/** A soft, glimmering translucent block that stands in for a model while its LEGO parts load. */
+/**
+ * A stand-in for a model while its LEGO parts load: the model's outline, with a translucent block that
+ * builds up inside it layer by layer under a bright scan line, then starts over. Its origin is on the mat.
+ */
 function shimmerBox(w, h, d) {
-  const mat = new THREE.MeshStandardMaterial({ color: 0xBFD0E6, emissive: 0x8FB4E8, emissiveIntensity: 0.25, transparent: true, opacity: 0.35, roughness: 0.3, depthWrite: false });
-  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
-  m.userData.shimmer = true;
-  return m;
+  const g = new THREE.Group();
+  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), new THREE.LineBasicMaterial({ color: 0x7FA8E0, transparent: true, opacity: 0.8 }));
+  edges.position.y = h / 2;
+  const fill = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d), new THREE.MeshStandardMaterial({ color: 0x9FBCE8, emissive: 0x6F9BE0, emissiveIntensity: 0.35, transparent: true, opacity: 0.45, roughness: 0.3, depthWrite: false }));
+  const scan = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.18, d + 0.4), new THREE.MeshBasicMaterial({ color: 0xE8F2FF, transparent: true, opacity: 0.95 }));
+  g.add(edges, fill, scan);
+  g.userData = { shimmer: true, h, fill, scan, edges, phase: Math.random() };
+  return g;
 }
 
 /** Load a packed .mpd without flattening; resolves to a fresh clone of the raw part hierarchy (or null). */
@@ -336,6 +343,8 @@ export class Sim3D {
   buildObstacles() {
     for (const m of this.obstacleMeshes) this.scene.remove(m);
     for (const m of this.obstacleExtras || []) this.scene.remove(m);
+    for (const m of this.shimmers.filter((x) => !x.userData.robot)) this.scene.remove(m);
+    this.shimmers = this.shimmers.filter((x) => x.userData.robot);
     for (const pn of this.pieceNodes || []) this.scene.remove(pn.node);
     this.obstacleMeshes = [];
     this.obstacleExtras = [];
@@ -350,14 +359,13 @@ export class Sim3D {
       this.scene.add(m);
       this.obstacleMeshes.push(m);
       let ghost = null;
-      if (o.model) {                    // glimmering stand-in until the real bricks arrive
+      if (o.model) {                    // building-up stand-in until the real bricks arrive
         ghost = shimmerBox(o.w, o.h, o.d);
-        ghost.position.copy(m.position);
+        ghost.position.set(o.x, 0, o.y);
         this.scene.add(ghost);
-        this.obstacleExtras.push(ghost);
         this.shimmers.push(ghost);
       }
-      const unghost = () => { if (ghost) { this.scene.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); this.obstacleExtras = this.obstacleExtras.filter((x) => x !== ghost); } };
+      const unghost = () => { if (ghost) { this.scene.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); } };
       const def = MECHANISMS[o.id];
       if (o.model && def) {
         loadLDrawRaw(o.model).then((raw) => {
@@ -540,7 +548,7 @@ export class Sim3D {
     const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
     if (isDrivingBase(build)) {
       const gen = this.robotBuildGen;
-      const ghost = shimmerBox(20, 9, 16); ghost.position.set(-1, 4.5, 0); ghost.userData.robot = true;
+      const ghost = shimmerBox(20, 9, 16); ghost.position.set(-1, 0, 0); ghost.userData.robot = true;
       g.add(ghost); this.shimmers.push(ghost);
       const shown = [body, caster].concat(this.wheels);
       shown.forEach((n) => { n.visible = false; });
@@ -794,12 +802,20 @@ export class Sim3D {
 
   update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.watchPerformance(dt); }
 
-  /** The loading blocks breathe: a slow glimmer so a waiting robot or model reads as "on its way", not broken. */
+  /** The loading blocks build up layer by layer (about two seconds a cycle), each on its own phase. */
   updateShimmer(dt) {
     if (!this.shimmers.length) return;
     this.shimmerT = (this.shimmerT || 0) + dt;
-    const k = 0.5 + 0.5 * Math.sin(this.shimmerT * 3.2);
-    for (const m of this.shimmers) { m.material.opacity = 0.22 + 0.25 * k; m.material.emissiveIntensity = 0.15 + 0.5 * k; }
+    for (const g of this.shimmers) {
+      const u = g.userData, c = (this.shimmerT / 2.2 + u.phase) % 1;
+      const grow = Math.min(1, c / 0.8);                       // rise for 80% of the cycle, hold full, start over
+      const k = 1 - Math.pow(1 - grow, 2);
+      const fh = Math.max(0.2, u.h * k);
+      u.fill.scale.y = fh; u.fill.position.y = fh / 2;
+      u.scan.position.y = fh + 0.1;
+      u.scan.material.opacity = c < 0.8 ? 0.95 : 0.95 * (1 - (c - 0.8) / 0.2);
+      u.edges.material.opacity = 0.55 + 0.35 * Math.sin(this.shimmerT * 2.5 + u.phase * 6.28);
+    }
   }
 
   render() {
@@ -807,7 +823,6 @@ export class Sim3D {
     for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; if (o.movable) m.rotation.y = -(o.angle || 0) * DEG; }
     for (const e of this.obstacleExtras) {
       const o = e.userData.obstacle;
-      if (!o) continue;
       const off = e.userData.offset || [0, 0];
       if (o.angle) {
         const a = o.angle * DEG, c = Math.cos(a), s = Math.sin(a);
