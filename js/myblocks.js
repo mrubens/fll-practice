@@ -151,11 +151,16 @@ export function createDefinition(workspace, name, params) {
   };
   const protoInputs = {};
   proc.argumentids.forEach((id, i) => { protoInputs[id] = { shadow: { type: params[i].kind === 'b' ? 'argument_reporter_boolean' : 'argument_reporter_string_number', fields: { VALUE: proc.argumentnames[i] } } }; });
-  const metrics = workspace.getMetrics();
-  const scale = workspace.scale || 1;
+  // Place the new definition below everything that is already on the workspace.
+  let bottom = 40, left = 40;
+  for (const b of workspace.getTopBlocks(false)) {
+    const xy = b.getRelativeToSurfaceXY();
+    bottom = Math.max(bottom, xy.y + b.getHeightWidth().height + 40);
+    left = Math.min(left, xy.x);
+  }
   const state = {
     type: 'procedures_definition',
-    x: (metrics.viewLeft + 40) / scale, y: (metrics.viewTop + 40) / scale,
+    x: left, y: bottom,
     inputs: { custom_block: { shadow: { type: 'procedures_prototype', extraState: proc, inputs: protoInputs } } },
   };
   const block = B.serialization.blocks.append(state, workspace);
