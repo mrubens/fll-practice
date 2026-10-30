@@ -319,6 +319,58 @@ stopHubBtn.addEventListener('click', async () => {
 });
 hubUi();
 
+// ---------- draggable divider between the blocks and the simulator ----------
+(() => {
+  const splitter = $('#splitter'), pane = $('.simpane'), layout = $('.layout');
+  const isColumn = () => getComputedStyle(layout).flexDirection.startsWith('column');
+  const apply = (size) => {
+    if (isColumn()) pane.style.flex = `0 0 ${size}px`; else pane.style.flex = `0 0 ${size}px`;
+  };
+  const saved = (() => { try { return JSON.parse(localStorage.getItem('spikesim.split') || 'null'); } catch { return null; } })();
+  if (saved) { if (!isColumn() && saved.w) pane.style.flex = `0 0 ${saved.w}px`; if (isColumn() && saved.h) pane.style.flex = `0 0 ${saved.h}px`; }
+  let drag = null;
+  splitter.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    const rect = pane.getBoundingClientRect();
+    drag = { column: isColumn(), startX: e.clientX, startY: e.clientY, startW: rect.width, startH: rect.height };
+    splitter.setPointerCapture(e.pointerId);
+    splitter.classList.add('active');
+    document.body.classList.add('resizing');
+  });
+  splitter.addEventListener('pointermove', (e) => {
+    if (!drag) return;
+    const total = layout.getBoundingClientRect();
+    let size;
+    if (drag.column) size = Math.min(total.height - 160, Math.max(180, drag.startH + (e.clientY - drag.startY)));
+    else size = Math.min(total.width - 420, Math.max(280, drag.startW - (e.clientX - drag.startX)));
+    apply(size);
+    B.svgResize(workspace);
+  });
+  const end = () => {
+    if (!drag) return;
+    const rect = pane.getBoundingClientRect();
+    const next = Object.assign({}, saved || {}, drag.column ? { h: Math.round(rect.height) } : { w: Math.round(rect.width) });
+    try { localStorage.setItem('spikesim.split', JSON.stringify(next)); } catch { /* ignore */ }
+    drag = null;
+    splitter.classList.remove('active');
+    document.body.classList.remove('resizing');
+    B.svgResize(workspace);
+  };
+  splitter.addEventListener('pointerup', end);
+  splitter.addEventListener('pointercancel', end);
+  splitter.addEventListener('keydown', (e) => {
+    const step = e.shiftKey ? 80 : 20;
+    const rect = pane.getBoundingClientRect();
+    if (isColumn() ? (e.key === 'ArrowUp' || e.key === 'ArrowDown') : (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+      e.preventDefault();
+      const grow = e.key === 'ArrowLeft' || e.key === 'ArrowDown';
+      apply((isColumn() ? rect.height : rect.width) + (grow ? step : -step));
+      B.svgResize(workspace);
+    }
+  });
+  window.addEventListener('resize', () => { pane.style.flex = ''; });
+})();
+
 // ---------- main loop ----------
 let last = performance.now();
 let acc = 0;

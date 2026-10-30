@@ -60,7 +60,12 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .round.stop span { width: 20px; height: 20px; background: #1E2430; border-radius: 3px; }
 body.running .round.stop span { background: var(--stop); }
 
-.simpane { flex: 0 0 min(42%, 560px); min-width: 320px; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel); min-height: 0; }
+.splitter { flex: 0 0 8px; cursor: col-resize; background: var(--line); position: relative; touch-action: none; user-select: none; }
+.splitter::after { content: ""; position: absolute; left: 2px; top: 50%; width: 4px; height: 36px; margin-top: -18px; border-radius: 2px; background: #AEB5C2; }
+.splitter:hover, .splitter.active, .splitter:focus-visible { background: #C9D2E0; outline: none; }
+body.resizing { cursor: col-resize; user-select: none; }
+body.resizing iframe, body.resizing canvas { pointer-events: none; }
+.simpane { flex: 0 0 min(42%, 560px); min-width: 280px; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel); min-height: 0; }
 .view3d-wrap { position: relative; flex: 1 1 55%; min-height: 220px; }
 #view3d { position: absolute; inset: 0; }
 #view3d canvas { display: block; touch-action: none; }
@@ -143,6 +148,9 @@ body.running .round.stop span { background: var(--stop); }
 @media (max-width: 900px) {
   .layout { flex-direction: column-reverse; }
   .simpane { flex: 0 0 46vh; min-width: 0; border-left: 0; border-bottom: 1px solid var(--line); flex-direction: row; }
+  .splitter { flex-basis: 10px; cursor: row-resize; }
+  .splitter::after { left: 50%; top: 3px; width: 36px; height: 4px; margin: 0 0 0 -18px; }
+  body.resizing { cursor: row-resize; }
   .view3d-wrap { flex: 1 1 55%; min-height: 0; }
   #hubPanel { flex: 0 0 min(50%, 330px); border-top: 0; border-left: 1px solid var(--line); }
   .hub { flex-direction: column; padding: 8px; }
