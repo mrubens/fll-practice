@@ -1,5 +1,6 @@
 // The table: an FLL-sized mat (236 x 114 cm) with walls, a black line loop, color tiles and obstacles.
 // The mat is drawn once onto a canvas that is both the 3D texture and the color-sensor lookup.
+import { createPhysics } from './physics.js';
 
 export const TABLE = { w: 236, h: 114, wall: 2.5, wallHeight: 9 };
 export const PX_PER_CM = 8;
@@ -108,6 +109,15 @@ export class World {
     this.innerHalfH = TABLE.h / 2;
     this.listeners = [];
     this.season = null;
+    this.table = TABLE;
+    this.robot = null;             // set by Robot.applyBuild
+    this.physics = null;           // Rapier collision layer (see physics.js); null until loaded or when it cannot load
+    createPhysics(this).then((p) => {
+      if (!p) return;
+      this.physics = p;
+      p.rebuildObstacles();
+      if (this.robot) p.rebuildRobot(this.robot);
+    });
   }
 
   onChange(fn) { this.listeners.push(fn); }
@@ -123,6 +133,7 @@ export class World {
     this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
     this.startPose = { ...START_POSE };
     this.season = null;
+    if (this.physics) this.physics.rebuildObstacles();
     this.listeners.forEach((fn) => fn('mat'));
     this.listeners.forEach((fn) => fn('season'));
   }
@@ -140,6 +151,7 @@ export class World {
       this.obstacles = cfg.obstacles.map((o, i) => ({ id: o.id || `model${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
     }
     this.season = cfg;
+    if (this.physics) this.physics.rebuildObstacles();
     this.listeners.forEach((fn) => fn('season'));
     return true;
   }
@@ -161,7 +173,8 @@ export class World {
   }
 
   resetObstacles() {
-    for (const o of this.obstacles) { o.x = o.x0; o.y = o.y0; }
+    for (const o of this.obstacles) { o.x = o.x0; o.y = o.y0; o.angle = 0; }
+    if (this.physics) this.physics.resetObstacles();
     this.listeners.forEach((fn) => fn('obstacles'));
   }
 
@@ -196,8 +209,9 @@ export class World {
     return segs;
   }
 
-  /** Distance (cm) from (x,y) along (dx,dy) to the first wall/obstacle, or Infinity. */
-  raycast(x, y, dx, dy, maxDist = 250) {
+  /** Distance (cm) from (x,y) along (dx,dy) to the first wall/obstacle, or Infinity. `height` matters once physics is on. */
+  raycast(x, y, dx, dy, maxDist = 250, height = 5) {
+    if (this.physics) return this.physics.raycast(x, y, dx, dy, height, maxDist);
     let best = Infinity;
     for (const [ax, ay, bx, by] of this.segments()) {
       const ex = bx - ax, ey = by - ay;

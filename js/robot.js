@@ -27,6 +27,8 @@ export class Robot {
     this.geom = geometryFor(this.build);
     this.config = portsOf(this.build);
     if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
+    this.world.robot = this;
+    if (this.world.physics && this.x !== undefined) this.world.physics.rebuildRobot(this);
     this.emit('build');
   }
 
@@ -51,13 +53,28 @@ export class Robot {
   resetPose(pose = this.world.startPose || START_POSE) {
     this.x = pose.x; this.y = pose.y; this.heading = pose.heading;
     this.hub.yawOffset = this.heading;
+    this._syncPhysicsPose();
     this.emit('pose');
   }
 
   setPose(x, y, heading = this.heading) {
     [this.x, this.y] = this.world.resolveCircle(x, y, this.geom.radius);
     this.heading = heading;
+    this._syncPhysicsPose();
     this.emit('pose');
+  }
+
+  _syncPhysicsPose() {
+    const ph = this.world.physics;
+    if (!ph) return;
+    if (!ph.robotBody) ph.rebuildRobot(this);
+    ph.setRobotPose(this.x, this.y, this.heading);
+  }
+
+  /** The attachment motor is pressing against a wall or model (set by the simulation step). */
+  attachmentStalled() {
+    const m = this.config.attachment ? this.motors[this.config.attachment] : null;
+    return !!(m && m.stalled);
   }
 
   // ---------------- movement pair ----------------
@@ -209,7 +226,7 @@ export class Robot {
     const d0 = this.geom.distance;
     const a = (this.heading + d0.angle) * DEG;
     const [px, py] = this._point(d0.fwd, d0.lat);
-    const d = this.world.raycast(px, py, Math.cos(a), Math.sin(a), 200);
+    const d = this.world.raycast(px, py, Math.cos(a), Math.sin(a), 200, d0.height);
     return Number.isFinite(d) ? Math.max(0, d) : null;
   }
 
@@ -333,12 +350,20 @@ export class Robot {
   update(dt) {
     this.time += dt;
     // Motors: ramp towards target, integrate angle, count down goals.
+    const ph = this.world.physics && this.world.physics.robotBody ? this.world.physics : null;
     for (const p of PORT_LETTERS) {
       const m = this.motors[p];
       const dv = m.target - m.velocity;
       const step = ACCEL * dt;
       m.velocity += Math.abs(dv) <= step ? dv : Math.sign(dv) * step;
+      const prevAngle = m.angle;
       m.angle += m.velocity * dt;
+      // Attachment motor pressing into a wall or model: it stalls (and a "run for" goal gives up after a moment, like the hub).
+      if (ph && p === this.config.attachment && m.velocity !== 0 && ph.attachmentBlocked(m.angle)) {
+        m.angle = prevAngle; m.velocity = 0;
+        m.stalled = true; m.stallTime = (m.stallTime || 0) + dt;
+        if (m.goal && m.stallTime > 0.3) { m.goal.done = true; m.goal = null; m.target = 0; }
+      } else if (m.stalled && m.velocity !== 0) { m.stalled = false; m.stallTime = 0; }
       if (m.goal) {
         m.goal.remaining -= m.goal.type === 'time' ? dt : Math.abs(m.velocity) * dt;
         if (m.goal.remaining <= 0) { m.goal.done = true; m.goal = null; m.target = 0; m.velocity = 0; }
@@ -359,14 +384,21 @@ export class Robot {
     const vR = (this.motors[this.config.right].velocity / 360) * circ;
     const v = (vL + vR) / 2;
     const w = (vL - vR) / this.geom.track; // rad/s, clockwise positive (y axis points down)
+    const prevHeading = this.heading;
     this.heading += (w * dt) / DEG;
     const h = this.heading * DEG;
     const nx = this.x + Math.cos(h) * v * dt;
     const ny = this.y + Math.sin(h) * v * dt;
-    [this.x, this.y] = this.world.resolveCircle(nx, ny, this.geom.radius);
-    const arm = this.arm();
     this.armContact = null;
-    if (arm && arm.down) {
+    if (ph) {
+      const nh = this.heading;
+      this.heading = prevHeading;
+      [this.x, this.y, this.heading] = ph.moveRobot(this, nx, ny, nh, dt);
+    } else {
+      [this.x, this.y] = this.world.resolveCircle(nx, ny, this.geom.radius);
+    }
+    const arm = this.arm();
+    if (!ph && arm && arm.down) {
       for (const o of this.world.obstacles) {
         if (arm.tipHeight > o.h) continue;
         const push = this.world.circleBoxPush(arm.tx, arm.ty, arm.module === 'plow' ? 5 : 2, o);

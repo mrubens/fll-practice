@@ -23,8 +23,10 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **See what scores.** Click a mission model and the camera flies to it with a card: the mission's rulebook
   points, its tasks, and how the simulator detects each one (drive into it, lower the attachment onto it, lower
   then lift, or keep away). When the robot does it the model pulses green, the task ticks off and the points
-  chip in the view updates. Interactions are scripted, not simulated physics, so it tells you whether the robot
-  got to the right place and did the right motion, not whether a lever would really flip.
+  chip in the view updates. Mission mechanics are scripted, so it tells you whether the robot got to the right
+  place and did the right motion, not whether a lever would really flip. Collisions are real, though: the robot
+  and its attachment stop at the walls and models, a motor pressing the arm into something stalls (and its
+  "run for" block gives up after a moment, like the hub), and loose practice boxes get shoved around.
 - **Practice one mission.** "Practice this" on a mission card resets the robot to the launch area, marks the
   first target with a green ring and draws the robot's path; when the program stops it reports how far from the
   target the robot ended and how far it was turned. That is the loop kids actually iterate on.
@@ -66,7 +68,7 @@ It is a static site. The hosted copy is published from `main` by GitHub Pages. L
 python3 serve.py 8794
 ```
 
-then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, JSZip) and the
+then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, Rapier, JSZip) and the
 Nunito font. For another season: replace `mat/season.jpg` (8 px/cm covering the whole table), edit
 `mat/season.json` (model boxes, poses, launch pose) and add packed LDraw models to `models/` (see
 `models/ATTRIBUTION.md`); without a season file the simulator falls back to a plain practice mat.
@@ -79,7 +81,7 @@ Nunito font. For another season: replace `mat/season.jpg` (8 px/cm covering the 
 | `js/blocks.js`, `js/myblocks.js` | Blockly setup, custom fields, theme, toolbox; My Blocks (Scratch procedures) |
 | `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behavior |
 | `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
-| `js/world.js` | The table: mat (also the color-sensor lookup), season loading, obstacles, ray casts, collisions |
+| `js/world.js`, `js/physics.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier collision layer (kinematic robot, collide-and-slide, arm stall, pushable boxes) |
 | `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
 | `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Mission definitions and rulebook points, scripted trigger engine, mission card |
 | `js/hub.js` | Hub strip UI and audio |

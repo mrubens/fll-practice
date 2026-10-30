@@ -515,11 +515,17 @@ export class Sim3D {
 
   render() {
     const r = this.robot, g = this.robotGroup;
-    for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; }
+    for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; if (o.movable) m.rotation.y = -(o.angle || 0) * DEG; }
     for (const e of this.obstacleExtras) {
       const o = e.userData.obstacle;
       const off = e.userData.offset || [0, 0];
-      e.position.x = o.x + off[0]; e.position.z = o.y + off[1];
+      if (o.angle) {
+        const a = o.angle * DEG, c = Math.cos(a), s = Math.sin(a);
+        e.position.x = o.x + off[0] * c - off[1] * s; e.position.z = o.y + off[0] * s + off[1] * c;
+        e.rotation.y = ((o.modelPose && o.modelPose.heading) || 0) * DEG - a;
+      } else {
+        e.position.x = o.x + off[0]; e.position.z = o.y + off[1];
+      }
     }
     g.position.set(r.x, 0, r.y);
     g.rotation.y = -r.heading * DEG;

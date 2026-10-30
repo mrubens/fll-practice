@@ -138,7 +138,7 @@ export class HubPanel {
         v.textContent = d === null ? 'none' : `${Math.round(d)} cm`;
       } else {
         const m = r.motors[p];
-        v.textContent = `${Math.round(((m.angle % 360) + 360) % 360)}° · ${Math.round((m.velocity / 9))}%`;
+        v.textContent = `${Math.round(((m.angle % 360) + 360) % 360)}° · ${m.stalled ? 'stalled' : Math.round((m.velocity / 9)) + '%'}`;
       }
     }
   }
