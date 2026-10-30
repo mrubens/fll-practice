@@ -192,6 +192,7 @@ export class Sim3D {
     matTex.colorSpace = THREE.SRGBColorSpace;
     matTex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
     const mat = new THREE.Mesh(new THREE.PlaneGeometry(TABLE.w, TABLE.h), new THREE.MeshStandardMaterial({ map: matTex, roughness: 0.9 }));
+    this.matMesh = mat;
     mat.rotation.x = -Math.PI / 2;
     mat.receiveShadow = true;
     scene.add(mat);
@@ -222,7 +223,30 @@ export class Sim3D {
     this.buildObstacles();
     world.onChange((what) => {
       if (what === 'mat') this.matTex.needsUpdate = true;
+      if (what === 'season') this.loadHiResMat();
       if (what === 'season') this.buildObstacles();
+    });
+  }
+
+  /**
+   * On a capable GPU (desktops, most laptops) swap the mat texture for the full-resolution image: four times the
+   * detail of the sensor canvas. Phones and tablets keep the canvas texture, which already fits their limits.
+   */
+  loadHiResMat() {
+    const url = this.world.season && this.world.season.matHi;
+    if (!url || this.hiResUrl === url) return;
+    const maxTex = this.renderer.capabilities.maxTextureSize || 0;
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (maxTex < 8192 || coarse) return;
+    this.hiResUrl = url;
+    new THREE.TextureLoader().load(url, (tex) => {
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      tex.generateMipmaps = true;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+      this.matMesh.material.map = tex;
+      this.matMesh.material.needsUpdate = true;
     });
   }
 

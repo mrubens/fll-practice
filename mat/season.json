@@ -1,6 +1,7 @@
 {
   "name": "FIRST LEGO League BIOGLOW (2026-27)",
   "mat": "mat/season.jpg",
+  "matHi": "mat/season-hi.jpg",
   "matSize": {
     "w": 200.0,
     "h": 114.0,
