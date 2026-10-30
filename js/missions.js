@@ -124,10 +124,10 @@ export const MISSIONS = [
   { id: 'M15', name: 'Biocentric Architecture', models: ['Dock mine (M13-15)'], noEquipment: true,
     text: 'Modify the building to create homes for wildlife, restore soil health and bring in natural light.',
     tasks: [
-      { id: 'canopy', label: 'The nesting canopy is raised', points: 10, how: 'Get the attachment under the canopy’s overhang on the open side of the building and lift while creeping forward until it clicks up.',
+      { id: 'canopy', label: 'The nesting canopy is raised', points: 10, how: 'Get the attachment under the garden roof’s overhang on the open side and lift while creeping forward until it clicks up.',
         met: (c) => c.p('Dock mine (M13-15)').canopy.angle > 50 },
-      { id: 'skylight', label: 'The garden skylight is completely in', points: 10, how: 'Push the dark skylight plate on the roof all the way in from the open side.',
-        met: (c) => c.p('Dock mine (M13-15)').skylight.ext > 4.5 },
+      { id: 'skylight', label: 'The garden skylight is completely in', points: 10, how: 'Reach over the garden and push the dark skylight plate on the roof all the way in.',
+        met: (c) => c.p('Dock mine (M13-15)').skylight.ext > 3.5 },
       { id: 'hatch', label: 'The compost hatch is completely opened, touching the mat', points: 10, how: 'Press the handle on the compost hatch down with the attachment; keep pressing until the hatch lies on the mat.',
         met: (c) => c.p('Dock mine (M13-15)').hatch.angle > 85 },
       { id: 'env', label: 'Environmental bonus: the building is on the mine dock, so the nesting canopy counts', points: 10, bonusOf: 'canopy', met: (c) => c.p('Dock mine (M13-15)').canopy.angle > 50 },

@@ -191,12 +191,15 @@ export const MECHANISMS = {
   'Dock mine (M13-15)': {
     base: [{ box: [15, 7.4, 10], at: [0, 3.7, 0] }],
     pieces: {
+      // the garden half of the roof (the side facing the table) is the nesting canopy: lift its outer edge until it clicks
       canopy: { kind: 'hinge', axis: [0, 0, 1], anchor: [1.0, 7.6, 0], range: [0, 58], latch: true, mass: 0.03, damp: 0.5,
-        shape: [{ box: [10, 1.2, 9], at: [5, 0.4, 0] }], parts: (p) => p.c[1] > 7.3 && p.c[0] > 1.2 && !['0', '4', '71'].includes(p.color) },
-      skylight: { kind: 'slider', axis: [-1, 0, 0], anchor: [4.5, 8, -1.6], range: [0, 5], damp: 1.5, gravity: false, mass: 0.03,
-        shape: [{ box: [8, 1.2, 5], at: [0, 0, 0] }], parts: (p) => p.c[1] > 7.3 && p.c[0] >= -1.2 && (p.color === '0' || p.color === '4' || p.color === '71') },
+        shape: [{ box: [10, 1.2, 9], at: [5, 0.4, 0] }], parts: (p) => p.c[1] > 6.8 && p.c[0] > -0.5 && p.c[0] < 6.5 },
+      // the dark skylight plate on the other half of the roof slides in when pushed from the garden side
+      skylight: { kind: 'slider', axis: [-1, 0, 0], anchor: [-2.3, 8.4, -1.3], range: [0, 4], damp: 1.5, gravity: false, mass: 0.03,
+        shape: [{ box: [5, 1.6, 8], at: [0, 0, 0] }], parts: (p) => p.c[1] > 6.8 && p.c[0] <= -0.5 },
+      // the compost hatch: the lower middle of the front wall, hinged at the bottom, pressed open by its handle
       hatch: { kind: 'hinge', axis: [0, 0, -1], anchor: [7.5, 2.4, 0], range: [0, 95], mass: 0.03, damp: 0.4, gravity: false,
-        shape: [{ box: [1.2, 3, 5], at: [0, 1.6, 0] }, { box: [1.8, 1.2, 3], at: [1.3, 2.6, 0] }], parts: (p) => p.c[0] > 6.8 && p.c[1] < 5.6 && Math.abs(p.c[2]) < 3 },
+        shape: [{ box: [1.2, 3, 5], at: [0, 1.6, 0] }, { box: [1.8, 1.2, 3], at: [1.3, 2.6, 0] }], parts: (p) => p.c[0] > 6.3 && p.c[1] < 4.2 && Math.abs(p.c[2]) < 2.4 },
     },
   },
 };
