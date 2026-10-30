@@ -2,7 +2,7 @@
 // The mat is drawn once onto a canvas that is both the 3D texture and the color-sensor lookup.
 
 export const TABLE = { w: 236, h: 114, wall: 2.5, wallHeight: 9 };
-export const PX_PER_CM = 4;
+export const PX_PER_CM = 8;
 
 export const START_POSE = { x: -95, y: 40, heading: 0 };
 export const MATCH_SECONDS = 150; // FLL match: 2 minutes 30 seconds

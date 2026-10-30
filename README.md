@@ -34,7 +34,7 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
   Prime Driving Base itself built from real parts (hub, motors, sensors, frame). See `models/ATTRIBUTION.md`
   for sources and how to add models.
   **Launch** puts the robot in the launch area, resets the models and runs the program with a 2:30 match clock.
-  The mat image comes from the public Robot Game Rulebook; replace `mat/season.png` (4 px/cm covering the
+  The mat image comes from the public Robot Game Rulebook; replace `mat/season.jpg` (8 px/cm covering the
   whole 236 x 114 cm table) and edit `mat/season.json` for another season. Delete the file to get the plain
   practice mat back.
 - **Missions and scoring**: click a mission model in the 3D view and the camera flies to it with a card:
