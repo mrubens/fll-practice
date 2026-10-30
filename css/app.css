@@ -65,7 +65,7 @@ body.running .round.stop span { background: var(--stop); }
 .splitter:hover, .splitter.active, .splitter:focus-visible { background: #C9D2E0; outline: none; }
 body.resizing { cursor: col-resize; user-select: none; }
 body.resizing iframe, body.resizing canvas { pointer-events: none; }
-.simpane { flex: 0 0 min(42%, 560px); min-width: 280px; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel); min-height: 0; }
+.simpane { flex: 0 0 clamp(320px, 66%, 1500px); min-width: 280px; display: flex; flex-direction: column; border-left: 1px solid var(--line); background: var(--panel); min-height: 0; }
 .view3d-wrap { position: relative; flex: 1 1 55%; min-height: 220px; }
 #view3d { position: absolute; inset: 0; }
 #view3d canvas { display: block; touch-action: none; }
