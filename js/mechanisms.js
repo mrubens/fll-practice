@@ -102,10 +102,11 @@ export const MECHANISMS = {
   },
   // ---- M06/M07: the ant cart rolls to the nest; the mycelium lattice slides out ----
   'M06-07 Leafcutter Frenzy / Humongous Fungus': {
-    base: [{ box: [14, 9, 8], at: [0, 4.5, -5.5] }],
+    base: [{ box: [11, 9, 8], at: [1.5, 4.5, -5.5] }],
     pieces: {
-      ant: { kind: 'loose', anchor: [6.0, 0, 7.8], planar: true, mass: 0.05, friction: 0.3, impactor: true,
-        shape: [{ box: [4, 3, 4], at: [0, 1.5, 0] }], parts: (p) => p.c[2] > 5.0 && p.c[1] < 4 },
+      // the ant cart sits at the nest's left side; it has to be pushed forward along the side to the nest entrance
+      ant: { kind: 'loose', anchor: [-6.1, 0, -4.6], planar: true, mass: 0.05, friction: 0.3, impactor: true,
+        shape: [{ box: [3, 3, 4], at: [0, 1.5, 0] }], parts: (p) => p.c[0] < -4.8 && p.c[1] < 3 && p.c[2] < -2 && p.c[2] > -7.2 },
       mycelium: { kind: 'slider', axis: [1, 0, 0], anchor: [2, 13, 2], range: [0, 8], damp: 1.2, gravity: false, mass: 0.05,
         shape: [{ box: [12, 2.4, 4], at: [0, 0, 0] }], parts: (p) => p.c[1] > 9.8 && p.color === '15' },
       frag1: { kind: 'loose', anchor: [-0.8, 9.0, -6.6], locked: true, releaseWhen: (s) => s._impact > 45, kick: [0.5, 1.2, -1.4], mass: 0.01,
@@ -118,16 +119,20 @@ export const MECHANISMS = {
   },
   // ---- M08/M09: the vine drops when touched, the platform lifts, the camera trap flips out, the seed falls ----
   'M08-09 Tangled / Research Platform': {
-    base: [{ box: [12, 28, 7], at: [0, 14, 0] }, { box: [3, 2.4, 3], at: [-9.6, 1.2, -1.5] }],
+    base: [{ box: [12, 28, 7], at: [0, 14, 0] }],
     pieces: {
-      vine: { kind: 'loose', anchor: [0, 14.5, 9.5], mass: 0.04, locked: true, releaseWhen: (s) => s.vine.touched, friction: 0.6,
-        shape: [{ box: [4, 12, 3], at: [0, -6.5, 1.5] }], parts: (p) => p.c[2] > 7.6 && p.c[1] < 14.2 },
-      platform: { kind: 'slider', axis: [0, 1, 0], anchor: [-6.5, 5.5, 0], range: [0, 5], latch: true, mass: 0.06,
-        shape: [{ box: [8, 2.6, 8], at: [0, 1.3, 0] }], parts: (p) => p.c[0] < -3 && p.c[1] > 4 && p.c[1] < 10.5 && p.c[2] > -3 && p.c[2] < 5 },
-      camera: { kind: 'hinge', axis: [0, 0, 1], anchor: [8.6, 6.5, 1.2], range: [0, 75], damp: 0.6, latch: true, mass: 0.02,
-        shape: [{ box: [4.5, 2, 2.4], at: [2.3, 0, 0] }], parts: (p) => p.c[0] > 8.4 && p.c[1] < 9 && p.c[1] > 4.4 },
-      seed: { kind: 'loose', anchor: [-9.6, 2.4, -1.5], mass: 0.01, friction: 0.6,
-        shape: [{ box: [2.2, 1.6, 2.2], at: [0, 0.8, 0] }], parts: (p) => p.c[0] < -8 && p.c[1] < 4.5 },
+      // the vine: the winding column on the tree's right side, hanging just above the mat; touch it and it drops
+      vine: { kind: 'loose', anchor: [8.6, 2.9, 1.3], mass: 0.04, locked: true, releaseWhen: (s) => s.vine.touched, friction: 0.6,
+        shape: [{ box: [4, 17, 1.6], at: [0, 8.5, 0] }], parts: (p) => p.c[0] > 6 && p.c[1] < 21 && Math.abs(p.c[2]) < 3 },
+      // the research platform: the deck with the researchers on the front, lifted from below until it clicks
+      platform: { kind: 'slider', axis: [0, 1, 0], anchor: [0, 5.6, 9.5], range: [0, 5], latch: true, mass: 0.06,
+        shape: [{ box: [12, 3, 7], at: [0, 1.5, 0] }], parts: (p) => p.c[2] > 6 && p.c[1] > 4.5 && p.c[1] < 16 && !(Math.abs(p.c[0]) > 6 && p.c[1] < 5) },
+      // the camera trap: the red ball joint at the deck's right pivot, flipped up and out
+      camera: { kind: 'loose', anchor: [7.1, 4.1, 4.2], locked: true, releaseWhen: (s) => s.camera.touched, mass: 0.01, kick: [0.5, 0.2, 0.3],
+        shape: [{ box: [2.5, 1.6, 1.6], at: [0, 0, 0] }], parts: (p) => p.c[0] > 6 && p.c[1] < 5 && p.c[2] > 3 },
+      // the seed: the ball joint at the deck's left pivot; knock it and it drops
+      seed: { kind: 'loose', anchor: [-7.1, 4.1, 4.2], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01, kick: [-0.5, 0.2, 0],
+        shape: [{ box: [2.5, 1.6, 1.6], at: [0, 0, 0] }], parts: (p) => p.c[0] < -6 && p.c[1] < 5 && p.c[2] > 3 },
     },
   },
   // ---- M10: the two habitats must not move; they are free-standing ----
@@ -156,10 +161,12 @@ export const MECHANISMS = {
   'M12 Forest Elder': {
     base: [{ box: [5, 16, 5], at: [-0.5, 8, 0] }],
     pieces: {
-      cane: { kind: 'hinge', axis: [0, 0, -1], anchor: [-1.2, 2.6, -0.6], range: [0, 78], latch: true, mass: 0.03, damp: 0.6,
-        shape: [{ box: [9.4, 1.4, 1.4], at: [-5.2, 0, 0] }], parts: (p) => p.c[0] < -3.2 && p.c[1] < 1.6 && p.c[2] > -3.2 && p.c[2] < 2 },
-      tie: { kind: 'loose', anchor: [-6.2, 0, -5.2], planar: true, mass: 0.04, friction: 0.5,
-        shape: [{ box: [6, 2.4, 6], at: [0, 1.2, 0] }], parts: (p) => p.color === '4' && p.c[0] < -2.8 && p.c[1] < 9 },
+      // the cane lies from the foot of the trunk out to the left; lift its far end until it leans on the tree
+      cane: { kind: 'hinge', axis: [0, 0, -1], anchor: [-1.2, 2.6, 0.6], range: [0, 78], latch: true, mass: 0.03, damp: 0.6,
+        shape: [{ box: [9.4, 1.4, 1.4], at: [-5.2, 0, 0] }], parts: (p) => p.c[0] < -3 },
+      // the support tie: the red ring with its chain, standing in front of the trunk; push it over to the post
+      tie: { kind: 'loose', anchor: [-6, 0, -3.5], planar: true, mass: 0.04, friction: 0.5,
+        shape: [{ box: [8, 8, 2.4], at: [0, 4, 0] }], parts: (p) => (p.color === '4' && p.c[2] > 1.5 && p.c[1] < 9) || p.file.startsWith('60169') },
     },
   },
   'M12 Forest Elder post': { base: [{ box: [7, 4, 2.6], at: [6, 2, 8.8] }], pieces: {} },

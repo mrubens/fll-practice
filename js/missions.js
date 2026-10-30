@@ -55,7 +55,7 @@ export const MISSIONS = [
   { id: 'M06', name: 'Leafcutter Frenzy', models: ['M06-07 Leafcutter Frenzy / Humongous Fungus'],
     text: 'Guide the ant back to its nest, but move too quickly and you may scatter the leaves it collected.',
     tasks: [
-      { id: 'frag1', label: 'Ant touching the nest, leaf fragment contained within the nest', points: 10, how: 'Nudge the red ant cart gently toward the nest. Hitting the nest hard knocks the leaf fragments out.',
+      { id: 'frag1', label: 'Ant touching the nest, leaf fragment contained within the nest', points: 10, how: 'Nudge the red ant cart along the nest’s left side toward the back wall. Ram the nest and the leaf fragments fly out.',
         met: (c) => antHome(c) && fragIn(c, 'frag1') },
       { id: 'frag2', label: 'Second leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag2') },
       { id: 'frag3', label: 'Third leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag3') },
@@ -70,18 +70,18 @@ export const MISSIONS = [
   { id: 'M08', name: 'Tangled', models: ['M08-09 Tangled / Research Platform'],
     text: 'Gently untangle the vines so the tree has space and sunlight to grow again.',
     tasks: [
-      { id: 'vine', label: 'The vine is touching the mat', points: 30, how: 'Touch the hanging vine on the side of the tree; it drops to the mat.',
-        met: (c) => c.p('M08-09 Tangled / Research Platform').vine.bottom < 0.8 },
+      { id: 'vine', label: 'The vine is touching the mat', points: 30, how: 'Touch the winding vine on the right side of the tree; it drops to the mat.',
+        met: (c) => { const v = c.p('M08-09 Tangled / Research Platform').vine; return v.released && v.bottom < 1.5; } },
     ] },
   { id: 'M09', name: 'Research Platform', models: ['M08-09 Tangled / Research Platform'], noEquipment: true,
     text: 'Help the team deploy equipment to monitor activity high above the forest floor.',
     tasks: [
-      { id: 'platform', label: 'The research platform is raised', points: 10, how: 'Get under the platform with the attachment and lift it until it clicks.',
+      { id: 'platform', label: 'The research platform is raised', points: 10, how: 'Get the attachment under the researchers’ deck from the left and lift until it clicks.',
         met: (c) => c.p('M08-09 Tangled / Research Platform').platform.ext > 4 },
-      { id: 'camera', label: 'The camera trap is deployed', points: 10, how: 'Push the camera trap at the right side of the tree base so it swings out.',
-        met: (c) => c.p('M08-09 Tangled / Research Platform').camera.angle > 45 },
-      { id: 'seed', label: 'The seed is no longer touching the tree', points: 10, how: 'Knock the seed off its ledge at the left of the tree.',
-        met: (c) => { const s = c.p('M08-09 Tangled / Research Platform').seed; return s.moved > 2 || s.height < -1.5; } },
+      { id: 'camera', label: 'The camera trap is deployed', points: 10, how: 'Knock the red ball joint at the deck’s right pivot; it drops.',
+        met: (c) => { const k = c.p('M08-09 Tangled / Research Platform').camera; return k.released && (k.moved > 1 || k.height < -1.5); } },
+      { id: 'seed', label: 'The seed is no longer touching the tree', points: 10, how: 'Knock the red ball joint at the deck’s left pivot; it drops.',
+        met: (c) => { const s = c.p('M08-09 Tangled / Research Platform').seed; return s.released && (s.moved > 2 || s.height < -1.5); } },
     ] },
   { id: 'M10', name: 'Fragile Microhabitats', models: ['M10 Fragile Microhabitat A', 'M10 Fragile Microhabitat B'], noEquipment: true,
     text: 'Move through the area without damaging these tiny creatures’ homes.',
@@ -104,7 +104,7 @@ export const MISSIONS = [
     tasks: [
       { id: 'cane', label: 'The cane is completely raised, touching the tree', points: 20, how: 'Lift the cane lying at the foot of the tree until it leans against the trunk.',
         met: (c) => c.p('M12 Forest Elder').cane.angle > 68 },
-      { id: 'tie', label: 'The support tie is around the post', points: 10, how: 'Push the red support tie from the tree over to the post and leave it around it.',
+      { id: 'tie', label: 'The support tie is around the post', points: 10, how: 'Push the red support tie ring from the foot of the tree over to the post.',
         met: (c) => { const t = c.p('M12 Forest Elder').tie; const post = c.obstacle('M12 Forest Elder post'); return !!post && Math.hypot(t.x - post.x, t.y - post.y) < 10; } },
     ] },
   { id: 'M13', name: 'Keystone Species', models: ['Dock farm (M13-15)'],
@@ -138,7 +138,7 @@ function antHome(c) {
   const m = 'M06-07 Leafcutter Frenzy / Humongous Fungus';
   const a = c.p(m).ant;
   const l = c.local(m, a.pos);
-  return l[2] < 1.2 && Math.abs(l[0]) < 9;      // the cart is up against the nest front
+  return l[2] < -8.3 && l[0] > -10 && l[0] < -3;    // the cart has been pushed back along the nest's left side to the entrance
 }
 function fragIn(c, name) {
   const m = 'M06-07 Leafcutter Frenzy / Humongous Fungus';
