@@ -57,7 +57,7 @@ function flattenObjects(objects) {
 /** True when a build has the LEGO Driving Base's geometry, whatever its ports: small wheels, 11.2 cm track, flat hub. */
 function isDrivingBase(build) {
   const a = build.attachment || {};
-  return build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright' && (a.module === 'none' || a.module === 'arm');
+  return build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright' && !!a;
 }
 
 /**
@@ -565,32 +565,28 @@ export class Sim3D {
     this.armPivot.add(this.armMoving);
     const armMat = new THREE.MeshStandardMaterial({ color: 0xC3C9D3, roughness: 0.6 });
     const red = new THREE.MeshStandardMaterial({ color: 0xE3000B, roughness: 0.6 });
+    const prim = [];                        // the placeholder boxes, hidden once the LEGO parts arrive
+    const add = (parent, mesh, pos) => { if (pos) mesh.position.set(...pos); parent.add(mesh); prim.push(mesh); return mesh; };
     if (a.module === 'arm' || a.module === 'sweeper') {
-      const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat); beam.position.x = 6;
-      const paddle = new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red); paddle.position.x = 12;
-      this.armMoving.add(beam, paddle);
-      const block = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat);
-      this.armPivot.add(block);
-      if (a.module === 'arm') this.legoArm([beam, paddle, block]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat), [6, 0, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, 0, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
     } else if (a.module === 'lift') {
-      const mast = new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat); mast.position.set(1, 3, 0);
-      const fork = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 7), red); fork.position.set(5, 0, 0);
-      this.armPivot.add(mast); this.armMoving.add(fork);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat), [1, 3, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 7), red), [5, 0, 0]);
     } else if (a.module === 'plow') {
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red); blade.position.set(4, -2.5, 0);
-      const strut = new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat); strut.position.set(2, 0, 0);
-      this.armPivot.add(blade, strut);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red), [4, -2.5, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat), [2, 0, 0]);
     } else if (a.module === 'basket') {
       // The basket tips about its front lip (like a dump truck), so the lip stays high while the load slides out.
-      const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat); floor.position.set(-5, -0.4, 0);
-      const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red); back.position.set(-9.6, 2, 0);
-      const sideL = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideL.position.set(-5, 2, -5.6);
-      const sideR = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideR.position.set(-5, 2, 5.6);
-      const lip = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red); lip.position.set(0, 0.8, 0);
-      this.armMoving.add(floor, back, sideL, sideR, lip);
-      const motor = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat); motor.position.set(-10, 0, 0);
-      this.armPivot.add(motor);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat), [-5, -0.4, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red), [-9.6, 2, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red), [-5, 2, -5.6]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red), [-5, 2, 5.6]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red), [0, 0.8, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat), [-10, 0, 0]);
     }
+    if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), 6, a.lat);
     this.armPivot.rotation.y = -a.angle * DEG;
@@ -640,22 +636,49 @@ export class Sim3D {
     }
   }
 
-  /** Real LEGO parts for the arm: a medium motor at the mount, a 15-long liftarm, a red 5-long liftarm as the paddle. */
-  legoArm(primitives) {
+  /**
+   * Real LEGO parts for the attachment modules: a medium motor at the mount and Technic liftarms, laid out like
+   * the Training Camp builds. Beams run along z in their own frame with the holes along y; `along x` turns them
+   * to run forward and `upright` stands them on end.
+   */
+  legoAttachment(module, primitives) {
     const gen = this.robotBuildGen;
     const pivot = this.armPivot, moving = this.armMoving;
     if (this.robotLego) this.robotPending++;
     const place = (group, pos, rot) => { group.matrixAutoUpdate = false; const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...rot)); m.setPosition(...pos); group.matrix.copy(m); return group; };
     const toSim = (g) => { const h = new THREE.Group(); g.rotation.x = Math.PI; g.scale.setScalar(LDU); h.add(g); return h; };   // LDraw y-down -> y-up, LDU -> cm
-    Promise.all([loadLDrawModel('models/parts/motor.mpd'), loadLDrawModel('models/parts/beam15.mpd'), loadLDrawModel('models/parts/beam5.mpd')]).then(([motor, beam, paddle]) => {
+    const names = { motor: 'motor', b3: 'beam3', b5: 'beam5', b7: 'beam7', b11: 'beam11', b11r: 'beam11red', b15: 'beam15', b15g: 'beam15grey' };
+    const H = Math.PI / 2, ALONG_X = [0, H, 0], UPRIGHT = [H, 0, 0], ACROSS = [0, 0, 0];
+    Promise.all(Object.values(names).map((n) => loadLDrawModel(`models/parts/${n}.mpd`))).then((loaded) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
-      if (gen !== this.robotBuildGen || !motor || !beam || !paddle || !pivot.parent) { done(); return; }
-      // the motor's output axle is at its origin along z (lateral): body behind and above the pivot
-      pivot.add(place(toSim(motor), [0, 0, 0], [0, Math.PI, 0]));
-      // the liftarms run along z in their own frame with the holes along y: two 15-long arms side by side,
-      // turned to run forward, and the red 5-long paddle across the end with its holes facing forward
-      for (const z of [-0.8, 0.8]) moving.add(place(toSim(z < 0 ? beam : beam.clone()), [6, 0, z], [0, Math.PI / 2, 0]));
-      moving.add(place(toSim(paddle), [12.4, 0, 0], [0, 0, Math.PI / 2]));
+      if (gen !== this.robotBuildGen || loaded.some((x) => !x) || !pivot.parent) { done(); return; }
+      const parts = {}; Object.keys(names).forEach((k, i) => { parts[k] = loaded[i]; });
+      const put = (parent, key, pos, rot) => parent.add(place(toSim(parts[key].clone()), pos, rot));
+      if (module === 'arm') {
+        put(pivot, 'motor', [0, 0, 0], [0, Math.PI, 0]);                      // output axle lateral at the pivot
+        for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, 0, z], ALONG_X);
+        put(moving, 'b5', [12.4, 0, 0], [0, 0, H]);                           // red paddle across the end, holes forward
+      } else if (module === 'sweeper') {
+        put(pivot, 'motor', [0, 0, 0], [H, 0, 0]);                            // axle vertical: the arm swings sideways
+        for (const y of [-0.8, 0.8]) put(moving, 'b15', [6, y, 0], ALONG_X);
+        put(moving, 'b5', [12.4, -2, 0], UPRIGHT);                            // a 5-long hanging down at the tip
+      } else if (module === 'lift') {
+        put(pivot, 'motor', [-1.5, -3, 0], [0, Math.PI, 0]);
+        for (const z of [-2.4, 2.4]) put(pivot, 'b15', [1, 3, z], UPRIGHT);    // the mast
+        for (const z of [-2.8, 2.8]) put(moving, 'b7', [4.5, 0, z], ALONG_X);  // the fork
+        put(moving, 'b5', [1.4, 0, 0], ACROSS);
+        put(moving, 'b5', [1.4, 1.6, 0], ACROSS);
+      } else if (module === 'plow') {
+        for (const y of [-1.6, -3.2]) put(pivot, 'b15g', [4, y, 0], ACROSS);  // the blade: two 15-longs across
+        for (const z of [-3.2, 3.2]) put(pivot, 'b5', [2, -2.4, z], ALONG_X);  // struts back to the mount
+        put(pivot, 'b3', [0, -1.2, 0], ACROSS);
+      } else if (module === 'basket') {
+        put(pivot, 'motor', [-10, 0, 0], [0, Math.PI, 0]);
+        for (const z of [-4, 0, 4]) put(moving, 'b11', [-5, -0.4, z], ALONG_X);   // floor
+        for (const z of [-5.6, 5.6]) put(moving, 'b11r', [-5, 1.2, z], ALONG_X);  // sides
+        for (const y of [0.4, 2]) put(moving, 'b15g', [-9.6, y, 0], ACROSS);      // back
+        put(moving, 'b15g', [0, 0.8, 0], ACROSS);                                 // the lip it tips over
+      }
       primitives.forEach((m) => { m.visible = false; });
       done();
     });

@@ -9,7 +9,7 @@ import { exportLlsp3, importLlsp3 } from './llsp3.js';
 import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
-import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
+import { MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
@@ -300,9 +300,6 @@ const B$ = (id) => document.getElementById(id);
 const portOptions = (sel, allowNone) => (allowNone ? '<option value="">none</option>' : '') + PORT_LETTERS.map((p) => `<option value="${p}"${p === sel ? ' selected' : ''}>${p}</option>`).join('');
 let buildOpen = false;
 function fillBuilder(b) {
-  B$('bWheel').innerHTML = Object.entries(WHEELS).map(([k, w]) => `<option value="${k}"${k === b.wheel ? ' selected' : ''}>${w.label}</option>`).join('');
-  B$('bTrack').value = b.track; B$('bTrackOut').value = `${b.track.toFixed(1)} cm`;
-  B$('bHub').value = b.hub;
   B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
   B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
   B$('bColorMount').innerHTML = Object.entries(COLOR_MOUNTS).map(([k, l]) => `<option value="${k}"${k === b.colorMount ? ' selected' : ''}>${l}</option>`).join('');
@@ -317,7 +314,6 @@ function fillBuilder(b) {
 function readBuilder() {
   return normalizeBuild({
     preset: null, name: 'Custom robot',
-    wheel: B$('bWheel').value, track: Number(B$('bTrack').value), hub: B$('bHub').value,
     ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value, attachment: B$('bArmPort').value || null },
     colorMount: B$('bColorMount').value, distanceMount: B$('bDistMount').value,
     attachment: { module: B$('bModule').value, mount: B$('bMount').value },

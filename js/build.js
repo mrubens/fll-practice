@@ -28,13 +28,6 @@ export const PRESETS = {
     colorMount: 'front', distanceMount: 'front',
     attachment: { module: 'none', mount: 'front' },
   },
-  'big-wheels': {
-    name: 'Big-wheel base with front arm',
-    wheel: '8.8', track: 14, hub: 'flat',
-    ports: { left: 'A', right: 'B', color: 'E', distance: 'F', attachment: 'C' },
-    colorMount: 'front', distanceMount: 'front',
-    attachment: { module: 'arm', mount: 'front' },
-  },
 };
 
 export function defaultBuild() { return normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }); }
@@ -50,9 +43,11 @@ export function normalizeBuild(b) {
   return {
     preset: src.preset || null,
     name: String(src.name || base.name),
-    wheel: WHEELS[src.wheel] ? String(src.wheel) : base.wheel,
-    track: Math.min(20, Math.max(8, Number(src.track) || base.track)),
-    hub: src.hub === 'upright' ? 'upright' : 'flat',
+    // Every robot is the Training Camp Driving Base (small wheels, 11.2 cm track, hub flat): older saves with
+    // other wheels or an upright hub fold back onto it.
+    wheel: base.wheel,
+    track: base.track,
+    hub: 'flat',
     ports,
     colorMount: COLOR_MOUNTS[src.colorMount] ? src.colorMount : 'front',
     distanceMount: MOUNTS.includes(src.distanceMount) ? src.distanceMount : 'front',

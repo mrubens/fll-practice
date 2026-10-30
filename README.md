@@ -58,10 +58,10 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
   sensor, and two brick cubes to collect and bring to the goal square. Match rules and scoring only apply on the
   season table.
-- **Build your robot.** **Robot builder** sets wheel size (5.6 or 8.8 cm), track width, hub orientation, hub
-  ports, color and distance sensor mounts, and an attachment (arm, sweeper, forklift, plow) on a front, left,
-  right or back mount. Everything in the simulation (geometry, sensor positions, cm per rotation, attachment
-  reach) follows from it. The Training Camp Driving Base is a preset so the LEGO lessons still match.
+- **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
+  hub flat), drawn from its real bricks. **Robot builder** sets the hub ports, the color and distance sensor mounts,
+  and an attachment on the front, left, right or back: arm, sweeper, forklift, plow or basket, each built from the
+  medium motor and Technic liftarms. Presets: the Guided Mission robot and the plain Training Camp base.
 - **Save for the real robot.** Projects autosave in the browser (My projects). **Save .llsp3** writes a file
   the SPIKE App opens unchanged (verified against the SPIKE web app, including My Blocks). The robot build
   travels inside the file.
