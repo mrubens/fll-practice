@@ -11,6 +11,7 @@ import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring } from './scoring.js';
+import { BOARDS, boardById } from './boards.js';
 import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 
@@ -73,6 +74,7 @@ const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
 });
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
+  if (!world.season) return;                 // only the season table has mission cards
   modelCard.show(obstacle);
   sim.flyTo({ x: obstacle.x, y: obstacle.y });
 };
@@ -374,7 +376,32 @@ $('#btnLaunch').addEventListener('click', () => {
   if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
   startMatch();
 });
-world.loadSeason().then((ok) => { if (ok) { if (!runtime.running) robot.resetPose(); toast('Season mat loaded.'); } });
+// ---------- boards (tables) ----------
+const boardSelect = $('#boardSelect');
+boardSelect.innerHTML = BOARDS.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
+/** Match rules, scores and mission cards only make sense on the season table. */
+function applyBoardUi() {
+  const season = !!world.season;
+  $('#btnLaunch').hidden = !season;
+  $('#scoreChip').hidden = !season;
+  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); }
+  boardSelect.value = (world.board && world.board.id) || 'season';
+}
+async function switchBoard(id, quiet) {
+  const b = boardById(id);
+  runtime.stop();
+  hub.matchLeft = null;
+  scoring.reset();
+  sim.resetEffects();
+  sim.clearTrail();
+  const ok = await world.loadBoard(b);
+  robot.resetPose();
+  store.board = b.id; saveStore();
+  applyBoardUi();
+  if (!quiet) toast(ok ? `${b.name} loaded.` : `${b.name} could not be loaded; using the line practice table.`);
+}
+boardSelect.addEventListener('change', () => switchBoard(boardSelect.value));
+switchBoard(store.board || 'season', true);
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
 $('#btnTurnR').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading + 15));
 $('#btnFollow').addEventListener('click', (e) => { sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });

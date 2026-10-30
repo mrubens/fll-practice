@@ -53,6 +53,11 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
   keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
+- **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
+  table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
+  SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
+  sensor, and two brick cubes to collect and bring to the goal square. Match rules and scoring only apply on the
+  season table.
 - **Build your robot.** **Robot builder** sets wheel size (5.6 or 8.8 cm), track width, hub orientation, hub
   ports, color and distance sensor mounts, and an attachment (arm, sweeper, forklift, plow) on a front, left,
   right or back mount. Everything in the simulation (geometry, sensor positions, cm per rotation, attachment

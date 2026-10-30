@@ -82,6 +82,8 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .view-tools { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; }
 .vt { border: 1px solid rgba(30,36,48,.12); background: rgba(255,255,255,.92); border-radius: 9px; padding: 5px 9px; font-size: 12px; font-weight: 700; backdrop-filter: blur(4px); }
 .vt.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+select.vt { cursor: pointer; color: var(--fg); }
+.vt[hidden], .score-chip[hidden] { display: none; }
 .view-hint { position: absolute; left: 10px; right: 10px; bottom: 6px; margin: 0; font-size: 11px; color: #4B5563; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; pointer-events: none; }
 
 /* ---- hub panel ---- */
@@ -319,6 +321,7 @@ body.building #hubPanel { display: none; }
         <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
         <button type="button" id="btnFollow" class="vt" title="Camera follows the robot">Follow</button>
         <button type="button" id="btnCamera" class="vt" title="Reset the camera">Camera</button>
+        <select id="boardSelect" class="vt" title="Which table to practice on"></select>
         <button type="button" class="score-chip" id="scoreChip" title="Points so far. Click for the whole sheet."><b class="pts">0 pts</b></button>
       </div>
       <div class="score-sheet" id="scoreSheet" hidden></div>

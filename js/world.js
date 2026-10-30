@@ -139,6 +139,21 @@ export class World {
     this.listeners.forEach((fn) => fn('season'));
   }
 
+  /** Switch tables: the season setup from its file, or a drawn board (see boards.js). */
+  async loadBoard(board) {
+    this.board = board;
+    if (board.kind === 'season') return this.loadSeason(board.url);
+    this.matImage = board.draw(this.matCanvas, board);
+    this.matReady = true;
+    this.obstacles = (board.obstacles || []).map((o, i) => ({ id: o.id || `object${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
+    this.startPose = { ...board.start };
+    this.season = null;
+    if (this.physics) this.physics.rebuildObstacles();
+    this.listeners.forEach((fn) => fn('mat'));
+    this.listeners.forEach((fn) => fn('season'));
+    return true;
+  }
+
   async loadSeason(url = 'mat/season.json') {
     let cfg;
     try {
