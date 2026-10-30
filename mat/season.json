@@ -8,9 +8,9 @@
     "y": 0
   },
   "launch": {
-    "x": -78,
-    "y": 35,
-    "heading": -45
+    "x": -76,
+    "y": 32,
+    "heading": 0
   },
   "robotModel": "models/driving-base.mpd",
   "note": "Mission model footprints and poses from martijas/fll-sim (measured from the FIRST wireframe PDF); LDraw models reconstructed there from the official building instructions. Table interior 236 x 114 cm, mat 200 x 114 cm centered, flush with the south wall.",

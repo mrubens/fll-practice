@@ -14,6 +14,13 @@ export const MODULES = {
 };
 
 export const PRESETS = {
+  'guided-mission': {
+    name: 'Guided Mission robot (Driving Base, color sensor on B, attachment motor on E)',
+    wheel: '5.6', track: 11.2, hub: 'flat',
+    ports: { left: 'C', right: 'D', color: 'B', distance: 'F', attachment: 'E' },
+    colorMount: 'front', distanceMount: 'front',
+    attachment: { module: 'arm', mount: 'front' },
+  },
   'training-camp': {
     name: 'Training Camp Driving Base',
     wheel: '5.6', track: 11.2, hub: 'flat',

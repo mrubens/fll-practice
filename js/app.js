@@ -535,6 +535,16 @@ function frame(now) {
 // ---------- start ----------
 if (store.current && store.projects[store.current]) loadProject(store.current);
 else createProject(SAMPLE_NAME, SAMPLE_STATE);
+// First visit: start from FIRST's official Guided Mission program (Mission 11) with the robot it was written for.
+if (!store.guidedLoaded) {
+  fetch('samples/guided-mission-bioglow-11.llsp3', { cache: 'no-cache' }).then((res) => (res.ok ? res.arrayBuffer() : null)).then(async (buf) => {
+    if (!buf) return;
+    const { state } = await importLlsp3(buf);
+    store.guidedLoaded = true;
+    createProject('Guided Mission (M11)', state, normalizeBuild({ ...PRESETS['guided-mission'], preset: 'guided-mission' }));
+    toast('Loaded the official FIRST Guided Mission for Mission 11. Press Launch to watch it run.');
+  }).catch(() => {});
+}
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 

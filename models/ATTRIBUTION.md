@@ -25,3 +25,5 @@ sponsors or endorses this project.
    north, positive = counter-clockwise from above). The entry's box stays as the collision shape.
 4. The robot body for the Training Camp preset is `models/driving-base.mpd` (origin at the axle midpoint on the
    mat, forward −z, left +x, y down, as in LDraw); the simulator keeps its own spinning wheels.
+
+- `../samples/guided-mission-bioglow-11.llsp3`: FIRST's official Guided Mission program for the 2026-27 BIOGLOW season (https://firstinspires.blob.core.windows.net/fll/challenge/2026-27/guided-mission-bioglow-11.llsp3), redistributed unchanged for practice.
