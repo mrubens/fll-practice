@@ -1,5 +1,9 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>FLL Practice</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
@@ -152,6 +156,23 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .spike-matrix-editor .cell { width: 30px; height: 30px; border-radius: 7px; border: 0; background: rgba(0,0,0,.35); padding: 0; }
 .spike-matrix-editor .cell.on { background: var(--led); box-shadow: 0 0 6px rgba(255,212,0,.8); }
 .spike-matrix-editor .tools { display: flex; gap: 6px; }
+.spike-steer-editor { padding: 10px 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; user-select: none; }
+.spike-steer-editor .dial { touch-action: none; cursor: pointer; }
+.spike-steer-editor .bg { fill: rgba(0,0,0,.18); }
+.spike-steer-editor .tick { stroke: rgba(255,255,255,.45); stroke-width: 2; stroke-linecap: round; }
+.spike-steer-editor .tick.big { stroke: rgba(255,255,255,.8); stroke-width: 3; }
+.spike-steer-editor .wedge { fill: rgba(255,255,255,.28); }
+.spike-steer-editor .wheel { fill: #fff; }
+.spike-steer-editor .wheel-in { fill: rgba(0,0,0,.35); }
+.spike-steer-editor .spoke { fill: #fff; }
+.spike-steer-editor .hub { fill: #fff; }
+.spike-steer-editor .pointer { stroke: #fff; stroke-width: 3; stroke-linecap: round; }
+.spike-steer-editor .knob circle { fill: #fff; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
+.spike-steer-editor .knob .arrow { fill: none; stroke: rgba(0,0,0,.65); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.spike-steer-editor .row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
+.spike-steer-editor .row button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: transparent; color: #fff; font-size: 22px; font-weight: 700; line-height: 1; padding: 0; }
+.spike-steer-editor .row button:active { background: rgba(255,255,255,.25); }
+.spike-steer-editor .readout { color: #fff; font-weight: 700; font-size: 18px; }
 .spike-matrix-editor .tools button { flex: 1; border: 0; border-radius: 8px; padding: 6px 4px; background: rgba(255,255,255,.9); font-size: 12px; font-weight: 700; }
 
 /* ---- narrow screens: sim on top, blocks below ---- */
@@ -231,6 +252,8 @@ body.building #hubPanel { display: none; }
   "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
 } }
 </script>
+</head>
+<body>
 <header class="topbar">
   <div class="brand"><span class="logo">F</span><span>FLL Practice</span></div>
   <input id="projectName" class="project-name" type="text" aria-label="Project name" maxlength="60" spellcheck="false">
@@ -318,3 +341,5 @@ body.building #hubPanel { display: none; }
 <div id="toasts" aria-live="polite"></div>
 <input type="file" id="fileOpen" accept=".llsp3,application/zip" hidden>
 <script type="module" src="js/app.js"></script>
+</body>
+</html>
