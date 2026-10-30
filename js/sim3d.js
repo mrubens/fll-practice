@@ -5,6 +5,35 @@ import { TABLE } from './world.js';
 
 const DEG = Math.PI / 180;
 
+/** "M01 Drone Survey" -> "01", "Dock NE (M13-15)" -> "13-15", anything else -> its first word. */
+function labelFor(id) {
+  const s = String(id || '');
+  let m = /^M(\d+)/i.exec(s);
+  if (m) return m[1].padStart(2, '0');
+  m = /M(\d+-\d+)/i.exec(s);
+  if (m) return m[1];
+  return s.split(' ')[0].slice(0, 5);
+}
+
+const labelCache = new Map();
+function labelTexture(text) {
+  if (labelCache.has(text)) return labelCache.get(text);
+  const c = document.createElement('canvas');
+  c.width = text.length > 2 ? 192 : 128; c.height = 128;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#E3000B';
+  ctx.beginPath(); ctx.roundRect(4, 4, c.width - 8, c.height - 8, 26); ctx.fill();
+  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 8; ctx.stroke();
+  ctx.fillStyle = '#FFFFFF';
+  ctx.font = `bold ${text.length > 2 ? 60 : 76}px Nunito, Arial, sans-serif`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(text, c.width / 2, c.height / 2 + 4);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  labelCache.set(text, tex);
+  return tex;
+}
+
 function box(w, h, d, color, opts = {}) {
   const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshStandardMaterial({ color, roughness: opts.roughness ?? 0.65, metalness: 0.05 }));
   mesh.castShadow = true;
@@ -111,6 +140,15 @@ export class Sim3D {
       const m = box(o.w, o.h, o.d, o.color);
       m.position.set(o.x, o.h / 2, o.y);
       m.userData.obstacle = o;
+      const label = labelFor(o.id);
+      if (label) {
+        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(label), transparent: true, depthTest: false }));
+        const w = label.length > 2 ? 9 : 6;
+        sprite.scale.set(w, 6, 1);
+        sprite.position.set(0, o.h / 2 + 4.5, 0);
+        sprite.renderOrder = 10;
+        m.add(sprite);
+      }
       this.scene.add(m);
       this.obstacleMeshes.push(m);
     }
