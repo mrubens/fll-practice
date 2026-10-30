@@ -1,106 +1,95 @@
-# SPIKE Sim
+# FLL BIOGLOW practice simulator (SPIKE Sim)
 
-A browser-based simulator for LEGO® Education SPIKE™ Prime. Kids write programs with the same
-Word Blocks as the SPIKE App, run them on a simulated Driving Base in 3D, and save the result as a
-`.llsp3` file that opens directly in the real SPIKE App 3 (desktop, tablet or web).
+A browser simulator for FIRST® LEGO® League Challenge teams using LEGO® Education SPIKE™ Prime. The team
+writes programs with the same Word Blocks as the SPIKE App, runs them on a to-scale BIOGLOW (2026-27) field
+with the real mission models, sees what scores, and then takes the exact same program to the real robot.
 
-**Use it here: <https://mrubens.github.io/spike-sim/>** (works on any tablet or laptop; nothing to install).
+**Use it here: <https://mrubens.github.io/spike-sim/>** (any laptop or tablet, nothing to install).
 
-Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Group.
+Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO League are their trademarks.
 
-## What's in it
+## For the team
 
-- **Block editor** (Blockly, Scratch-style renderer) with the SPIKE categories: Movement, Motors, Light,
-  Sound, Events, Control, Sensors, Operators, Variables. Block names, inputs, dropdowns and defaults
-  match the SPIKE App.
-- **3D simulator** (three.js): an FLL-sized table (236 x 114 cm) with walls, a black line loop, color tiles
-  and obstacles. The robot is a standard Driving Base: 5.6 cm wheels, 11.2 cm track, color sensor
-  in front pointing down, distance sensor in front. Drag the robot to place it; orbit/zoom the camera.
-- **Hub panel**: 5x5 LED matrix, left/right buttons (click, or arrow keys), center button light,
-  yaw/timer readouts, live sensor and motor values per port. Beeps play through the speakers.
-- **Programs behave like Scratch/SPIKE**: every hat block is its own thread, `when ... button pressed`
-  and `when <condition>` hats fire while the program runs, loops yield once per iteration, running stacks glow.
-- **Save / Open `.llsp3`**: files written here open in the SPIKE App; the LEGO lesson files
-  (Training Camp etc.) open here. Projects also autosave in the browser (My projects).
-- **Robot builder**: a snap-together robot from a few parameters, previewed live in the 3D view: wheel size
-  (5.6 or 8.8 cm), track width, hub flat or upright, hub ports, color-sensor and distance-sensor mount points,
-  and an attachment module (arm, sweeper, forklift or plow blade) on a front/left/right/back mount. The
-  geometry, sensor positions, cm-per-rotation default and attachment physics all derive from it. The build is
-  saved with the project and inside exported `.llsp3` files (as an extra `spikesim-build.json` entry the SPIKE
-  App ignores). The Training Camp Driving Base is a preset so the LEGO lessons still match.
-- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image (200 x 114 cm, centered on the
-  236 cm table), the launch area and the mission models as real LEGO geometry: LDraw models of all 15 missions
-  (plus the drone stand and the Forest Elder post) placed where the FIRST wireframe puts them, and the SPIKE
-  Prime Driving Base itself built from real parts (hub, motors, sensors, frame). See `models/ATTRIBUTION.md`
-  for sources and how to add models.
-  **Launch** puts the robot in the launch area, resets the models and runs the program with a 2:30 match clock.
-  The mat image comes from the public Robot Game Rulebook; replace `mat/season.jpg` (8 px/cm covering the
-  whole 236 x 114 cm table) and edit `mat/season.json` for another season. Delete the file to get the plain
-  practice mat back.
-- **Missions and scoring**: click a mission model in the 3D view and the camera flies to it with a card:
-  the mission's rulebook points, its tasks and how the simulator detects each one. Interactions are scripted,
-  not physics: each task has a zone on the table and a required robot action (drive through it, lower the
-  attachment onto it, lower then lift, or stay out of it). When it happens the model pulses green (some also
-  move), the task ticks off and the score chip updates. "Practice this" puts the robot in the launch area,
-  marks the first target with a green ring, draws the path, and reports how far from the target the robot
-  stopped. Zones are approximate (built from the model positions); tune them in `js/missions.js`.
-- **My Blocks**: "Make a Block" with number/text and true/false inputs. Definitions, calls and argument
-  reporters are stored exactly as the SPIKE App stores them, so they round-trip through `.llsp3` files, run in
-  the simulator and compile to Python functions.
+- **Code it like the SPIKE App.** The block palette (Movement, Motors, Light, Sound, Events, Control, Sensors,
+  Operators, Variables, My Blocks) has the same blocks, names, dropdowns and defaults as SPIKE App 3, so nothing
+  has to be relearned on the real tablet.
+- **Run it on the BIOGLOW field.** The table is 236 x 114 cm with the 200 cm season mat, the launch areas and
+  all 15 mission models as real LEGO geometry, placed where the field setup guide puts them. Drag the robot to
+  position it, orbit and zoom the camera, or press **Follow** to ride along.
+- **Launch like a match.** **Launch** puts the robot in the left launch area, resets the field and runs the
+  program with the 2:30 match clock in the hub strip.
+- **See what scores.** Click a mission model and the camera flies to it with a card: the mission's rulebook
+  points, its tasks, and how the simulator detects each one (drive into it, lower the attachment onto it, lower
+  then lift, or keep away). When the robot does it the model pulses green, the task ticks off and the points
+  chip in the view updates. Interactions are scripted, not simulated physics, so it tells you whether the robot
+  got to the right place and did the right motion, not whether a lever would really flip.
+- **Practice one mission.** "Practice this" on a mission card resets the robot to the launch area, marks the
+  first target with a green ring and draws the robot's path; when the program stops it reports how far from the
+  target the robot ended and how far it was turned. That is the loop kids actually iterate on.
+- **Build your robot.** **Robot builder** sets wheel size (5.6 or 8.8 cm), track width, hub orientation, hub
+  ports, color and distance sensor mounts, and an attachment (arm, sweeper, forklift, plow) on a front, left,
+  right or back mount. Everything in the simulation (geometry, sensor positions, cm per rotation, attachment
+  reach) follows from it. The Training Camp Driving Base is a preset so the LEGO lessons still match.
+- **Save for the real robot.** Projects autosave in the browser (My projects). **Save .llsp3** writes a file
+  the SPIKE App opens unchanged (verified against the SPIKE web app, including My Blocks). The robot build
+  travels inside the file.
 
-## Run it
+## Getting a program onto the real robot
 
-The hosted copy at <https://mrubens.github.io/spike-sim/> is published from the `main` branch by GitHub Pages,
-so every push updates it. To run it locally, it is a static site and any web server works, for example:
+1. **Save .llsp3** here, then **Open Project** in the SPIKE App (web/desktop) or share the file to the iPad app,
+   connect the hub and run it there. This is the reliable path.
+2. **Send to hub** over Bluetooth: **Connect hub** (hub on, not connected to anything else), pick it in the
+   browser dialog, then **Send to hub** compiles the program to SPIKE Python, uploads it to slot 0 and starts it.
+   Works in Chrome and Edge on laptops, Chromebooks and Android; not in Safari or on iPad. Written against
+   LEGO's published hub protocol (https://lego.github.io/spike-prime-docs/) but not yet tried on a physical hub.
+   **Python** shows the generated code for pasting into a SPIKE Python project.
+
+## How accurate is it
+
+- The drive uses the SPIKE math exactly: 5.6 cm wheels (17.59 cm per rotation), 11.2 cm track, the same
+  17.5 cm/rotation calibration the hub uses, the same steering rule. There is no wheel slip, acceleration
+  overshoot or battery sag, so real runs drift a few percent and a few degrees; expect to retune numbers on the
+  real table.
+- Mission-model positions and footprints come from the FIRST wireframe PDF (measured by the fll-sim project);
+  the mat image is the Robot Game Rulebook's render, since FIRST does not publish the print file. Scoring zones
+  are built from the model positions and are approximate; adjust them in `js/missions.js`.
+- Not simulated: force sensor, pitch/roll (the table is flat), sound files, broadcasts, light-matrix pixel
+  blocks, precision tokens and inspection points. Mission models do not articulate.
+
+## Run or host it yourself
+
+It is a static site. The hosted copy is published from `main` by GitHub Pages. Locally:
 
 ```bash
 python3 serve.py 8794
 ```
 
-then open <http://localhost:8794>. It needs internet for the three CDN libraries (Blockly, three.js, JSZip)
-and the Nunito font.
-
-## Getting a program onto the real robot
-
-Two ways:
-
-1. **Save `.llsp3`** here, then in the SPIKE App use **Open Project** (web/desktop) or share the file to the
-   iPad app. Connect the hub and press Run in the SPIKE App.
-2. **Send to hub** over Bluetooth, no SPIKE App needed. Press **Connect hub** (the hub must be on and not
-   connected to anything else), pick it in the browser dialog, then **Send to hub**: the program is compiled to
-   SPIKE Python, uploaded to slot 0 and started. **Stop hub** stops it. This uses LEGO's published hub protocol
-   (https://lego.github.io/spike-prime-docs/, firmware 3.x) via Web Bluetooth, which works in Chrome and Edge on
-   laptops, Chromebooks and Android. It does not work in Safari or on iPad, and may not work inside the claude.ai
-   artifact frame; use the hosted site there. **Python** shows the generated code so it can also be pasted into a
-   SPIKE Python project.
-
-The Bluetooth upload path was written against LEGO's protocol spec and example (COBS framing and CRC32 checked
-against the reference implementation) but has not yet been exercised with a physical hub.
+then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, JSZip) and the
+Nunito font. For another season: replace `mat/season.jpg` (8 px/cm covering the whole table), edit
+`mat/season.json` (model boxes, poses, launch pose) and add packed LDraw models to `models/` (see
+`models/ATTRIBUTION.md`); without a season file the simulator falls back to a plain practice mat.
 
 ## Files
 
 | File | Purpose |
 |---|---|
-| `js/spec.js` | The block catalogue: opcodes, inputs, fields and selector menus exactly as the SPIKE App stores them |
-| `js/blocks.js` | Blockly setup: block definitions, custom fields (steering, LED image), theme, toolbox, dialogs |
+| `js/spec.js` | The block catalog: opcodes, inputs, fields and selector menus exactly as the SPIKE App stores them |
+| `js/blocks.js`, `js/myblocks.js` | Blockly setup, custom fields, theme, toolbox; My Blocks (Scratch procedures) |
 | `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behavior |
-| `js/robot.js` | Robot and hub model: motors, differential-drive kinematics, sensors, matrix, sound |
-| `js/world.js` | The table: mat drawing (also the color-sensor lookup), obstacles, ray casts, collisions |
-| `js/sim3d.js` | three.js scene, robot mesh, camera, drag-to-place |
-| `js/hub.js` | Hub panel UI and audio |
+| `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
+| `js/world.js` | The table: mat (also the color-sensor lookup), season loading, obstacles, ray casts, collisions |
+| `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
+| `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Mission definitions and rulebook points, scripted trigger engine, mission card |
+| `js/hub.js` | Hub strip UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
-| `js/myblocks.js` | My Blocks (Scratch procedures): block shapes, Make-a-Block dialog, mutations |
-| `js/build.js` | Robot build parameters, presets, derived geometry and validation |
-| `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Mission definitions and points, scripted trigger engine, the click-on-model card |
-| `mat/season.json`, `mat/season.png` | Season field: mat image, mission models (collision boxes + LDraw files), launch pose |
+| `js/python.js`, `js/ble.js` | SPIKE Python compiler and the Web Bluetooth hub client |
+| `js/app.js` | Toolbar, project storage, builder UI, main loop |
+| `mat/season.json`, `mat/season.jpg` | Season field: mat image, mission models (collision boxes + model files), launch pose |
 | `models/*.mpd` | Self-contained LDraw models: the 15 BIOGLOW missions and the SPIKE driving bases |
-| `js/python.js` | Compiles the blocks to SPIKE Python 3 (one async task per hat block) |
-| `js/ble.js` | Web Bluetooth client for the hub: COBS/XOR framing, CRC32 chunked upload, program start/stop |
-| `js/app.js` | Toolbar, project storage, main loop |
-| `artifact.html` | Same page with the stylesheet inlined, for publishing as a claude.ai artifact |
-| `serve.py` | Tiny no-cache dev server |
+| `artifact.html`, `serve.py` | Inlined-stylesheet copy for publishing as a claude.ai artifact; tiny no-cache dev server |
 
-## Not simulated (yet)
+## Credits
 
-Force sensor, pitch/roll (the table is flat), sound files, broadcasts, and the light-matrix
-pixel/brightness blocks. Mission models are rigid (their collision shapes are boxes); they do not move or score. Those blocks still exist in the SPIKE App; they are just not in this palette.
+Mission models and the driving bases are LDraw reconstructions from the official building instructions by
+[fll-sim](https://github.com/martijas/fll-sim); part geometry is the [LDraw Parts Library](https://library.ldraw.org)
+(CC BY). The `.llsp3` format and block shapes were verified against files written by the SPIKE App.
