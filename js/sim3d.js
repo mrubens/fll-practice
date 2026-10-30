@@ -51,6 +51,20 @@ function flattenObjects(objects) {
   return out;
 }
 
+/** True when a build has the LEGO Driving Base's geometry, whatever its ports: small wheels, 11.2 cm track, flat hub. */
+function isDrivingBase(build) {
+  const a = build.attachment || {};
+  return build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright' && (a.module === 'none' || a.module === 'arm');
+}
+
+/** A soft, glimmering translucent block that stands in for a model while its LEGO parts load. */
+function shimmerBox(w, h, d) {
+  const mat = new THREE.MeshStandardMaterial({ color: 0xBFD0E6, emissive: 0x8FB4E8, emissiveIntensity: 0.25, transparent: true, opacity: 0.35, roughness: 0.3, depthWrite: false });
+  const m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+  m.userData.shimmer = true;
+  return m;
+}
+
 /** Load a packed .mpd without flattening; resolves to a fresh clone of the raw part hierarchy (or null). */
 const rawCache = new Map();
 function loadLDrawRaw(url) {
@@ -145,6 +159,7 @@ export class Sim3D {
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
     // Graphics tiers: picked from the device up front, then stepped down automatically if frames get slow.
+    this.shimmers = [];
     this.quality = null;
     this.frameEma = 1 / 60;
     this.slowSince = null;
@@ -334,10 +349,20 @@ export class Sim3D {
       m.visible = !o.model;             // a model entry never shows its collision box unless the file fails
       this.scene.add(m);
       this.obstacleMeshes.push(m);
+      let ghost = null;
+      if (o.model) {                    // glimmering stand-in until the real bricks arrive
+        ghost = shimmerBox(o.w, o.h, o.d);
+        ghost.position.copy(m.position);
+        this.scene.add(ghost);
+        this.obstacleExtras.push(ghost);
+        this.shimmers.push(ghost);
+      }
+      const unghost = () => { if (ghost) { this.scene.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); this.obstacleExtras = this.obstacleExtras.filter((x) => x !== ghost); } };
       const def = MECHANISMS[o.id];
       if (o.model && def) {
         loadLDrawRaw(o.model).then((raw) => {
           if (generation !== this.buildGeneration) return;
+          unghost();
           if (!raw) { m.visible = true; return; }
           const split = splitModel(raw, def);
           const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
@@ -366,6 +391,7 @@ export class Sim3D {
       if (o.model) {
         loadLDrawModel(o.model).then((group) => {
           if (generation !== this.buildGeneration) return;
+          unghost();
           if (!group) { m.visible = true; return; }
           const holder = ldrawToWorld(group);
           const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
@@ -385,6 +411,9 @@ export class Sim3D {
     if (this.robotGroup) { this.scene.remove(this.robotGroup); this.robotGroup = null; }
     this.robotBuildGen = (this.robotBuildGen || 0) + 1;   // one generation per build: late loads for an old build are dropped
     const r = this.robot, build = r.build, geom = r.geom;
+    this.robotLego = isDrivingBase(build);                 // real bricks: nothing primitive shows until every part is in
+    this.robotPending = 0; this.revealRobot = null;
+    this.shimmers = this.shimmers.filter((m) => !m.userData.robot);
     const g = new THREE.Group();
     const body = new THREE.Group();          // everything that rides on the wheels
     body.position.y = geom.lift;
@@ -500,23 +529,40 @@ export class Sim3D {
     body.add(this.armPivot);
 
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; } });
+    this.robotLDrawParts = body.children.filter((n) => n !== this.armPivot && n !== csMount);
     this.robotGroup = g;
     this.scene.add(g);
     this.matrixDirty = true;
 
     // Real LEGO body (packed LDraw model) for the Training Camp Driving Base; wheels stay the spinning primitives.
+    // Any build with the Driving Base's geometry (small wheels, 11.2 cm track, flat hub) gets the real bricks,
+    // whatever ports it uses. Nothing primitive shows while the parts load: a glimmering block stands in.
     const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
-    if ((build.preset === 'training-camp' || build.preset === 'guided-mission') && (a.module === 'none' || a.module === 'arm')) {
+    if (isDrivingBase(build)) {
       const gen = this.robotBuildGen;
+      const ghost = shimmerBox(20, 9, 16); ghost.position.set(-1, 4.5, 0); ghost.userData.robot = true;
+      g.add(ghost); this.shimmers.push(ghost);
+      const shown = [body, caster].concat(this.wheels);
+      shown.forEach((n) => { n.visible = false; });
+      this.revealRobot = () => {
+        if (gen !== this.robotBuildGen || --this.robotPending > 0) return;
+        g.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost);
+        shown.forEach((n) => { n.visible = true; });
+        this.revealRobot = null;
+      };
+      this.robotPending++;
       loadLDrawModel(modelUrl).then((group) => {
-        if (!group || gen !== this.robotBuildGen || this.robotGroup !== g) return;
-        // Model frame: origin at the axle midpoint on the table, forward -z, left +x, y down.
-        // Ours: x forward, y up, z right.  our = (-z_l, -y_l, -x_l), scaled to cm.
-        group.matrixAutoUpdate = false;
-        group.matrix.set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
-        g.add(group);
-        body.visible = false;
-        this.robotLDraw = group;
+        if (gen !== this.robotBuildGen || this.robotGroup !== g) return;
+        if (group) {
+          // Model frame: origin at the axle midpoint on the table, forward -z, left +x, y down.
+          // Ours: x forward, y up, z right.  our = (-z_l, -y_l, -x_l), scaled to cm.
+          group.matrixAutoUpdate = false;
+          group.matrix.set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+          g.add(group);
+          this.robotLDraw = group;
+          this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
+        }
+        this.revealRobot && this.revealRobot();
       });
     }
   }
@@ -525,29 +571,36 @@ export class Sim3D {
   legoArm(primitives) {
     const gen = this.robotBuildGen;
     const pivot = this.armPivot, moving = this.armMoving;
+    if (this.robotLego) this.robotPending++;
     const place = (group, pos, rot) => { group.matrixAutoUpdate = false; const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...rot)); m.setPosition(...pos); group.matrix.copy(m); return group; };
     const toSim = (g) => { const h = new THREE.Group(); g.rotation.x = Math.PI; g.scale.setScalar(LDU); h.add(g); return h; };   // LDraw y-down -> y-up, LDU -> cm
     Promise.all([loadLDrawModel('models/parts/motor.mpd'), loadLDrawModel('models/parts/beam15.mpd'), loadLDrawModel('models/parts/beam5.mpd')]).then(([motor, beam, paddle]) => {
-      if (gen !== this.robotBuildGen || !motor || !beam || !paddle || !pivot.parent) return;
+      const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
+      if (gen !== this.robotBuildGen || !motor || !beam || !paddle || !pivot.parent) { done(); return; }
       // the motor's output axle is at its origin along z (lateral): body behind and above the pivot
       pivot.add(place(toSim(motor), [0, 0, 0], [0, Math.PI, 0]));
-      // the liftarm runs along z in its own frame: turn it to run forward, holes lateral
-      moving.add(place(toSim(beam), [6, 0, 0], [0, Math.PI / 2, 0]));
-      moving.add(place(toSim(paddle), [12, 0, 0], [Math.PI / 2, 0, 0]));
+      // the liftarms run along z in their own frame with the holes along y: two 15-long arms side by side,
+      // turned to run forward, and the red 5-long paddle across the end with its holes facing forward
+      for (const z of [-0.8, 0.8]) moving.add(place(toSim(z < 0 ? beam : beam.clone()), [6, 0, z], [0, Math.PI / 2, 0]));
+      moving.add(place(toSim(paddle), [12.4, 0, 0], [0, 0, Math.PI / 2]));
       primitives.forEach((m) => { m.visible = false; });
+      done();
     });
   }
 
   /** Real LEGO color sensor at the sensor mount, lens down. */
   legoColorSensor(mount, hideMesh) {
     const gen = this.robotBuildGen;
+    if (this.robotLego) this.robotPending++;
     loadLDrawModel('models/parts/colorsensor.mpd').then((sensor) => {
-      if (!sensor || gen !== this.robotBuildGen || !mount.parent) return;
+      const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
+      if (!sensor || gen !== this.robotBuildGen || !mount.parent) { done(); return; }
       const h = new THREE.Group(); sensor.rotation.x = Math.PI; sensor.scale.setScalar(LDU); h.add(sensor);
       h.rotation.set(-Math.PI / 2, 0, 0);
       h.position.set(0, 2.6, 0);
       mount.add(h);
       if (hideMesh) hideMesh.visible = false;
+      done();
     });
   }
 
@@ -739,13 +792,22 @@ export class Sim3D {
     if (f.t >= 1) this.fly = null;
   }
 
-  update(dt) { this.updateEffects(dt); this.updateFly(dt); this.watchPerformance(dt); }
+  update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.watchPerformance(dt); }
+
+  /** The loading blocks breathe: a slow glimmer so a waiting robot or model reads as "on its way", not broken. */
+  updateShimmer(dt) {
+    if (!this.shimmers.length) return;
+    this.shimmerT = (this.shimmerT || 0) + dt;
+    const k = 0.5 + 0.5 * Math.sin(this.shimmerT * 3.2);
+    for (const m of this.shimmers) { m.material.opacity = 0.22 + 0.25 * k; m.material.emissiveIntensity = 0.15 + 0.5 * k; }
+  }
 
   render() {
     const r = this.robot, g = this.robotGroup;
     for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; if (o.movable) m.rotation.y = -(o.angle || 0) * DEG; }
     for (const e of this.obstacleExtras) {
       const o = e.userData.obstacle;
+      if (!o) continue;
       const off = e.userData.offset || [0, 0];
       if (o.angle) {
         const a = o.angle * DEG, c = Math.cos(a), s = Math.sin(a);
