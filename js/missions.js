@@ -28,7 +28,7 @@ export const MISSIONS = [
   { id: 'M03', name: 'Flip the Rock', models: ['M03 Flip the Rock'],
     text: 'Flip the rock to discover what lives underneath, then put it back the way you found it.',
     tasks: [
-      { id: 'flag', label: 'The research flag is down', points: 20, how: 'Lift the front edge of the rock until it flips over backwards; the flag drops.',
+      { id: 'flag', label: 'The research flag is down', points: 20, how: 'Drive into the rock’s front face with the attachment held low (about 4 cm up); it tips over backwards and the flag drops. Hitting its top edge just presses it down.',
         met: (c) => c.p('M03 Flip the Rock').flag.angle > 60 },
       { id: 'back', label: 'Bonus: the rock has been returned to its original starting position', points: 10, bonusOf: 'flag', how: 'Flip the rock back onto its base afterwards.',
         met: (c) => c.p('M03 Flip the Rock').rock.angle < 15 },
