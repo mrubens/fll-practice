@@ -495,7 +495,7 @@ export class Physics {
     if (this.robotParts.length) pass(this.bodyCollider);
     // Several physics substeps per robot step: the arm can sweep a centimetre per step, and jointed pieces need
     // the kinematic push spread over small moves to react properly.
-    const SUB = this.substeps || 3;
+    const SUB = this.substeps || this.sim.physicsSubsteps || 3;
     const h0 = robot.heading, a0 = this.lastArmAngle ?? angle;
     for (let k = 1; k <= SUB; k++) {
       const f = k / SUB;

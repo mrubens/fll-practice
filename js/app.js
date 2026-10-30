@@ -52,6 +52,7 @@ if (store.config && !store.lastBuild) { store.lastBuild = normalizeBuild({ ports
 robot.applyBuild(store.lastBuild || defaultBuild());
 const sim = new Sim3D($('#view3d'), world, robot);
 const hub = new HubPanel($('#hubPanel'), robot);
+sim.onQualityChange = (q, reason) => { if (reason === 'slow') toast(q === 'low' ? 'Graphics turned down so the robot stays smooth on this device.' : 'Graphics turned down a notch to keep the robot smooth.'); };
 const runtime = new Runtime({
   workspace, robot,
   onChange: () => { updateRunState(); if (!runtime.running && practicing) modelCard.setResult(practiceResult(scoring, practicing)); },

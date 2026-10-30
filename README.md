@@ -44,6 +44,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   tokens are worth 50, then 50/35/25/15/10). Relaunching needs the robot back in a launch area. When time is up
   the sheet freezes, and missions marked with the no-equipment constraint score nothing if their model is
   touching the robot. Run (the play button) is free practice with no match rules.
+- **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
+  shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
+  frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
   keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
 - **Practice one mission.** "Practice this" on a mission card resets the robot to the launch area, marks the

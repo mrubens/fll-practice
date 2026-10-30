@@ -137,13 +137,19 @@ export class Sim3D {
     this.locked = false;
     this.dragging = false;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     container.appendChild(renderer.domElement);
     this.renderer = renderer;
+    // Graphics tiers: picked from the device up front, then stepped down automatically if frames get slow.
+    this.quality = null;
+    this.frameEma = 1 / 60;
+    this.slowSince = null;
+    this.qualityChangedAt = 0;
+    this.onQualityChange = null;
 
     const scene = new THREE.Scene();
     scene.background = new THREE.Color(0xE4E8EF);
@@ -164,6 +170,7 @@ export class Sim3D {
 
     scene.add(new THREE.HemisphereLight(0xffffff, 0x9aa4b3, 0.95));
     const sun = new THREE.DirectionalLight(0xffffff, 1.5);
+    this.sun = sun;
     sun.position.set(70, 220, 90);
     sun.castShadow = true;
     sun.shadow.mapSize.set(2048, 2048);
@@ -221,11 +228,56 @@ export class Sim3D {
     this.pieceNodes = [];
     this.equipmentNodes = [];
     this.buildObstacles();
+    this.setQuality(this.detectQuality());
     world.onChange((what) => {
       if (what === 'mat') this.matTex.needsUpdate = true;
       if (what === 'season') this.loadMatTexture();
       if (what === 'season') this.buildObstacles();
     });
+  }
+
+  /** Where to start: desktops get everything, touch devices and small CPUs start a tier down. */
+  detectQuality() {
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    const cores = navigator.hardwareConcurrency || 4;
+    const mem = navigator.deviceMemory || 4;
+    const maxTex = this.renderer.capabilities.maxTextureSize || 0;
+    if (mem <= 2 || cores <= 2) return 'low';
+    if (coarse || cores <= 4 || maxTex < 8192) return 'medium';
+    return 'high';
+  }
+
+  /** Apply a graphics tier: pixel ratio, shadows and the mat texture. */
+  setQuality(q, reason) {
+    if (q === this.quality) return;
+    const prev = this.quality;
+    this.quality = q;
+    const dpr = window.devicePixelRatio || 1;
+    const r = this.renderer;
+    if (q === 'high') { r.setPixelRatio(Math.min(dpr, 2)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap; this.sun.shadow.mapSize.set(2048, 2048); }
+    else if (q === 'medium') { r.setPixelRatio(Math.min(dpr, 1.5)); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFShadowMap; this.sun.shadow.mapSize.set(1024, 1024); }
+    else { r.setPixelRatio(1); r.shadowMap.enabled = false; }
+    if (this.sun.shadow.map) { this.sun.shadow.map.dispose(); this.sun.shadow.map = null; }
+    this.scene.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { m.needsUpdate = true; }); } });
+    this.world.physicsSubsteps = q === 'low' ? 2 : 3;
+    if (this.world.physics) this.world.physics.substeps = this.world.physicsSubsteps;
+    this.hiResUrl = null;
+    this.loadMatTexture();
+    this.qualityChangedAt = performance.now();
+    this.slowSince = null;
+    if (prev && this.onQualityChange) this.onQualityChange(q, reason);
+  }
+
+  /** Frame-time watchdog: step the tier down when the page cannot keep up. */
+  watchPerformance(dt) {
+    if (document.hidden || dt > 0.5 || !this.quality || this.quality === 'low') return;
+    this.frameEma = this.frameEma * 0.9 + dt * 0.1;
+    const now = performance.now();
+    if (now - this.qualityChangedAt < 8000) return;      // settle after a change (textures, shaders)
+    if (this.frameEma > 1 / 28) {
+      if (this.slowSince === null) this.slowSince = now;
+      else if (now - this.slowSince > 2500) this.setQuality(this.quality === 'high' ? 'medium' : 'low', 'slow');
+    } else this.slowSince = null;
   }
 
   /**
@@ -238,7 +290,7 @@ export class Sim3D {
     if (!season) { this.hiResUrl = null; this.matMesh.material.map = this.matTex; this.matMesh.material.needsUpdate = true; return; }
     const maxTex = this.renderer.capabilities.maxTextureSize || 0;
     const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
-    const url = (season.matHi && maxTex >= 8192 && !coarse) ? season.matHi : season.mat;
+    const url = (season.matHi && maxTex >= 8192 && !coarse && this.quality === 'high') ? season.matHi : season.mat;
     if (!url || this.hiResUrl === url) return;
     this.hiResUrl = url;
     new THREE.TextureLoader().load(url, (tex) => {
@@ -640,7 +692,7 @@ export class Sim3D {
     if (f.t >= 1) this.fly = null;
   }
 
-  update(dt) { this.updateEffects(dt); this.updateFly(dt); }
+  update(dt) { this.updateEffects(dt); this.updateFly(dt); this.watchPerformance(dt); }
 
   render() {
     const r = this.robot, g = this.robotGroup;
