@@ -3,7 +3,7 @@
 import { createPhysics } from './physics.js';
 
 export const TABLE = { w: 236, h: 114, wall: 2.5, wallHeight: 9 };
-export const PX_PER_CM = 8;
+export const PX_PER_CM = 16;
 
 export const START_POSE = { x: -95, y: 40, heading: 0 };
 export const MATCH_SECONDS = 150; // FLL match: 2 minutes 30 seconds
@@ -195,7 +195,7 @@ export class World {
     const img = this.matImage;
     if (px < 0 || py < 0 || px >= img.width || py >= img.height) return [255, 255, 255];
     // The real sensor sees a spot about 1 cm across, not a single pixel: average a small square.
-    const R = 4;
+    const R = 8;
     let r = 0, g = 0, b = 0, n = 0;
     for (let dy = -R; dy <= R; dy++) {
       const yy = py + dy;
