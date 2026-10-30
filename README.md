@@ -56,7 +56,8 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
-  sensor, and two brick cubes to collect and bring to the goal square. Match rules and scoring only apply on the
+  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The arm has a fork: lower it
+  about 12 degrees, drive into a cube, lift a little (lift too far and it dangles), carry, lower, back out. Match rules and scoring only apply on the
   season table.
 - **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
   hub flat), drawn from its real bricks. **Robot builder** sets the hub ports, the color and distance sensor mounts,

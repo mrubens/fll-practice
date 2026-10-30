@@ -371,14 +371,15 @@ export class Physics {
     const armBody = hasMoving ? this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading))) : null;
     this.armBody = armBody;
     root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); root.updateMatrixWorld(true);
-    const part = (parent, size, pos) => {
+    const part = (parent, size, pos, pitch = 0) => {       // pitch: degrees about z, nose up
       const node = new THREE.Object3D();
       node.position.set(...pos);
+      node.rotation.z = pitch * DEG;
       parent.add(node);
       node.updateMatrixWorld(true);
       const onArm = parent === moving && armBody;
       const desc = R.ColliderDesc.cuboid((size[0] / 2) * S, (size[1] / 2) * S, (size[2] / 2) * S).setFriction(0.5).setCollisionGroups(SHARED).setActiveCollisionTypes(ACT);
-      if (onArm) desc.setTranslation(pos[0] * S, pos[1] * S, pos[2] * S);           // relative to the moving frame
+      if (onArm) { desc.setTranslation(pos[0] * S, pos[1] * S, pos[2] * S); if (pitch) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, pitch * DEG)); desc.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); } }   // relative to the moving frame
       else { const w = new THREE.Vector3(); node.getWorldPosition(w); const q = new THREE.Quaternion(); node.getWorldQuaternion(q); desc.setTranslation(w.x * S, w.y * S, w.z * S).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
       const collider = this.world.createCollider(desc, onArm ? armBody : body);
       this.robotParts.push({ collider, node, half: size.map((v) => v / 2), onArm: !!onArm });
@@ -386,6 +387,9 @@ export class Physics {
     if (a.module === 'arm' || a.module === 'sweeper') {
       part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle (a little narrower than it looks, so it fits the loops)
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
+      // the fork: two tines ahead of the paddle, pitched up 12 degrees so they run level when the arm is lowered 12 degrees
+      // (a hair narrower than the beams, so they clear the cube's posts)
+      if (a.module === 'arm') for (const z of [-0.45, 0.45]) part(moving, [5.6, 0.7, 0.7], [12.4 + 2.8 * Math.cos(12 * DEG), -1.2 + 2.8 * Math.sin(12 * DEG), z], 12);
     } else if (a.module === 'basket') {
       part(moving, [10, 0.8, 12], [-5, -0.4, 0]);       // floor
       part(moving, [0.8, 4, 12], [-9.6, 2, 0]);         // back

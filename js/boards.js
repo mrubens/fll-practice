@@ -85,8 +85,8 @@ export const BOARDS = [
     start: { x: -95, y: 36, heading: 0 },
     obstacles: [
       { id: 'Training marker', x: -50, y: 36, w: 3.2, d: 3.2, h: 9.6, color: '#FFD500', movable: false, model: 'models/training/marker.mpd', modelPose: { x: -50, y: 36, heading: 0 } },
-      { id: 'Training cube', x: 10, y: 0, w: 3.2, d: 3.2, h: 3.9, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: 0, heading: 0 } },
-      { id: 'Training cube 2', x: 10, y: -30, w: 3.2, d: 3.2, h: 3.9, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: -30, heading: 0 } },
+      { id: 'Training cube', x: 10, y: 0, w: 4, d: 4, h: 5.6, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: 0, heading: 0 } },
+      { id: 'Training cube 2', x: 10, y: -30, w: 4, d: 4, h: 5.6, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: -30, heading: 0 } },
     ],
   },
 ];

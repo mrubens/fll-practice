@@ -38,8 +38,10 @@ export function inHome(x, y) {
 export const MECHANISMS = {
   // ---- Training camp objects (boards.js): loose LEGO bricks the robot can push, lift or knock over ----
   'Training marker': { pieces: { marker: { kind: 'loose', anchor: [0, 4.8, 0], whole: true, mass: 0.03, friction: 0.8, shape: [{ box: [3.2, 9.6, 3.2], at: [0, 0, 0] }], parts: () => true } } },
-  'Training cube': { pieces: { cube: { kind: 'loose', anchor: [0, 1.92, 0], whole: true, mass: 0.02, friction: 0.8, shape: [{ box: [3.2, 3.84, 3.2], at: [0, 0, 0] }], parts: () => true } } },
-  'Training cube 2': { pieces: { cube: { kind: 'loose', anchor: [0, 1.92, 0], whole: true, mass: 0.02, friction: 0.8, shape: [{ box: [3.2, 3.84, 3.2], at: [0, 0, 0] }], parts: () => true } } },
+  // the cube is an open Technic frame (two rings of 5-long beams on 7-long posts): the arm's fork slides in
+  // between the rings and lifts it by the top ring
+  'Training cube': { pieces: { cube: { kind: 'loose', anchor: [0, 2.8, 0], whole: true, mass: 0.02, friction: 0.9, shape: [{ box: [0.8, 0.8, 4], at: [-1.6, -2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, -2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, -2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, -2.4, 1.6] }, { box: [0.8, 0.8, 4], at: [-1.6, 2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, 2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, 2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, 2.4, 1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, 1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, 1.6] }], parts: () => true } } },
+  'Training cube 2': { pieces: { cube: { kind: 'loose', anchor: [0, 2.8, 0], whole: true, mass: 0.02, friction: 0.9, shape: [{ box: [0.8, 0.8, 4], at: [-1.6, -2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, -2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, -2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, -2.4, 1.6] }, { box: [0.8, 0.8, 4], at: [-1.6, 2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, 2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, 2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, 2.4, 1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, 1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, 1.6] }], parts: () => true } } },
   // ---- M01: the drone rig (lying along the south wall) + the pilot stand with the LiDAR map ----
   'M01 Drone Survey': {
     base: [{ box: [56, 0.8, 6], at: [0, -0.2, 8.5] }],   // the strings lie flat; the robot drives over them

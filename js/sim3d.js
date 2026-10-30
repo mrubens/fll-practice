@@ -544,7 +544,7 @@ export class Sim3D {
       const eye = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.4, 20), new THREE.MeshStandardMaterial({ color: 0x1F2937, roughness: 0.3 }));
       eye.rotation.z = Math.PI / 2; eye.position.set(1.2, 0, z); ds.add(eye);
     }
-    ds.position.set(d.fwd - 1.2, 5.6, d.lat);
+    ds.position.set(d.fwd - 3.3, 5.6, d.lat + (geom.distance.angle === 0 ? -3.2 : 0));   // sits on the frame, beside the attachment motor
     ds.rotation.y = -d.angle * DEG;
     body.add(ds);
 
@@ -654,23 +654,29 @@ export class Sim3D {
       if (gen !== this.robotBuildGen || loaded.some((x) => !x) || !pivot.parent) { done(); return; }
       const parts = {}; Object.keys(names).forEach((k, i) => { parts[k] = loaded[i]; });
       const put = (parent, key, pos, rot) => parent.add(place(toSim(parts[key].clone()), pos, rot));
+      // Every module starts from two 7-long beams lying on top of the base's front frame and reaching the mount,
+      // so whatever hangs off the mount is visibly bolted to the robot.
+      const mountX = module === 'basket' ? -12.8 : -2.8;
+      for (const z of [-2.4, 2.4]) put(pivot, 'b7', [mountX, -0.8, z], ALONG_X);
       if (module === 'arm') {
         put(pivot, 'motor', [0, 0, 0], [0, Math.PI, 0]);                      // output axle lateral at the pivot
         for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, 0, z], ALONG_X);
         put(moving, 'b5', [12.4, 0, 0], [0, 0, H]);                           // red paddle across the end, holes forward
+        const P = 12 * DEG;                                                   // the fork: two tines, pitched up 12 degrees
+        for (const z of [-0.45, 0.45]) put(moving, 'b7', [12.4 + 2.8 * Math.cos(P), -1.2 + 2.8 * Math.sin(P), z], [0, H, P, 'ZYX']);   // turn to x, then pitch
       } else if (module === 'sweeper') {
         put(pivot, 'motor', [0, 0, 0], [H, 0, 0]);                            // axle vertical: the arm swings sideways
         for (const y of [-0.8, 0.8]) put(moving, 'b15', [6, y, 0], ALONG_X);
         put(moving, 'b5', [12.4, -2, 0], UPRIGHT);                            // a 5-long hanging down at the tip
       } else if (module === 'lift') {
-        put(pivot, 'motor', [-1.5, -3, 0], [0, Math.PI, 0]);
-        for (const z of [-2.4, 2.4]) put(pivot, 'b15', [1, 3, z], UPRIGHT);    // the mast
+        put(pivot, 'motor', [-1.2, 0, 0], [0, Math.PI, 0]);
+        for (const z of [-2.4, 2.4]) put(pivot, 'b15', [-1, 3, z], UPRIGHT);   // the mast, through the mount beams
         for (const z of [-2.8, 2.8]) put(moving, 'b7', [4.5, 0, z], ALONG_X);  // the fork
         put(moving, 'b5', [1.4, 0, 0], ACROSS);
         put(moving, 'b5', [1.4, 1.6, 0], ACROSS);
       } else if (module === 'plow') {
         for (const y of [-1.6, -3.2]) put(pivot, 'b15g', [4, y, 0], ACROSS);  // the blade: two 15-longs across
-        for (const z of [-3.2, 3.2]) put(pivot, 'b5', [2, -2.4, z], ALONG_X);  // struts back to the mount
+        for (const z of [-3.2, 3.2]) put(pivot, 'b7', [1.2, -1.6, z], ALONG_X); // struts from the frame to the blade
         put(pivot, 'b3', [0, -1.2, 0], ACROSS);
       } else if (module === 'basket') {
         put(pivot, 'motor', [-10, 0, 0], [0, Math.PI, 0]);
