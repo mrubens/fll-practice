@@ -245,6 +245,12 @@ export class Robot {
     }
   }
 
+  /** Forward speed of the robot body in cm/s (negative when reversing). */
+  forwardSpeed() {
+    const circ = Math.PI * this.geom.wheelDiameter;
+    return ((this.motors[this.config.left].velocity + this.motors[this.config.right].velocity) / 2 / 360) * circ;
+  }
+
   yaw() { return Math.round(norm180(this.heading - this.hub.yawOffset)); }
   resetYaw() { this.hub.yawOffset = this.heading; }
   timer() { return this.time - this.hub.timerStart; }

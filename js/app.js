@@ -10,6 +10,8 @@ import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
+import { Scoring, practiceResult } from './scoring.js';
+import { MissionsPanel } from './missionsui.js';
 
 const B = window.Blockly;
 const $ = (sel) => document.querySelector(sel);
@@ -51,10 +53,31 @@ const sim = new Sim3D($('#view3d'), world, robot);
 const hub = new HubPanel($('#hubPanel'), robot);
 const runtime = new Runtime({
   workspace, robot,
-  onChange: () => updateRunState(),
+  onChange: () => { updateRunState(); if (!runtime.running && practising) missionsPanel.showResult(practiceResult(scoring, practising)); },
   onLog: (m) => toast(m, 'warn'),
 });
 robot.on('hint', (m) => toast(m, 'warn'));
+
+// ---------- missions: scripted interactions, scoresheet, practice cards ----------
+const scoring = new Scoring(robot, world);
+let practising = null;
+scoring.on((ev) => {
+  if (ev.type === 'done') { sim.celebrate(ev.obstacle, ev.action.animate); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} +${ev.action.points}`); }
+  if (ev.type === 'lost') { toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} lost (${ev.action.points} pts)`, 'warn'); }
+});
+const missionsPanel = new MissionsPanel($('#missionsPanel'), {
+  scoring,
+  onPractice: (m) => { practising = m; runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m.actions[0])); },
+  onStopPractice: () => { practising = null; sim.showZone(null); },
+});
+function startRun() {
+  world.resetObstacles();
+  scoring.reset();
+  sim.resetEffects();
+  sim.clearTrail();
+  hub.ensureAudio();
+  runtime.start();
+}
 
 const btnRun = $('#btnRun'), btnStop = $('#btnStop');
 function updateRunState() {
@@ -63,7 +86,7 @@ function updateRunState() {
   btnRun.disabled = runtime.running;
   btnStop.disabled = !runtime.running;
 }
-btnRun.addEventListener('click', () => { hub.ensureAudio(); runtime.start(); });
+btnRun.addEventListener('click', () => { if (practising) robot.resetPose(); startRun(); });
 btnStop.addEventListener('click', () => runtime.stop());
 updateRunState();
 
@@ -289,11 +312,9 @@ $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 $('#btnResetPos').addEventListener('click', () => { robot.resetPose(); world.resetObstacles(); });
 $('#btnLaunch').addEventListener('click', () => {
   runtime.stop();
-  world.resetObstacles();
   robot.resetPose();
   hub.matchLeft = MATCH_SECONDS;
-  hub.ensureAudio();
-  runtime.start();
+  startRun();
 });
 world.loadSeason().then((ok) => { if (ok) { if (!runtime.running) robot.resetPose(); toast('Season mat loaded.'); } });
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
@@ -433,8 +454,9 @@ function frame(now) {
   last = now;
   if (runtime.running) {
     acc += dt;
-    while (acc >= STEP) { robot.update(STEP); acc -= STEP; }
+    while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     runtime.tick();
+    sim.addTrailPoint(robot.x, robot.y);
     if (hub.matchLeft !== null && hub.matchLeft > 0) {
       hub.matchLeft -= dt;
       if (hub.matchLeft <= 0) { hub.matchLeft = 0; toast('Match over: 2:30 is up.', 'warn'); }
@@ -443,6 +465,7 @@ function frame(now) {
     acc = 0;
   }
   hub.update(now);
+  sim.update(dt);
   sim.render();
   requestAnimationFrame(frame);
 }
@@ -453,4 +476,4 @@ else createProject(SAMPLE_NAME, SAMPLE_STATE);
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
-window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, missionsPanel, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };

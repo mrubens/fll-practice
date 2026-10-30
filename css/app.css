@@ -195,3 +195,31 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .builder output { font-weight: 800; color: var(--fg); font-variant-numeric: tabular-nums; width: 56px; }
 .builder .hint { margin: 2px 0 0; font-size: 12px; color: var(--stop); min-height: 1em; }
 body.building #hubPanel { display: none; }
+
+/* ---- missions panel ---- */
+.missions { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); padding: 8px 12px 12px; max-height: 42%; overflow: auto; }
+.missions-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.missions-head h3 { margin: 0; font-size: 14px; }
+.missions-head .score { font-size: 13px; color: var(--muted); }
+.missions-head .score b { font-size: 18px; color: var(--fg); }
+.mission-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
+.mission { border: 1px solid var(--line); border-radius: 10px; padding: 4px 6px; background: #fff; }
+.mission.part { border-color: #B7791F; }
+.mission.full { border-color: var(--run); background: #F1FBF4; }
+.mission.active { box-shadow: 0 0 0 2px var(--accent); }
+.mission.flash { animation: missionflash 1.2s ease; }
+@keyframes missionflash { 0% { background: #D6F5E0; } 100% { background: #fff; } }
+.mission .pick { display: grid; grid-template-columns: 26px 1fr auto; gap: 6px; align-items: center; width: 100%; border: 0; background: none; padding: 2px 0; text-align: left; font-weight: 700; font-size: 12px; cursor: pointer; }
+.mission .mid { background: #E3000B; color: #fff; border-radius: 6px; text-align: center; font-size: 11px; padding: 2px 0; }
+.mission .mpts { color: var(--muted); font-variant-numeric: tabular-nums; }
+.mission .actions { display: flex; flex-direction: column; gap: 1px; padding: 2px 0 2px 32px; }
+.mission .act { font-size: 11px; color: var(--muted); }
+.mission .act.done { color: #1B7F3B; }
+.mission .act.lost { color: var(--stop); }
+.mission .act i { font-style: normal; color: #9AA3AF; }
+.mission-card { border: 1px solid var(--accent); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: #EAF4FF; font-size: 12px; }
+.mission-card .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+.mission-card p { margin: 6px 0; }
+.mission-card ul { margin: 4px 0; padding-left: 18px; }
+.mission-card .how { color: var(--muted); }
+.mission-card .result { background: #fff; border-radius: 8px; padding: 6px 8px; }

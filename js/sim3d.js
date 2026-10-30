@@ -27,6 +27,7 @@ function flattenLDraw(group) {
   const byMaterial = new Map();
   group.traverse((o) => {
     if (!o.isMesh || !o.geometry.attributes.position) return;
+    if (Array.isArray(o.material)) o.material = o.material[0];   // multi-material parts: keep the first (rare)
     const geo = o.geometry.clone();
     geo.applyMatrix4(o.matrixWorld);
     for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal') geo.deleteAttribute(name);
@@ -58,7 +59,12 @@ export function loadLDrawModel(url) {
     ldrawQueue = job.catch(() => {});
     ldrawCache.set(url, job);
   }
-  return ldrawCache.get(url).then((g) => (g ? g.clone() : null));
+  return ldrawCache.get(url).then((g) => {
+    if (!g) return null;
+    const c = g.clone();
+    c.traverse((o) => { if (o.isMesh && o.material && typeof o.material.clone === 'function') o.material = o.material.clone(); });   // per-model materials so highlights stay local
+    return c;
+  });
 }
 /** Wrap an LDraw group so LDraw's y-down frame becomes y-up and LDU become cm. */
 function ldrawToWorld(group) {
@@ -127,6 +133,9 @@ export class Sim3D {
     this.resize();
     this.installDrag();
     this.matrixDirty = true;
+    this.effects = [];           // running model animations / pulses
+    this.buildTrail();
+    this.buildZoneMarker();
     robot.on('matrix', () => { this.matrixDirty = true; });
     robot.on('build', () => this.buildRobot());
   }
@@ -327,6 +336,86 @@ export class Sim3D {
     }
   }
 
+  // ---- path trail ----
+  buildTrail() {
+    this.trailMax = 4000;
+    this.trailGeo = new THREE.BufferGeometry();
+    this.trailPos = new Float32Array(this.trailMax * 3);
+    this.trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPos, 3));
+    this.trailGeo.setDrawRange(0, 0);
+    this.trail = new THREE.Line(this.trailGeo, new THREE.LineBasicMaterial({ color: 0x0A8DFF, transparent: true, opacity: 0.9 }));
+    this.trail.frustumCulled = false;
+    this.trailCount = 0;
+    this.trailLast = null;
+    this.scene.add(this.trail);
+  }
+  clearTrail() { this.trailCount = 0; this.trailLast = null; this.trailGeo.setDrawRange(0, 0); }
+  addTrailPoint(x, y) {
+    if (this.trailLast && Math.hypot(x - this.trailLast[0], y - this.trailLast[1]) < 0.8) return;
+    if (this.trailCount >= this.trailMax) return;
+    const i = this.trailCount * 3;
+    this.trailPos[i] = x; this.trailPos[i + 1] = 0.3; this.trailPos[i + 2] = y;
+    this.trailCount++;
+    this.trailLast = [x, y];
+    this.trailGeo.attributes.position.needsUpdate = true;
+    this.trailGeo.setDrawRange(0, this.trailCount);
+  }
+
+  // ---- zone marker for the mission being practised ----
+  buildZoneMarker() {
+    this.zoneRing = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 48), new THREE.MeshBasicMaterial({ color: 0x2FC25B, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthTest: false }));
+    this.zoneRing.rotation.x = -Math.PI / 2;
+    this.zoneRing.renderOrder = 6;
+    this.zoneRing.visible = false;
+    this.scene.add(this.zoneRing);
+  }
+  showZone(zone) {
+    if (!zone) { this.zoneRing.visible = false; return; }
+    this.zoneRing.visible = true;
+    this.zoneRing.position.set(zone.x, 0.4, zone.y);
+    this.zoneRing.scale.setScalar(zone.r);
+  }
+
+  // ---- mission feedback: green pulse plus an optional whole-model motion ----
+  extrasFor(obstacle) { return this.obstacleExtras.filter((e) => e.userData.obstacle === obstacle); }
+  celebrate(obstacle, animate) {
+    if (!obstacle) return;
+    const targets = this.extrasFor(obstacle).concat(this.obstacleMeshes.filter((m) => m.userData.obstacle === obstacle && m.visible));
+    for (const target of targets) {
+      const base = { px: target.position.x, py: target.position.y, pz: target.position.z, rz: target.rotation.z, rx: target.rotation.x };
+      this.effects.push({ target, base, animate: animate || null, t: 0, duration: animate ? 0.9 : 0.6 });
+    }
+  }
+  updateEffects(dt) {
+    for (const e of this.effects) {
+      e.t += dt;
+      const k = Math.min(1, e.t / e.duration);
+      const pulse = Math.sin(Math.min(1, e.t / 0.6) * Math.PI) * 0.5;
+      e.target.traverse((o) => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setRGB(0, pulse, 0); });
+      const a = e.animate, b = e.base, ease = 1 - Math.pow(1 - k, 3);
+      if (a && a.kind === 'rise') e.target.position.y = b.py + a.cm * ease;
+      else if (a && a.kind === 'tilt') e.target.rotation.z = b.rz + (a.degrees || 20) * DEG * ease;
+      else if (a && a.kind === 'slide') { const d = a.cm * ease; if (a.dir === 'east') e.target.position.x = b.px + d; else if (a.dir === 'west') e.target.position.x = b.px - d; else if (a.dir === 'south') e.target.position.z = b.pz + d; else e.target.position.z = b.pz - d; }
+      else if (a && a.kind === 'wobble') e.target.rotation.z = b.rz + Math.sin(k * Math.PI * 4) * 6 * DEG * (1 - k);
+    }
+    this.effects = this.effects.filter((e) => {
+      if (e.t < e.duration) return true;
+      e.target.traverse((o) => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setRGB(0, 0, 0); });
+      if (e.animate && e.animate.kind === 'wobble') e.target.rotation.z = e.base.rz;
+      return false;
+    });
+  }
+  /** Put every model back where it started (new launch). */
+  resetEffects() {
+    this.effects = [];
+    for (const e of this.obstacleExtras) {
+      const o = e.userData.obstacle, off = e.userData.offset || [0, 0];
+      e.position.set(o.x + off[0], 0, o.y + off[1]);
+      e.rotation.set(0, ((o.modelPose && o.modelPose.heading) || 0) * DEG, 0);
+      e.traverse((m) => { if (m.isMesh && m.material && m.material.emissive) m.material.emissive.setRGB(0, 0, 0); });
+    }
+  }
+
   drawMatrix() {
     const ctx = this.matrixCanvas.getContext('2d');
     ctx.fillStyle = '#15171C';
@@ -388,6 +477,8 @@ export class Sim3D {
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
   }
+
+  update(dt) { this.updateEffects(dt); }
 
   render() {
     const r = this.robot, g = this.robotGroup;
