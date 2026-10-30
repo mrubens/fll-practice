@@ -164,6 +164,19 @@ export class Sim3D {
     controls.enableDamping = true;
     controls.dampingFactor = 0.12;
     controls.maxPolarAngle = Math.PI / 2 - 0.04;
+    // Touchpad: two-finger scroll pans the view, pinch (ctrl+wheel on Macs) zooms; the mouse wheel still zooms.
+    renderer.domElement.addEventListener('wheel', (e) => {
+      const touchpad = Math.abs(e.deltaX) > 0 || (e.deltaMode === 0 && Math.abs(e.deltaY) < 50 && !Number.isInteger(e.deltaY / 100));
+      if (e.ctrlKey || !touchpad) return;                 // pinch or a real wheel: OrbitControls zooms
+      e.preventDefault(); e.stopImmediatePropagation();
+      const dist = camera.position.distanceTo(controls.target);
+      const perPx = (2 * dist * Math.tan((camera.fov / 2) * DEG)) / renderer.domElement.clientHeight;
+      const right = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 0);
+      const up = new THREE.Vector3().setFromMatrixColumn(camera.matrix, 1);
+      const move = right.multiplyScalar(e.deltaX * perPx).add(up.multiplyScalar(-e.deltaY * perPx));
+      camera.position.add(move); controls.target.add(move);
+      this.follow = false;
+    }, { capture: true, passive: false });
     controls.minDistance = 25;
     controls.maxDistance = 600;
     this.controls = controls;
@@ -370,6 +383,7 @@ export class Sim3D {
 
   buildRobot() {
     if (this.robotGroup) { this.scene.remove(this.robotGroup); this.robotGroup = null; }
+    this.robotBuildGen = (this.robotBuildGen || 0) + 1;   // one generation per build: late loads for an old build are dropped
     const r = this.robot, build = r.build, geom = r.geom;
     const g = new THREE.Group();
     const body = new THREE.Group();          // everything that rides on the wheels
@@ -440,6 +454,8 @@ export class Sim3D {
     // Color sensor pointing down, with a disc showing what it sees.
     const c = geom.color;
     const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(c.fwd, 2.3, c.lat); body.add(cs);
+    const csMount = new THREE.Group(); csMount.position.set(c.fwd, 0, c.lat); body.add(csMount);
+    this.legoColorSensor(csMount, cs);
     this.sensorDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     this.sensorDisc.rotation.x = -Math.PI / 2;
     this.sensorDisc.position.set(c.fwd, 0.08, c.lat);
@@ -456,7 +472,9 @@ export class Sim3D {
       const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat); beam.position.x = 6;
       const paddle = new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red); paddle.position.x = 12;
       this.armMoving.add(beam, paddle);
-      this.armPivot.add(new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
+      const block = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat);
+      this.armPivot.add(block);
+      if (a.module === 'arm') this.legoArm([beam, paddle, block]);
     } else if (a.module === 'lift') {
       const mast = new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat); mast.position.set(1, 3, 0);
       const fork = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 7), red); fork.position.set(5, 0, 0);
@@ -488,8 +506,7 @@ export class Sim3D {
 
     // Real LEGO body (packed LDraw model) for the Training Camp Driving Base; wheels stay the spinning primitives.
     const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
-    if (build.preset === 'training-camp' && a.module === 'none') {
-      this.robotBuildGen = (this.robotBuildGen || 0) + 1;
+    if ((build.preset === 'training-camp' || build.preset === 'guided-mission') && (a.module === 'none' || a.module === 'arm')) {
       const gen = this.robotBuildGen;
       loadLDrawModel(modelUrl).then((group) => {
         if (!group || gen !== this.robotBuildGen || this.robotGroup !== g) return;
@@ -502,6 +519,36 @@ export class Sim3D {
         this.robotLDraw = group;
       });
     }
+  }
+
+  /** Real LEGO parts for the arm: a medium motor at the mount, a 15-long liftarm, a red 5-long liftarm as the paddle. */
+  legoArm(primitives) {
+    const gen = this.robotBuildGen;
+    const pivot = this.armPivot, moving = this.armMoving;
+    const place = (group, pos, rot) => { group.matrixAutoUpdate = false; const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...rot)); m.setPosition(...pos); group.matrix.copy(m); return group; };
+    const toSim = (g) => { const h = new THREE.Group(); g.rotation.x = Math.PI; g.scale.setScalar(LDU); h.add(g); return h; };   // LDraw y-down -> y-up, LDU -> cm
+    Promise.all([loadLDrawModel('models/parts/motor.mpd'), loadLDrawModel('models/parts/beam15.mpd'), loadLDrawModel('models/parts/beam5.mpd')]).then(([motor, beam, paddle]) => {
+      if (gen !== this.robotBuildGen || !motor || !beam || !paddle || !pivot.parent) return;
+      // the motor's output axle is at its origin along z (lateral): body behind and above the pivot
+      pivot.add(place(toSim(motor), [0, 0, 0], [0, Math.PI, 0]));
+      // the liftarm runs along z in its own frame: turn it to run forward, holes lateral
+      moving.add(place(toSim(beam), [6, 0, 0], [0, Math.PI / 2, 0]));
+      moving.add(place(toSim(paddle), [12, 0, 0], [Math.PI / 2, 0, 0]));
+      primitives.forEach((m) => { m.visible = false; });
+    });
+  }
+
+  /** Real LEGO color sensor at the sensor mount, lens down. */
+  legoColorSensor(mount, hideMesh) {
+    const gen = this.robotBuildGen;
+    loadLDrawModel('models/parts/colorsensor.mpd').then((sensor) => {
+      if (!sensor || gen !== this.robotBuildGen || !mount.parent) return;
+      const h = new THREE.Group(); sensor.rotation.x = Math.PI; sensor.scale.setScalar(LDU); h.add(sensor);
+      h.rotation.set(-Math.PI / 2, 0, 0);
+      h.position.set(0, 2.6, 0);
+      mount.add(h);
+      if (hideMesh) hideMesh.visible = false;
+    });
   }
 
   // ---- path trail ----
