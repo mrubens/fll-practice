@@ -10,6 +10,7 @@ export const MODULES = {
   sweeper: { label: 'sweeper (swings sideways)', motor: true },
   lift: { label: 'forklift (slides up)', motor: true },
   plow: { label: 'plow blade (no motor)', motor: false },
+  basket: { label: 'basket (carries pieces, tips to dump)', motor: true },
 };
 
 export const PRESETS = {

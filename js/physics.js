@@ -3,6 +3,7 @@
 // walls, mission models and the attachment, with the character controller doing collide-and-slide. Movable practice
 // boxes are dynamic bodies that get shoved. Frames: sim x east / y south / heading clockwise  <->  Rapier x east / z south / y up.
 import * as THREE from 'three';
+import { MECHANISMS } from './mechanisms.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for metres)
 const DEG = Math.PI / 180;
@@ -22,6 +23,14 @@ export async function createPhysics(world) {
   return new Physics(R, world);
 }
 
+// Collision groups: bit 0 = everything shared (robot, walls, mat, loose equipment, practice boxes); each mission
+// model gets its own bit so its pieces never collide with their own base (the LEGO geometry overlaps there).
+const ALL = 0xFFFF;
+const grp = (member, filter) => ((member & 0xFFFF) << 16) | (filter & 0xFFFF);
+const SHARED = grp(1, ALL);
+const MODEL_BIT = { 'M01 Drone Survey': 1, 'M01 Drone stand': 1 };   // the rest are assigned as they are built
+const modelGroup = (id) => { if (!(id in MODEL_BIT)) MODEL_BIT[id] = 2 + (Object.keys(MODEL_BIT).length - 1) % 14; const b = 1 << MODEL_BIT[id]; return grp(b, ALL & ~b); };
+
 const yawQuat = (headingDeg) => { const a = -headingDeg * DEG / 2; return { x: 0, y: Math.sin(a), z: 0, w: Math.cos(a) }; };
 const yawOf = (q) => Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.z * q.z)) / DEG;   // degrees, counter-clockwise from above
 
@@ -29,8 +38,13 @@ export class Physics {
   constructor(R, world) {
     this.R = R;
     this.sim = world;
-    this.world = new R.World({ x: 0, y: 0, z: 0 });
+    this.world = new R.World({ x: 0, y: -9.81, z: 0 });
+    // Jointed mission pieces are pushed by kinematic (infinitely heavy) robot parts: give the solver more passes
+    // so the joint and the contact agree instead of the robot plowing straight through the piece.
+    if (this.world.integrationParameters) { this.world.integrationParameters.numSolverIterations = 24; }
     this.obstacleBodies = [];
+    this.pieces = [];              // moving mission-model pieces (see mechanisms.js) and equipment
+    this.colliderToPiece = new Map();
     this.robotBody = null;
     this.robotParts = [];        // { collider, node } attachment pieces that follow the attachment motor
     this.bodyCollider = null;
@@ -46,11 +60,12 @@ export class Physics {
     const t = this.sim.table;
     const hw = this.sim.innerHalfW, hh = this.sim.innerHalfH, w = t.wall, h = t.wallHeight;
     const body = this.world.createRigidBody(R.RigidBodyDesc.fixed());
-    const add = (x, z, hx, hz) => this.world.createCollider(R.ColliderDesc.cuboid(hx * S, (h / 2) * S, hz * S).setTranslation(x * S, (h / 2) * S, z * S), body);
+    const add = (x, z, hx, hz) => this.world.createCollider(R.ColliderDesc.cuboid(hx * S, (h / 2) * S, hz * S).setTranslation(x * S, (h / 2) * S, z * S).setCollisionGroups(SHARED), body);
     add(0, -hh - w / 2, hw + w, w / 2);
     add(0, hh + w / 2, hw + w, w / 2);
     add(-hw - w / 2, 0, w / 2, hh + w);
     add(hw + w / 2, 0, w / 2, hh + w);
+    this.world.createCollider(R.ColliderDesc.cuboid((hw + w) * S, 1 * S, (hh + w) * S).setTranslation(0, -1 * S, 0).setFriction(0.8).setCollisionGroups(SHARED), body);   // the mat
     this.wallsBody = body;
   }
 
@@ -60,17 +75,233 @@ export class Physics {
     const { R } = this;
     for (const ob of this.obstacleBodies) this.world.removeRigidBody(ob.body);
     this.obstacleBodies = [];
+    for (const pc of this.pieces) if (!pc.equipment) this.world.removeRigidBody(pc.body);
+    this.pieces = this.pieces.filter((pc) => pc.equipment);
+    this.colliderToPiece = new Map(this.pieces.map((pc) => [pc.collider.handle, pc]));
     for (const o of this.sim.obstacles) {
+      if (MECHANISMS[o.id] && o.model) { this.buildMechanism(o, MECHANISMS[o.id]); continue; }
       const desc = o.movable
         ? R.RigidBodyDesc.dynamic().enabledTranslations(true, false, true).enabledRotations(false, true, false).setLinearDamping(6).setAngularDamping(6)
         : R.RigidBodyDesc.fixed();
       desc.setTranslation(o.x * S, (o.h / 2) * S, o.y * S);
       const body = this.world.createRigidBody(desc);
-      const col = this.world.createCollider(R.ColliderDesc.cuboid((o.w / 2) * S, (o.h / 2) * S, (o.d / 2) * S).setFriction(0.7).setMass(0.4), body);
+      const col = this.world.createCollider(R.ColliderDesc.cuboid((o.w / 2) * S, (o.h / 2) * S, (o.d / 2) * S).setFriction(0.7).setMass(0.4).setCollisionGroups(SHARED), body);
       this.obstacleBodies.push({ o, body, collider: col });
       o.angle = 0;
     }
-    this.colliderToObstacle = new Map(this.obstacleBodies.map((ob) => [ob.collider.handle, ob.o]));
+    this.colliderToObstacle = new Map(this.obstacleBodies.filter((ob) => ob.collider).map((ob) => [ob.collider.handle, ob.o]));
+    for (const ob of this.obstacleBodies) for (const c of ob.colliders || []) this.colliderToObstacle.set(c.handle, ob.o);
+    this.readPieces(0);
+  }
+
+  // ---------------- mission mechanisms ----------------
+
+  /** Pose of a model's own frame on the table (cm): the LDraw holder transform used by the 3D view. */
+  modelFrame(o) {
+    const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
+    const q = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), (pose.heading || 0) * DEG);
+    return { p: new THREE.Vector3(pose.x, 0, pose.y), q };
+  }
+
+  buildMechanism(o, def) {
+    const { R } = this;
+    const frame = this.modelFrame(o);
+    const toWorld = (v) => new THREE.Vector3(...v).applyQuaternion(frame.q).add(frame.p);
+    const rq = { x: frame.q.x, y: frame.q.y, z: frame.q.z, w: frame.q.w };
+    // fixed base
+    const base = this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(frame.p.x * S, 0, frame.p.z * S).setRotation(rq));
+    const groups = modelGroup(o.id);
+    const colliders = [];
+    for (const b of def.base || []) {
+      colliders.push(this.world.createCollider(R.ColliderDesc.cuboid((b.box[0] / 2) * S, (b.box[1] / 2) * S, (b.box[2] / 2) * S).setTranslation(b.at[0] * S, b.at[1] * S, b.at[2] * S).setFriction(0.7).setCollisionGroups(groups), base));
+    }
+    this.obstacleBodies.push({ o, body: base, colliders });
+    o.angle = 0;
+    for (const [name, pd] of Object.entries(def.pieces || {})) {
+      const anchorW = toWorld(pd.anchor);
+      const locked = !!pd.locked;
+      let desc;
+      if (pd.kind === 'lift') desc = R.RigidBodyDesc.kinematicPositionBased();
+      else desc = R.RigidBodyDesc.dynamic().setLinearDamping(pd.kind === 'loose' ? 1.5 : 0.8).setAngularDamping(pd.kind === 'loose' ? 1.5 : 0.8).setGravityScale(pd.gravity === false ? 0 : 1);
+      // A locked piece is a dynamic body with every degree of freedom switched off (a body born fixed cannot be
+      // jointed later), released by switching them back on.
+      if (locked) desc.enabledTranslations(false, false, false).enabledRotations(false, false, false);
+      else if (pd.planar && pd.kind === 'loose') desc.enabledTranslations(true, false, true).enabledRotations(false, true, false);
+      desc.setTranslation(anchorW.x * S, anchorW.y * S, anchorW.z * S).setRotation(rq).setCcdEnabled(true).setCanSleep(false);
+      const body = this.world.createRigidBody(desc);
+      const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
+      const cols = shapes.map((sh, i) => this.world.createCollider(
+        R.ColliderDesc.cuboid((sh.box[0] / 2) * S, (sh.box[1] / 2) * S, (sh.box[2] / 2) * S).setTranslation(sh.at[0] * S, sh.at[1] * S, sh.at[2] * S)
+          .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pd.whole || pd.kind === 'loose' ? SHARED : groups), body));
+      const pc = { o, name, def: pd, body, colliders: cols, collider: cols[0], anchor: anchorW, q0: frame.q.clone(), axisW: pd.axis ? new THREE.Vector3(...pd.axis).applyQuaternion(frame.q).normalize() : null,
+        locked, released: !locked, latched: false, touched: -1, angle: 0, ext: 0, height: 0, start: anchorW.clone() };
+      if (pd.kind === 'hinge') this._hingeJoint(pc, base, locked);
+      if (pd.kind === 'slider') this._sliderJoint(pc, base, locked);
+      this.pieces.push(pc);
+      for (const c of cols) this.colliderToPiece.set(c.handle, pc);
+    }
+  }
+
+  _hingeJoint(pc, base, collapsed = false) {
+    const { R } = this;
+    const a = pc.def.anchor, ax = pc.def.axis;
+    // Rapier measures the revolute angle the other way round from the right-hand rule used in mechanisms.js
+    // (checked empirically), so the limits are mirrored.
+    const data = R.JointData.revolute({ x: a[0] * S, y: a[1] * S, z: a[2] * S }, { x: 0, y: 0, z: 0 }, { x: -ax[0], y: -ax[1], z: -ax[2] });
+    const j = this.world.createImpulseJoint(data, base, pc.body, true);
+    pc.joint = j;
+    this._jointLimits(pc, collapsed);
+    if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 4e-6);
+  }
+  _sliderJoint(pc, base, collapsed = false) {
+    const { R } = this;
+    const a = pc.def.anchor, ax = pc.def.axis;
+    const data = R.JointData.prismatic({ x: a[0] * S, y: a[1] * S, z: a[2] * S }, { x: 0, y: 0, z: 0 }, { x: ax[0], y: ax[1], z: ax[2] });
+    const j = this.world.createImpulseJoint(data, base, pc.body, true);
+    pc.joint = j;
+    this._jointLimits(pc, collapsed);
+    if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 0.003);
+  }
+  /** Joint limits for a piece: its range, collapsed to the start while locked, or pinned at the end once latched. */
+  _jointLimits(pc, collapsed = false, latched = false) {
+    if (!pc.joint) return;
+    const r = pc.def.range;
+    if (pc.def.kind === 'hinge') {
+      if (collapsed) pc.joint.setLimits(-r[0] * DEG, -r[0] * DEG);
+      else if (latched) pc.joint.setLimits(-r[1] * DEG, -r[1] * DEG);
+      else pc.joint.setLimits(-r[1] * DEG, -r[0] * DEG);
+    } else {
+      if (collapsed) pc.joint.setLimits(r[0] * S, r[0] * S);
+      else if (latched) pc.joint.setLimits(r[1] * S, r[1] * S);
+      else pc.joint.setLimits(r[0] * S, r[1] * S);
+    }
+  }
+
+  /** Let a locked piece go (it becomes a free or jointed body) with an optional kick (cm/s). */
+  releasePiece(pc) {
+    if (pc.released) return;
+    pc.released = true; pc.locked = false;
+    const planar = pc.def.planar && pc.def.kind === 'loose';
+    pc.body.setEnabledTranslations(true, !planar, true, true);
+    pc.body.setEnabledRotations(!planar, true, !planar, true);
+    // a joint that was created collapsed stays stuck when widened, so build a fresh one
+    if (pc.joint) { this.world.removeImpulseJoint(pc.joint, true); pc.joint = null; }
+    const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
+    if (base && pc.def.kind === 'hinge') this._hingeJoint(pc, base.body);
+    if (base && pc.def.kind === 'slider') this._sliderJoint(pc, base.body);
+    pc.body.wakeUp();
+    if (pc.def.kick) {
+      const k = new THREE.Vector3(...pc.def.kick).applyQuaternion(pc.q0);
+      pc.body.setLinvel({ x: k.x * 0.5, y: k.y * 0.5, z: k.z * 0.5 }, true);
+    }
+  }
+
+  /** Current state of every piece of a model, for the scoring rules. */
+  pieceState(obstacleId) {
+    const out = {};
+    for (const pc of this.pieces) if (pc.o && pc.o.id === obstacleId) out[pc.name] = pc.state;
+    return out;
+  }
+
+  /** Reset mechanism pieces to their start (new launch). */
+  resetPieces() {
+    for (const pc of this.pieces) {
+      const rq = { x: pc.q0.x, y: pc.q0.y, z: pc.q0.z, w: pc.q0.w };
+      pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, true);
+      pc.body.setRotation(rq, true);
+      pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0;
+      if (pc.def.locked) {
+        pc.locked = true; pc.released = false;
+        pc.body.setEnabledTranslations(false, false, false, true); pc.body.setEnabledRotations(false, false, false, true);
+        if (pc.joint) { this.world.removeImpulseJoint(pc.joint, true); pc.joint = null; }
+        const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
+        if (base && pc.def.kind === 'hinge') this._hingeJoint(pc, base.body, true);
+        if (base && pc.def.kind === 'slider') this._sliderJoint(pc, base.body, true);
+      } else {
+        this._jointLimits(pc, false);
+      }
+    }
+    this.readPieces(0);
+  }
+
+  /** Spawn loose equipment pieces (the keystone species, the seeds) at table positions (cm). */
+  spawnEquipment(items) {
+    const { R } = this;
+    for (const pc of this.pieces) if (pc.equipment) { this.world.removeRigidBody(pc.body); this.colliderToPiece.delete(pc.collider.handle); }
+    this.pieces = this.pieces.filter((pc) => !pc.equipment);
+    for (const it of items) {
+      const h = it.h ?? (it.box[1] / 2 + 0.2);
+      const desc = R.RigidBodyDesc.dynamic().setTranslation(it.x * S, h * S, it.y * S).setLinearDamping(1.5).setAngularDamping(1.5).setCcdEnabled(true).setCanSleep(false);
+      const body = this.world.createRigidBody(desc);
+      const col = this.world.createCollider(R.ColliderDesc.cuboid((it.box[0] / 2) * S, (it.box[1] / 2) * S, (it.box[2] / 2) * S).setFriction(0.8).setMass(it.mass || 0.02).setCollisionGroups(SHARED), body);
+      const pc = { o: null, equipment: it, name: it.id, def: { kind: 'loose', box: it.box }, body, colliders: [col], collider: col,
+        anchor: new THREE.Vector3(it.x, h, it.y), q0: new THREE.Quaternion(), axisW: null, locked: false, released: true, touched: -1, start: new THREE.Vector3(it.x, h, it.y) };
+      this.pieces.push(pc);
+      this.colliderToPiece.set(col.handle, pc);
+    }
+    this.readPieces(0);
+  }
+
+  /** Before a physics step: releases, latches, driven lifts. */
+  updateMechanisms(time, impactSpeed) {
+    for (const pc of this.pieces) {
+      if (pc.o && pc.o.id !== undefined) {
+        const st = this.pieceState(pc.o.id);
+        st._impact = pc.o.impact || 0;
+        if (!pc.released && pc.def.releaseWhen && pc.def.releaseWhen(st)) this.releasePiece(pc);
+      }
+      if (pc.def.latch && pc.joint && !pc.latched) {
+        const atEnd = pc.def.kind === 'hinge' ? pc.angle >= pc.def.range[1] - 3 : pc.ext >= pc.def.range[1] - 0.3;
+        if (atEnd) { pc.latched = true; this._jointLimits(pc, false, true); }
+      }
+      if (pc.def.kind === 'lift' && pc.def.drivenBy) {
+        const d = pc.def.drivenBy;
+        const srcId = d.model || pc.o.id;
+        const src = this.pieces.find((q) => q.o && q.o.id === srcId && q.name === d.piece);
+        const drive = src ? (src.def.kind === 'hinge' ? src.angle : src.ext) : 0;
+        const h = Math.max(0, drive * d.ratio);
+        pc.height = h;
+        pc.body.setNextKinematicTranslation({ x: pc.start.x * S, y: (pc.start.y + h) * S, z: pc.start.z * S });
+      }
+    }
+  }
+
+  /** After a step: read every piece's pose and derived numbers. */
+  readPieces(time) {
+    for (const pc of this.pieces) {
+      const t = pc.body.translation(), r = pc.body.rotation();
+      const q = new THREE.Quaternion(r.x, r.y, r.z, r.w);
+      const pos = new THREE.Vector3(t.x / S, t.y / S, t.z / S);
+      if (pc.axisW && pc.def.kind === 'hinge') {
+        const rel = pc.q0.clone().invert().multiply(q);
+        if (rel.w < 0) { rel.x = -rel.x; rel.y = -rel.y; rel.z = -rel.z; rel.w = -rel.w; }   // same rotation, short arc
+        const ax = new THREE.Vector3(...pc.def.axis).normalize();
+        const dot = rel.x * ax.x + rel.y * ax.y + rel.z * ax.z;
+        pc.angle = (2 * Math.atan2(dot, rel.w)) / DEG;
+      } else if (pc.axisW && pc.def.kind === 'slider') {
+        pc.ext = pos.clone().sub(pc.anchor).dot(pc.axisW);
+      }
+      const moved = Math.hypot(pos.x - pc.start.x, pos.z - pc.start.z);
+      const relq = pc.q0.clone().invert().multiply(q);
+      const rotated = 2 * Math.acos(Math.min(1, Math.abs(relq.w))) / DEG;
+      // lowest point of the first shape (approximate: box corners)
+      let bottom = Infinity;
+      const sh = (pc.def.shape && pc.def.shape[0]) || { box: pc.def.box || [2, 2, 2], at: [0, 0, 0] };
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const c = new THREE.Vector3(sh.at[0] + sx * sh.box[0] / 2, sh.at[1] + sy * sh.box[1] / 2, sh.at[2] + sz * sh.box[2] / 2).applyQuaternion(q).add(pos);
+        if (c.y < bottom) bottom = c.y;
+      }
+      pc.state = { angle: pc.angle, ext: pc.ext, height: pc.def.kind === 'lift' ? pc.height : pos.y - pc.start.y, pos: [pos.x, pos.y, pos.z], x: pos.x, y: pos.z, moved, rotated, bottom,
+        touched: pc.touched >= 0 && time - pc.touched < 0.3, everTouched: pc.touched >= 0, released: pc.released, latched: pc.latched, q: [q.x, q.y, q.z, q.w] };
+    }
+  }
+
+  /** World pose of a piece for rendering: position (cm) and quaternion. */
+  piecePose(obstacleId, name) {
+    const pc = this.pieces.find((q) => (q.o ? q.o.id === obstacleId : obstacleId === null) && q.name === name);
+    if (!pc || !pc.state) return null;
+    return { p: pc.state.pos, q: pc.state.q };
   }
 
   resetObstacles() {
@@ -82,6 +313,7 @@ export class Physics {
       body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       o.angle = 0;
     }
+    this.resetPieces();
   }
 
   /** Copy dynamic body poses back to the sim's obstacle records (x, y, angle). */
@@ -108,9 +340,13 @@ export class Physics {
     const geom = robot.geom;
     const body = this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading)));
     this.robotBody = body;
-    this.bodyCollider = this.world.createCollider(R.ColliderDesc.cylinder(4.5 * S, geom.radius * S).setTranslation(0, 5 * S, 0).setFriction(0.5), body);
+    const ACT = R.ActiveCollisionTypes.DEFAULT | R.ActiveCollisionTypes.KINEMATIC_FIXED;
+    this.bodyCollider = this.world.createCollider(R.ColliderDesc.cylinder(4.5 * S, geom.radius * S).setTranslation(0, 5 * S, 0).setFriction(0.5).setCollisionGroups(SHARED).setActiveCollisionTypes(ACT), body);
 
-    // Attachment: a tiny scene graph mirroring the 3D view, so collider poses follow the motor the same way the meshes do.
+    // Attachment: a tiny scene graph mirroring the 3D view. Parts that move with the motor ride on their own
+    // kinematic body (so the solver sees real velocities when the arm lifts or sweeps something); parts fixed to
+    // the mount stay on the robot body.
+    if (this.armBody) { this.world.removeRigidBody(this.armBody); this.armBody = null; }
     this.robotParts = [];
     const a = geom.attachment;
     const root = new THREE.Object3D();
@@ -120,17 +356,33 @@ export class Physics {
     pivot.rotation.y = -a.angle * DEG;
     pivot.add(moving);
     root.add(pivot);
-    this.armPivot = pivot; this.armMoving = moving;
+    this.armRoot = root; this.armPivot = pivot; this.armMoving = moving;
+    const hasMoving = ['arm', 'sweeper', 'basket', 'lift'].includes(a.module);
+    const armBody = hasMoving ? this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading))) : null;
+    this.armBody = armBody;
+    root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); root.updateMatrixWorld(true);
     const part = (parent, size, pos) => {
       const node = new THREE.Object3D();
       node.position.set(...pos);
       parent.add(node);
-      const collider = this.world.createCollider(R.ColliderDesc.cuboid((size[0] / 2) * S, (size[1] / 2) * S, (size[2] / 2) * S).setFriction(0.5), body);
-      this.robotParts.push({ collider, node, half: size.map((s) => s / 2) });
+      node.updateMatrixWorld(true);
+      const onArm = parent === moving && armBody;
+      const desc = R.ColliderDesc.cuboid((size[0] / 2) * S, (size[1] / 2) * S, (size[2] / 2) * S).setFriction(0.5).setCollisionGroups(SHARED).setActiveCollisionTypes(ACT);
+      if (onArm) desc.setTranslation(pos[0] * S, pos[1] * S, pos[2] * S);           // relative to the moving frame
+      else { const w = new THREE.Vector3(); node.getWorldPosition(w); const q = new THREE.Quaternion(); node.getWorldQuaternion(q); desc.setTranslation(w.x * S, w.y * S, w.z * S).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
+      const collider = this.world.createCollider(desc, onArm ? armBody : body);
+      this.robotParts.push({ collider, node, half: size.map((v) => v / 2), onArm: !!onArm });
     };
     if (a.module === 'arm' || a.module === 'sweeper') {
-      part(moving, [13.6, 4, 4], [6.8, 0, 0]);          // beam + paddle
+      part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle (a little narrower than it looks, so it fits the loops)
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
+    } else if (a.module === 'basket') {
+      part(moving, [10, 0.8, 12], [5, -0.4, 0]);        // floor
+      part(moving, [0.8, 4, 12], [0.4, 2, 0]);          // back
+      part(moving, [10, 4, 0.8], [5, 2, -5.6]);         // sides
+      part(moving, [10, 4, 0.8], [5, 2, 5.6]);
+      part(moving, [0.8, 1.6, 12], [9.6, 0.8, 0]);      // front lip
+      part(pivot, [4, 4, 3.6], [0, 0, 0]);
     } else if (a.module === 'lift') {
       part(pivot, [1.6, 16, 6], [1, 3, 0]);             // mast
       part(moving, [8, 0.8, 7], [5, 0, 0]);             // fork
@@ -139,7 +391,8 @@ export class Physics {
       part(pivot, [4, 1.6, 1.6], [2, 0, 0]);            // strut
     }
     this.module = a.module;
-    this.syncAttachment(this.attachmentAngle(robot));
+    this.lastArmAngle = this.attachmentAngle(robot);
+    this.placeArm(robot.x, robot.y, robot.heading, this.lastArmAngle, true);
   }
 
   attachmentAngle(robot) {
@@ -147,43 +400,41 @@ export class Physics {
     return port && robot.motors[port] ? robot.motors[port].angle : 0;
   }
 
-  /** Place the attachment colliders for a motor angle (degrees). */
-  syncAttachment(angle) {
-    if (!this.robotParts.length) return;
+  /** Pose the attachment graph for a robot pose and motor angle (degrees); returns the moving frame's world pose (cm). */
+  syncAttachment(x, y, heading, angle) {
     const mv = this.armMoving;
     if (this.module === 'arm') mv.rotation.set(0, 0, angle * DEG);
+    else if (this.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, angle) * DEG);
     else if (this.module === 'sweeper') mv.rotation.set(0, angle * DEG, 0);
     else if (this.module === 'lift') mv.position.y = Math.max(1.5, Math.min(16, 1.5 + (angle / 360) * 6)) - this.armPivot.position.y;
-    this.armPivot.updateMatrixWorld(true);
-    const p = new THREE.Vector3(), q = new THREE.Quaternion(), s = new THREE.Vector3();
-    for (const part of this.robotParts) {
-      part.node.matrixWorld.decompose(p, q, s);
-      part.local = { p: { x: p.x * S, y: p.y * S, z: p.z * S }, q: { x: q.x, y: q.y, z: q.z, w: q.w } };
-      part.collider.setTranslationWrtParent(part.local.p);
-      part.collider.setRotationWrtParent(part.local.q);
-    }
+    this.armRoot.position.set(x, 0, y);
+    this.armRoot.rotation.set(0, -heading * DEG, 0);
+    this.armRoot.updateMatrixWorld(true);
+    const p = new THREE.Vector3(), q = new THREE.Quaternion();
+    mv.getWorldPosition(p); mv.getWorldQuaternion(q);
+    return { p, q };
   }
 
-  setRobotPose(x, y, heading) {
-    if (!this.robotBody) return;
-    this.robotBody.setTranslation({ x: x * S, y: 0, z: y * S }, true);
-    this.robotBody.setRotation(yawQuat(heading), true);
+  /** Move the attachment body to match the robot (teleport, or as the next kinematic pose for the coming step). */
+  placeArm(x, y, heading, angle, teleport = false) {
+    if (!this.armBody) { this.syncAttachment(x, y, heading, angle); return; }
+    const { p, q } = this.syncAttachment(x, y, heading, angle);
+    const t = { x: p.x * S, y: p.y * S, z: p.z * S }, r = { x: q.x, y: q.y, z: q.z, w: q.w };
+    if (teleport) { this.armBody.setTranslation(t, true); this.armBody.setRotation(r, true); }
+    else { this.armBody.setNextKinematicTranslation(t); this.armBody.setNextKinematicRotation(r); }
   }
 
-  _notRobot() { const h = this.robotBody.handle; return (c) => { const p = c.parent(); return !p || p.handle !== h; }; }
-
-  /** Would the attachment pieces (shrunk a little) overlap anything at this robot pose? */
-  _partsHit(trans, rot, margin = STALL_MARGIN) {
+  /** Would the attachment pieces (shrunk a little) overlap anything at this robot pose and motor angle? */
+  _partsHit(x, y, heading, angle, margin = STALL_MARGIN) {
     const { R } = this;
-    const tq = new THREE.Quaternion(rot.x, rot.y, rot.z, rot.w);
+    this.syncAttachment(x, y, heading, angle);
+    const p = new THREE.Vector3(), q = new THREE.Quaternion();
     let hit = false;
     for (const part of this.robotParts) {
-      const lp = new THREE.Vector3(part.local.p.x, part.local.p.y, part.local.p.z).applyQuaternion(tq);
-      const pos = { x: trans.x + lp.x, y: trans.y + lp.y, z: trans.z + lp.z };
-      const wq = tq.clone().multiply(new THREE.Quaternion(part.local.q.x, part.local.q.y, part.local.q.z, part.local.q.w));
+      part.node.getWorldPosition(p); part.node.getWorldQuaternion(q);
       const h = part.half.map((v) => Math.max(0.1, v - margin) * S);
       const shape = new R.Cuboid(h[0], h[1], h[2]);
-      this.world.intersectionsWithShape(pos, { x: wq.x, y: wq.y, z: wq.z, w: wq.w }, shape, () => { hit = true; return false; }, undefined, undefined, undefined, this.robotBody);
+      this.world.intersectionsWithShape({ x: p.x * S, y: p.y * S, z: p.z * S }, { x: q.x, y: q.y, z: q.z, w: q.w }, shape, () => { hit = true; return false; }, R.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, undefined, undefined, this._notRobot());
       if (hit) break;
     }
     return hit;
@@ -192,12 +443,21 @@ export class Physics {
   /** True when moving the attachment motor to `angle` would push the attachment into a wall or model. */
   attachmentBlocked(angle) {
     if (!this.robotBody || !this.robotParts.length) return false;
-    const prev = this.attachmentAngle(this.robot);
-    this.syncAttachment(angle);
-    const hit = this._partsHit(this.robotBody.translation(), this.robotBody.rotation());
-    this.syncAttachment(prev);
+    const r = this.robot;
+    const hit = this._partsHit(r.x, r.y, r.heading, angle);
+    this.syncAttachment(r.x, r.y, r.heading, this.attachmentAngle(r));
     return hit;
   }
+
+  setRobotPose(x, y, heading) {
+    if (!this.robotBody || ![x, y, heading].every(Number.isFinite)) return;   // NaN would poison the physics world
+    this.robotBody.setTranslation({ x: x * S, y: 0, z: y * S }, true);
+    this.robotBody.setRotation(yawQuat(heading), true);
+    this.lastArmAngle = this.attachmentAngle(this.robot);
+    this.placeArm(x, y, heading, this.lastArmAngle, true);
+  }
+
+  _notRobot() { const h = this.robotBody.handle, ha = this.armBody ? this.armBody.handle : -1; return (c) => { const p = c.parent(); return !p || (p.handle !== h && p.handle !== ha); }; }
 
   /**
    * Move the robot from its current pose towards (nx, ny, nh): spins that sweep the attachment into something are
@@ -206,36 +466,92 @@ export class Physics {
   moveRobot(robot, nx, ny, nh, dt) {
     const { R } = this;
     const body = this.robotBody;
-    this.syncAttachment(this.attachmentAngle(robot));
+    if (![nx, ny, nh].every(Number.isFinite)) return [robot.x, robot.y, robot.heading];
+    const angle = this.attachmentAngle(robot);
     const cur = body.translation();
     let heading = nh;
-    if (nh !== robot.heading && this.robotParts.length && this._partsHit(cur, yawQuat(nh))) heading = robot.heading;
+    if (nh !== robot.heading && this.robotParts.length && this._partsHit(robot.x, robot.y, nh, angle)) heading = robot.heading;
     const q = yawQuat(heading);
     body.setRotation(q, true);                        // queries below see the new heading
     let move = { x: (nx - robot.x) * S, y: 0, z: (ny - robot.y) * S };
     const notRobot = this._notRobot();
     const touched = new Set();
+    const speed = Math.hypot(move.x, move.z) / S / dt;   // cm/s
     const pass = (collider) => {
-      this.cc.computeColliderMovement(collider, move, undefined, undefined, notRobot);
+      this.cc.computeColliderMovement(collider, move, R.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, notRobot);
       const m = this.cc.computedMovement();
       move = { x: m.x, y: 0, z: m.z };
       for (let i = 0; i < this.cc.numComputedCollisions(); i++) {
         const c = this.cc.computedCollision(i);
-        const o = c && c.collider ? this.colliderToObstacle.get(c.collider.handle) : null;
-        if (o) touched.add(o);
+        if (!c || !c.collider) continue;
+        const o = this.colliderToObstacle.get(c.collider.handle);
+        if (o) { touched.add(o); if (speed > (o.impact || 0)) o.impact = speed; }
+        const pc = this.colliderToPiece.get(c.collider.handle);
+        if (pc) { pc.touched = robot.time; if (pc.o) touched.add(pc.o); }
       }
     };
     pass(this.bodyCollider);
     for (const part of this.robotParts) pass(part.collider);
     if (this.robotParts.length) pass(this.bodyCollider);
-    body.setNextKinematicTranslation({ x: cur.x + move.x, y: 0, z: cur.z + move.z });
-    body.setNextKinematicRotation(q);
-    this.world.timestep = dt;
-    this.world.step();
+    // Several physics substeps per robot step: the arm can sweep a centimetre per step, and jointed pieces need
+    // the kinematic push spread over small moves to react properly.
+    const SUB = this.substeps || 3;
+    const h0 = robot.heading, a0 = this.lastArmAngle ?? angle;
+    for (let k = 1; k <= SUB; k++) {
+      const f = k / SUB;
+      const hx = cur.x + move.x * f, hz = cur.z + move.z * f;
+      const hh = h0 + (heading - h0) * f, ha = a0 + (angle - a0) * f;
+      body.setNextKinematicTranslation({ x: hx, y: 0, z: hz });
+      body.setNextKinematicRotation(yawQuat(hh));
+      this.placeArm(hx / S, hz / S, hh, ha);
+      this.updateMechanisms(robot.time);
+      this.world.timestep = dt / SUB;
+      this.world.step();
+    }
+    this.lastArmAngle = angle;
+    this.robotContacts(robot.time, speed, touched);
     for (const o of touched) o.touched = robot.time;
+    for (const ob of this.obstacleBodies) if (ob.o.impact && !touched.has(ob.o)) ob.o.impact = 0;
+    this.readPieces(robot.time);
     this.syncObstacles();
     const t = body.translation();
     return [t.x / S, t.z / S, heading];
+  }
+
+  /** Everything the robot's colliders are in contact with after a step: marks pieces and models as touched. */
+  robotContacts(time, speed, touched) {
+    const cols = [this.bodyCollider, ...this.robotParts.map((p) => p.collider)];
+    for (const c of cols) {
+      this.world.contactPairsWith(c, (other) => {
+        const pc = this.colliderToPiece.get(other.handle);
+        if (pc) { pc.touched = time; if (pc.o) touched.add(pc.o); }
+        const o = this.colliderToObstacle.get(other.handle);
+        if (o) { touched.add(o); if (speed > (o.impact || 0)) o.impact = speed; }
+      });
+    }
+    // pieces that hit their own model hard (the ant cart ramming the nest) count as impacts on that model
+    for (const pc of this.pieces) {
+      if (!pc.def.impactor || !pc.o) continue;
+      const v = pc.body.linvel();
+      const sp = Math.hypot(v.x, v.z) / S;
+      if (sp > (pc.o.impact || 0)) pc.o.impact = sp;
+    }
+  }
+
+  /** Let loose pieces settle while no program runs (gravity keeps working between runs). */
+  idleStep(dt) {
+    if (!this.robotBody) return;
+    const t = this.robot ? this.robot.time : 0;
+    this.idleAcc = Math.min(0.05, (this.idleAcc || 0) + dt);
+    const STEP = 1 / 200;                 // joint limits need small, fixed steps or they bounce
+    while (this.idleAcc >= STEP) {
+      this.updateMechanisms(t);
+      this.world.timestep = STEP;
+      this.world.step();
+      this.idleAcc -= STEP;
+    }
+    this.readPieces(t);
+    this.syncObstacles();
   }
 
   /** Distance (cm) along (dx, dy) from (x, y) at `height` cm to the first wall/model, or Infinity. */

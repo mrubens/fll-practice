@@ -255,6 +255,10 @@ export class Robot {
       }
       case 'plow':
         return { ...base, tx: px + Math.cos(out) * 4, ty: py + Math.sin(out) * 4, tipHeight: 1.5, down: true };
+      case 'basket': {
+        const a = Math.max(0, angle) * DEG;      // tips forward as the motor turns
+        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * 9, ty: py + Math.sin(out) * Math.cos(a) * 9, tipHeight: a0.height - Math.sin(a) * 9, down: false, tilt: angle };
+      }
       default: {
         const a = angle * DEG;
         return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight: a0.height + Math.sin(a) * L, down: Math.sin(a) * L < 2 };

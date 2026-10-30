@@ -5,6 +5,7 @@ import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawConditionalLineMaterial.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TABLE } from './world.js';
+import { MECHANISMS } from './mechanisms.js';
 
 const DEG = Math.PI / 180;
 const LDU = 0.04; // 1 LDraw unit = 0.4 mm = 0.04 cm
@@ -24,8 +25,12 @@ function ldraw() {
 /** Merge every mesh of an LDraw group into one mesh per material (far fewer draw calls). */
 function flattenLDraw(group) {
   group.updateMatrixWorld(true);
+  return flattenObjects([group]);
+}
+/** Merge the meshes under the given objects (matrixWorld must be current) into one mesh per material. */
+function flattenObjects(objects) {
   const byMaterial = new Map();
-  group.traverse((o) => {
+  for (const root of objects) root.traverse((o) => {
     if (!o.isMesh || !o.geometry.attributes.position) return;
     if (Array.isArray(o.material)) o.material = o.material[0];   // multi-material parts: keep the first (rare)
     const geo = o.geometry.clone();
@@ -43,6 +48,47 @@ function flattenLDraw(group) {
     mesh.castShadow = true; mesh.receiveShadow = true;
     out.add(mesh);
   }
+  return out;
+}
+
+/** Load a packed .mpd without flattening; resolves to a fresh clone of the raw part hierarchy (or null). */
+const rawCache = new Map();
+function loadLDrawRaw(url) {
+  if (!rawCache.has(url)) {
+    const job = ldrawQueue.then(async () => {
+      const loader = ldraw();
+      await ldrawMaterials;
+      return new Promise((resolve) => loader.load(url, (group) => resolve(group), undefined, (err) => { console.warn('LDraw model failed', url, err); resolve(null); }));
+    });
+    ldrawQueue = job.catch(() => {});
+    rawCache.set(url, job);
+  }
+  return rawCache.get(url).then((g) => (g ? g.clone() : null));
+}
+
+/**
+ * Split a raw LDraw model into its mechanism pieces: returns { base: Group, pieces: { name: Group } } with every
+ * group in the model's own frame (cm, y up), ready to hang under a holder or a moving piece node.
+ */
+function splitModel(raw, def) {
+  const tmp = new THREE.Group();
+  raw.rotation.x = Math.PI; raw.scale.setScalar(LDU);
+  tmp.add(raw);
+  tmp.updateMatrixWorld(true);
+  const names = Object.keys(def.pieces || {});
+  const buckets = { base: [] };
+  for (const n of names) buckets[n] = [];
+  for (const child of raw.children) {
+    const bb = new THREE.Box3().setFromObject(child);
+    const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3());
+    let color = '';
+    child.traverse((m) => { if (!color && m.isMesh) { const mat = Array.isArray(m.material) ? m.material[0] : m.material; color = String(mat.userData.code ?? mat.name); } });
+    const info = { color, c: [c.x, c.y, c.z], s: [sz.x, sz.y, sz.z], file: child.userData.fileName || '' };
+    const hit = names.find((n) => { try { return def.pieces[n].parts(info); } catch { return false; } });
+    buckets[hit || 'base'].push(child);
+  }
+  const out = { base: flattenObjects(buckets.base), pieces: {} };
+  for (const n of names) out.pieces[n] = flattenObjects(buckets[n]);
   return out;
 }
 
@@ -171,6 +217,8 @@ export class Sim3D {
 
     this.matTex = matTex;
     this.obstacleMeshes = [];
+    this.pieceNodes = [];
+    this.equipmentNodes = [];
     this.buildObstacles();
     world.onChange((what) => {
       if (what === 'mat') this.matTex.needsUpdate = true;
@@ -181,8 +229,10 @@ export class Sim3D {
   buildObstacles() {
     for (const m of this.obstacleMeshes) this.scene.remove(m);
     for (const m of this.obstacleExtras || []) this.scene.remove(m);
+    for (const pn of this.pieceNodes || []) this.scene.remove(pn.node);
     this.obstacleMeshes = [];
     this.obstacleExtras = [];
+    this.pieceNodes = [];
     this.buildGeneration = (this.buildGeneration || 0) + 1;
     const generation = this.buildGeneration;
     for (const o of this.world.obstacles) {
@@ -192,6 +242,35 @@ export class Sim3D {
       m.visible = !o.model;             // a model entry never shows its collision box unless the file fails
       this.scene.add(m);
       this.obstacleMeshes.push(m);
+      const def = MECHANISMS[o.id];
+      if (o.model && def) {
+        loadLDrawRaw(o.model).then((raw) => {
+          if (generation !== this.buildGeneration) return;
+          if (!raw) { m.visible = true; return; }
+          const split = splitModel(raw, def);
+          const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
+          const holder = new THREE.Group();
+          holder.add(split.base);
+          holder.position.set(pose.x, 0, pose.y);
+          holder.rotation.y = (pose.heading || 0) * DEG;
+          holder.userData.obstacle = o;
+          holder.userData.offset = [pose.x - o.x, pose.y - o.y];
+          this.scene.add(holder);
+          this.obstacleExtras.push(holder);
+          for (const [name, pd] of Object.entries(def.pieces || {})) {
+            const node = new THREE.Group();
+            const inner = new THREE.Group();
+            inner.position.set(-pd.anchor[0], -pd.anchor[1], -pd.anchor[2]);
+            inner.add(split.pieces[name]);
+            node.add(inner);
+            node.userData.obstacle = o;
+            this.scene.add(node);
+            this.pieceNodes.push({ o, name, node, anchor: new THREE.Vector3(...pd.anchor), holder });
+          }
+          o.hasModel = true;
+        });
+        continue;
+      }
       if (o.model) {
         loadLDrawModel(o.model).then((group) => {
           if (generation !== this.buildGeneration) return;
@@ -307,6 +386,14 @@ export class Sim3D {
       const blade = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red); blade.position.set(4, -2.5, 0);
       const strut = new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat); strut.position.set(2, 0, 0);
       this.armPivot.add(blade, strut);
+    } else if (a.module === 'basket') {
+      const floor = new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat); floor.position.set(5, -0.4, 0);
+      const back = new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red); back.position.set(0.4, 2, 0);
+      const sideL = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideL.position.set(5, 2, -5.6);
+      const sideR = new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red); sideR.position.set(5, 2, 5.6);
+      const lip = new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red); lip.position.set(9.6, 0.8, 0);
+      this.armMoving.add(floor, back, sideL, sideR, lip);
+      this.armPivot.add(new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
     }
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd, 6, a.lat);
@@ -405,6 +492,19 @@ export class Sim3D {
       return false;
     });
   }
+  /** Simple boxes for the team's loose equipment pieces (keystone species, seeds). */
+  buildEquipment(items) {
+    for (const eq of this.equipmentNodes || []) this.scene.remove(eq.node);
+    this.equipmentNodes = [];
+    for (const it of items) {
+      const node = box(it.box[0], it.box[1], it.box[2], it.color, { roughness: 0.5 });
+      node.position.set(it.x, it.box[1] / 2, it.y);
+      node.userData.equipment = it;
+      this.scene.add(node);
+      this.equipmentNodes.push({ id: it.id, node });
+    }
+  }
+
   /** Put every model back where it started (new launch). */
   resetEffects() {
     this.effects = [];
@@ -527,6 +627,16 @@ export class Sim3D {
         e.position.x = o.x + off[0]; e.position.z = o.y + off[1];
       }
     }
+    const ph = this.world.physics;
+    for (const pn of this.pieceNodes) {
+      const pose = ph ? ph.piecePose(pn.o.id, pn.name) : null;
+      if (pose) { pn.node.position.set(pose.p[0], pose.p[1], pose.p[2]); pn.node.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]); }
+      else { pn.node.position.copy(pn.anchor).applyQuaternion(pn.holder.quaternion).add(pn.holder.position); pn.node.quaternion.copy(pn.holder.quaternion); }
+    }
+    for (const eq of this.equipmentNodes || []) {
+      const pose = ph ? ph.piecePose(null, eq.id) : null;
+      if (pose) { eq.node.position.set(pose.p[0], pose.p[1], pose.p[2]); eq.node.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]); }
+    }
     g.position.set(r.x, 0, r.y);
     g.rotation.y = -r.heading * DEG;
     const cfg = r.config;
@@ -537,6 +647,7 @@ export class Sim3D {
     if (arm) {
       const mv = this.armMoving;
       if (arm.module === 'arm') mv.rotation.set(0, 0, arm.angle * DEG);
+      else if (arm.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, arm.angle) * DEG);
       else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
       else if (arm.module === 'lift') mv.position.y = arm.liftHeight - 6;
     }

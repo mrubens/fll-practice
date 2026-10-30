@@ -1,8 +1,6 @@
 // A small card over the 3D view for the mission model that was clicked, plus the score chip.
 import { MISSIONS } from './missions.js';
 
-const HOW = { push: 'drive into it', arm: 'lower the attachment onto it', lift: 'lower the attachment, then lift', visit: 'stop at it', avoid: 'keep away from it', auto: '' };
-
 export function missionsForObstacle(obstacle) {
   return MISSIONS.filter((m) => m.models.includes(obstacle.id));
 }
@@ -13,7 +11,9 @@ export class ModelCard {
     this.onPractice = onPractice; this.onClose = onClose;
     this.obstacle = null; this.practicing = null; this.result = null;
     scoring.on((ev) => {
-      this.chip.textContent = `${scoring.score} pts`;
+      const x = scoring.extras();
+      this.chip.textContent = x.launched ? `${scoring.score} pts · ${x.tokens} tokens` : `${scoring.score} pts`;
+      this.chip.title = x.launched ? `Missions ${x.missions} + inspection ${x.inspection} + precision tokens ${x.tokenPoints}${x.ended ? ' (final)' : ''}` : 'Mission points if the match ended now';
       if (this.obstacle) this.render();
     });
   }
@@ -38,7 +38,11 @@ export class ModelCard {
     const sheet = this.scoring.sheet();
     const blocks = missions.map((m) => {
       const row = sheet.find((s) => s.mission.id === m.id);
-      const tasks = row.actions.map((a) => `<div class="task${a.done ? ' done' : ''}${a.lost ? ' lost' : ''}"><span>${a.done ? '&#10003;' : a.lost ? '&#10007;' : '&#9675;'}</span><span>${a.action.label}${HOW[a.action.trigger.kind] ? ` <span class="how">· ${HOW[a.action.trigger.kind]}</span>` : ''}</span><span class="pts">${a.action.points}</span></div>`).join('');
+      const tasks = row.tasks.filter((t) => t.task.points > 0 || t.task.count).map((t) => {
+        const pts = t.task.count ? `${t.count * t.task.each}` : `${t.task.points}`;
+        return `<div class="task${t.done ? ' done' : ''}"><span>${t.done ? '&#10003;' : '&#9675;'}</span><span>${t.task.label}${t.task.how ? ` <span class="how">· ${t.task.how}</span>` : ''}</span><span class="pts">${pts}</span></div>`;
+      }).join('') + (row.zero ? '<div class="task lost"><span>&#10007;</span><span>This mission scores zero right now (see the rulebook note on the card).</span><span class="pts">0</span></div>' : '') +
+        (m.noEquipment ? '<p class="note">No equipment constraint: nothing scores if the model is touching the robot when the match ends.</p>' : '');
       const practicing = this.practicing === m.id;
       return `<div class="mission-block" data-mission="${m.id}">
         <div class="head"><span class="num">${m.id.slice(1)}</span><span class="title">${m.name}</span></div>

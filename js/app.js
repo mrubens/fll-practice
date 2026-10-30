@@ -11,6 +11,7 @@ import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring, practiceResult } from './scoring.js';
+import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 
 const B = window.Blockly;
@@ -62,14 +63,15 @@ robot.on('hint', (m) => toast(m, 'warn'));
 const scoring = new Scoring(robot, world);
 let practicing = null;
 scoring.on((ev) => {
-  if (ev.type === 'done') { sim.celebrate(ev.obstacle, ev.action.animate); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} +${ev.action.points}`); }
-  if (ev.type === 'lost') { toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} lost (${ev.action.points} pts)`, 'warn'); }
+  if (ev.type === 'done') { sim.celebrate(ev.obstacle); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.task.label}`); }
+  if (ev.type === 'token') toast(`Robot interrupted outside home: one precision token lost (${ev.tokens} left).`, 'warn');
+  if (ev.type === 'end') toast(`Match over. Final score: ${ev.score} pts.`);
 });
 const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
   onPractice: (m) => {
     practicing = m;
-    if (m) { runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m.actions[0])); }
+    if (m) { runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m)); }
     else sim.showZone(null);
   },
   onClose: () => { sim.flyHome(); },
@@ -79,13 +81,65 @@ sim.onPick = (obstacle) => {
   modelCard.show(obstacle);
   sim.flyTo({ x: obstacle.x, y: obstacle.y });
 };
+/** Free run (no match rules): models and the sheet start fresh every time. During a launched match, Run is a relaunch. */
 function startRun() {
+  if (scoring.match.launched && !scoring.match.ended) { relaunch(); return; }
+  hub.matchLeft = null;
   world.resetObstacles();
   scoring.reset();
   sim.resetEffects();
   sim.clearTrail();
   hub.ensureAudio();
   runtime.start();
+}
+
+/** The team's loose equipment starts in the left home area. */
+function placeEquipment() {
+  const a = robot.geom.attachment;
+  const items = EQUIPMENT_PIECES.map((e, i) => {
+    if (a.module === 'basket') {   // the technicians load the basket by hand before the launch
+      const [x, y] = robot._point(a.fwd + 2.5 + (i % 2) * 4, -3 + Math.floor(i / 2) * 3);
+      return { ...e, x, y, h: a.height + 0.4 + e.box[1] / 2 + 0.3 };
+    }
+    return { ...e, x: -97 + (i % 3) * 5, y: 46 + Math.floor(i / 3) * 6 };
+  });
+  if (world.physics) world.physics.spawnEquipment(items);
+  sim.buildEquipment(items);
+}
+
+/** A launch under match rules: the robot must be completely inside a launch area. */
+function relaunch() {
+  const r = robot;
+  if (!inLaunchArea(r.x, r.y, r.geom.radius)) { toast('To launch, the robot must be completely inside a launch area (the quarter circles in home).', 'warn'); return false; }
+  const res = scoring.launch();
+  hub.ensureAudio();
+  runtime.start();
+  return res;
+}
+
+/** Start a whole match: fresh field, equipment in home, inspection, 2:30 on the clock. */
+function startMatch() {
+  runtime.stop();
+  world.resetObstacles();
+  scoring.reset();
+  sim.resetEffects();
+  sim.clearTrail();
+  robot.resetPose();
+  placeEquipment();
+  hub.matchLeft = MATCH_SECONDS;
+  const res = relaunch();
+  if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : 'Match started. Inspection failed (robot not in one launch area): no bonus.', res.inspection ? undefined : 'warn');
+  else hub.matchLeft = null;
+}
+
+/** Stop during a match = the technicians interrupted the robot. */
+function stopRun() {
+  const wasRunning = runtime.running;
+  runtime.stop();
+  if (wasRunning && scoring.match.launched && !scoring.match.ended && hub.matchLeft > 0) {
+    const outside = scoring.interrupt();
+    if (outside === false) toast('Robot interrupted in home: no token lost. Drag it into a launch area and launch again.');
+  }
 }
 
 const btnRun = $('#btnRun'), btnStop = $('#btnStop');
@@ -96,7 +150,7 @@ function updateRunState() {
   btnStop.disabled = !runtime.running;
 }
 btnRun.addEventListener('click', () => { if (practicing) robot.resetPose(); startRun(); });
-btnStop.addEventListener('click', () => runtime.stop());
+btnStop.addEventListener('click', () => stopRun());
 updateRunState();
 
 // ---------- projects ----------
@@ -320,10 +374,8 @@ $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 // ---------- sim view tools ----------
 $('#btnResetPos').addEventListener('click', () => { robot.resetPose(); world.resetObstacles(); });
 $('#btnLaunch').addEventListener('click', () => {
-  runtime.stop();
-  robot.resetPose();
-  hub.matchLeft = MATCH_SECONDS;
-  startRun();
+  if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
+  startMatch();
 });
 world.loadSeason().then((ok) => { if (ok) { if (!runtime.running) robot.resetPose(); toast('Season mat loaded.'); } });
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
@@ -466,12 +518,13 @@ function frame(now) {
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     runtime.tick();
     sim.addTrailPoint(robot.x, robot.y);
-    if (hub.matchLeft !== null && hub.matchLeft > 0) {
-      hub.matchLeft -= dt;
-      if (hub.matchLeft <= 0) { hub.matchLeft = 0; toast('Match over: 2:30 is up.', 'warn'); }
-    }
   } else {
     acc = 0;
+    if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
+  }
+  if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended) {
+    hub.matchLeft -= dt;
+    if (hub.matchLeft <= 0) { hub.matchLeft = 0; runtime.stop(); scoring.endMatch(); }
   }
   hub.update(now);
   sim.update(dt);
