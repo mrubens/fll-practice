@@ -53,9 +53,6 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
   keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
-- **Practice one mission.** "Practice this" on a mission card resets the robot to the launch area, marks the
-  first target with a green ring and draws the robot's path; when the program stops it reports how far from the
-  target the robot ended and how far it was turned. That is the loop kids actually iterate on.
 - **Build your robot.** **Robot builder** sets wheel size (5.6 or 8.8 cm), track width, hub orientation, hub
   ports, color and distance sensor mounts, and an attachment (arm, sweeper, forklift, plow) on a front, left,
   right or back mount. Everything in the simulation (geometry, sensor positions, cm per rotation, attachment

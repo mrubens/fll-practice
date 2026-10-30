@@ -140,12 +140,6 @@ export class Scoring {
 
   isDone(missionId, taskId) { const s = this.state[missionId + '.' + taskId]; return !!(s && s.met); }
 
-  /** Where a mission is on the table (its first model), for the practice ring and the result text. */
-  zoneOf(mission) {
-    const o = this.world.obstacles.find((x) => mission.models.includes(x.id));
-    return o ? { x: o.x, y: o.y, r: Math.max(o.w, o.d) / 2 + 6, obstacle: o } : null;
-  }
-
   /** Scoresheet rows. */
   sheet() {
     return MISSIONS.map((m) => ({
@@ -164,16 +158,3 @@ export class Scoring {
   }
 }
 
-/** Result of a practice run: how far the robot's front ended from the mission's model. */
-export function practiceResult(scoring, mission) {
-  const z = scoring.zoneOf(mission);
-  if (!z) return null;
-  const r = scoring.robot;
-  const front = r._point(r.geom.radius, 0);
-  const dist = Math.hypot(front[0] - z.x, front[1] - z.y);
-  const bearing = Math.atan2(z.y - front[1], z.x - front[0]) / DEG;
-  let off = ((bearing - r.heading + 540) % 360) - 180;
-  const row = scoring.sheet().find((s) => s.mission.id === mission.id);
-  const done = row.tasks.filter((t) => t.done).length;
-  return { dist, off, done, total: mission.tasks.length, points: row.points };
-}

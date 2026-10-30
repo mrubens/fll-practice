@@ -10,7 +10,7 @@ import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
-import { Scoring, practiceResult } from './scoring.js';
+import { Scoring } from './scoring.js';
 import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 
@@ -55,14 +55,13 @@ const hub = new HubPanel($('#hubPanel'), robot);
 sim.onQualityChange = (q, reason) => { if (reason === 'slow') toast(q === 'low' ? 'Graphics turned down so the robot stays smooth on this device.' : 'Graphics turned down a notch to keep the robot smooth.'); };
 const runtime = new Runtime({
   workspace, robot,
-  onChange: () => { updateRunState(); if (!runtime.running && practicing) modelCard.setResult(practiceResult(scoring, practicing)); },
+  onChange: () => { updateRunState(); },
   onLog: (m) => toast(m, 'warn'),
 });
 robot.on('hint', (m) => toast(m, 'warn'));
 
-// ---------- missions: scripted interactions, scoresheet, practice cards ----------
+// ---------- missions: scripted interactions, scoresheet, mission cards ----------
 const scoring = new Scoring(robot, world);
-let practicing = null;
 scoring.on((ev) => {
   if (ev.type === 'done') { sim.celebrate(ev.obstacle); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.task.label}`); }
   if (ev.type === 'token') toast(`Robot interrupted outside home: one precision token lost (${ev.tokens} left).`, 'warn');
@@ -70,11 +69,6 @@ scoring.on((ev) => {
 });
 const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
-  onPractice: (m) => {
-    practicing = m;
-    if (m) { runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m)); }
-    else sim.showZone(null);
-  },
   onClose: () => { sim.flyHome(); },
 });
 sim.onPick = (obstacle) => {
@@ -152,7 +146,7 @@ function updateRunState() {
   btnRun.disabled = runtime.running;
   btnStop.disabled = !runtime.running;
 }
-btnRun.addEventListener('click', () => { if (practicing) robot.resetPose(); startRun(); });
+btnRun.addEventListener('click', () => startRun());
 btnStop.addEventListener('click', () => stopRun());
 updateRunState();
 

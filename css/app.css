@@ -251,4 +251,3 @@ body.building #hubPanel { display: none; }
 .model-card .how { color: var(--muted); }
 .model-card .foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .model-card .foot .total { font-weight: 800; }
-.model-card .result { margin: 8px 0 0; background: #EAF4FF; border-radius: 8px; padding: 6px 8px; }

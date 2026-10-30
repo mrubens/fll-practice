@@ -279,7 +279,6 @@ export class Sim3D {
     this.matrixDirty = true;
     this.effects = [];           // running model animations / pulses
     this.buildTrail();
-    this.buildZoneMarker();
     robot.on('matrix', () => { this.matrixDirty = true; });
     robot.on('build', () => this.buildRobot());
   }
@@ -701,21 +700,6 @@ export class Sim3D {
     this.trailLast = [x, y];
     this.trailGeo.attributes.position.needsUpdate = true;
     this.trailGeo.setDrawRange(0, this.trailCount);
-  }
-
-  // ---- zone marker for the mission being practiced ----
-  buildZoneMarker() {
-    this.zoneRing = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 48), new THREE.MeshBasicMaterial({ color: 0x2FC25B, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthTest: false }));
-    this.zoneRing.rotation.x = -Math.PI / 2;
-    this.zoneRing.renderOrder = 6;
-    this.zoneRing.visible = false;
-    this.scene.add(this.zoneRing);
-  }
-  showZone(zone) {
-    if (!zone) { this.zoneRing.visible = false; return; }
-    this.zoneRing.visible = true;
-    this.zoneRing.position.set(zone.x, 0.4, zone.y);
-    this.zoneRing.scale.setScalar(zone.r);
   }
 
   // ---- mission feedback: green pulse plus an optional whole-model motion ----
