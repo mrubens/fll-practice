@@ -71,9 +71,13 @@ export function geometryFor(build) {
   const [cf, cl] = colorMounts[build.colorMount];
   const [df, dl, da] = sensorMounts[build.distanceMount];
   const [af, al, aa] = mountPoints[build.attachment.mount];
+  // The LEGO Driving Base (small wheels, 11.2 cm track, flat hub) has a known footprint, measured from its model:
+  // 8 cm behind the axle to 7.2 ahead, 16.8 wide. Other builds are treated as a circle.
+  const drivingBase = build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright';
   return {
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,
     lift, radius: Math.max(9, build.track / 2 + 2.5),
+    footprint: drivingBase ? { x0: -8, x1: 7.2, z0: -8.4, z1: 8.4 } : null,
     color: { fwd: cf, lat: cl }, distance: { fwd: df, lat: dl, angle: da, height: 5 + lift },
     attachment: { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift },
   };

@@ -347,7 +347,11 @@ export class Physics {
     const body = this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading)));
     this.robotBody = body;
     const ACT = R.ActiveCollisionTypes.DEFAULT | R.ActiveCollisionTypes.KINEMATIC_FIXED;
-    this.bodyCollider = this.world.createCollider(R.ColliderDesc.cylinder(4.5 * S, geom.radius * S).setTranslation(0, 5 * S, 0).setFriction(0.5).setCollisionGroups(SHARED).setActiveCollisionTypes(ACT), body);
+    const fp = geom.footprint;
+    const bodyDesc = fp
+      ? R.ColliderDesc.roundCuboid(((fp.x1 - fp.x0) / 2 - 0.8) * S, 4.5 * S, ((fp.z1 - fp.z0) / 2 - 0.8) * S, 0.8 * S).setTranslation(((fp.x0 + fp.x1) / 2) * S, 5 * S, ((fp.z0 + fp.z1) / 2) * S)
+      : R.ColliderDesc.cylinder(4.5 * S, geom.radius * S).setTranslation(0, 5 * S, 0);
+    this.bodyCollider = this.world.createCollider(bodyDesc.setFriction(0.5).setCollisionGroups(SHARED).setActiveCollisionTypes(ACT), body);
 
     // Attachment: a tiny scene graph mirroring the 3D view. Parts that move with the motor ride on their own
     // kinematic body (so the solver sees real velocities when the arm lifts or sweeps something); parts fixed to

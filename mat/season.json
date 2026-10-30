@@ -123,9 +123,9 @@
       "movable": false,
       "model": "models/m08-09.mpd",
       "modelPose": {
-        "x": -46.3,
-        "y": -47.8,
-        "heading": 152
+        "x": -41.7,
+        "y": -52.5,
+        "heading": -70
       }
     },
     {
