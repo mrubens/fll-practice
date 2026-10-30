@@ -1,0 +1,77 @@
+# SPIKE Sim
+
+A browser-based simulator for LEGO® Education SPIKE™ Prime. Kids write programs with the same
+Word Blocks as the SPIKE App, run them on a simulated Driving Base in 3D, and save the result as a
+`.llsp3` file that opens directly in the real SPIKE App 3 (desktop, tablet or web).
+
+Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Group.
+
+## What's in it
+
+- **Block editor** (Blockly, Scratch-style renderer) with the SPIKE categories: Movement, Motors, Light,
+  Sound, Events, Control, Sensors, Operators, Variables. Block names, inputs, dropdowns and defaults
+  match the SPIKE App.
+- **3D simulator** (three.js): an FLL-sized table (236 x 114 cm) with walls, a black line loop, colour tiles
+  and obstacles. The robot is a standard Driving Base: 5.6 cm wheels, 11.2 cm track, colour sensor
+  in front pointing down, distance sensor in front. Drag the robot to place it; orbit/zoom the camera.
+- **Hub panel**: 5x5 LED matrix, left/right buttons (click, or arrow keys), centre button light,
+  yaw/timer readouts, live sensor and motor values per port. Beeps play through the speakers.
+- **Programs behave like Scratch/SPIKE**: every hat block is its own thread, `when ... button pressed`
+  and `when <condition>` hats fire while the program runs, loops yield once per iteration, running stacks glow.
+- **Save / Open `.llsp3`**: files written here open in the SPIKE App; the LEGO lesson files
+  (Training Camp etc.) open here. Projects also autosave in the browser (My projects).
+- **Robot setup**: choose which hub ports the wheels and sensors use (default: motors C+D like the lesson
+  Driving Base, colour sensor E, distance sensor F).
+
+## Run it
+
+It is a static site. Any web server works, for example:
+
+```bash
+python3 serve.py 8794
+```
+
+then open <http://localhost:8794>. To put it on the web for the team, upload this folder to
+any static host (GitHub Pages, Netlify, a school web server). It needs internet for the three CDN
+libraries (Blockly, three.js, JSZip) and the Nunito font.
+
+## Getting a program onto the real robot
+
+Two ways:
+
+1. **Save `.llsp3`** here, then in the SPIKE App use **Open Project** (web/desktop) or share the file to the
+   iPad app. Connect the hub and press Run in the SPIKE App.
+2. **Send to hub** over Bluetooth, no SPIKE App needed. Press **Connect hub** (the hub must be on and not
+   connected to anything else), pick it in the browser dialog, then **Send to hub**: the program is compiled to
+   SPIKE Python, uploaded to slot 0 and started. **Stop hub** stops it. This uses LEGO's published hub protocol
+   (https://lego.github.io/spike-prime-docs/, firmware 3.x) via Web Bluetooth, which works in Chrome and Edge on
+   laptops, Chromebooks and Android. It does not work in Safari or on iPad, and may not work inside the claude.ai
+   artifact frame; use the hosted site there. **Python** shows the generated code so it can also be pasted into a
+   SPIKE Python project.
+
+The Bluetooth upload path was written against LEGO's protocol spec and example (COBS framing and CRC32 checked
+against the reference implementation) but has not yet been exercised with a physical hub.
+
+## Files
+
+| File | Purpose |
+|---|---|
+| `js/spec.js` | The block catalogue: opcodes, inputs, fields and selector menus exactly as the SPIKE App stores them |
+| `js/blocks.js` | Blockly setup: block definitions, custom fields (steering, LED image), theme, toolbox, dialogs |
+| `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behaviour |
+| `js/robot.js` | Robot and hub model: motors, differential-drive kinematics, sensors, matrix, sound |
+| `js/world.js` | The table: mat drawing (also the colour-sensor lookup), obstacles, ray casts, collisions |
+| `js/sim3d.js` | three.js scene, robot mesh, camera, drag-to-place |
+| `js/hub.js` | Hub panel UI and audio |
+| `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
+| `js/python.js` | Compiles the blocks to SPIKE Python 3 (one async task per hat block) |
+| `js/ble.js` | Web Bluetooth client for the hub: COBS/XOR framing, CRC32 chunked upload, program start/stop |
+| `js/app.js` | Toolbar, project storage, main loop |
+| `artifact.html` | Same page with the stylesheet inlined, for publishing as a claude.ai artifact |
+| `serve.py` | Tiny no-cache dev server |
+
+## Not simulated (yet)
+
+Force sensor, extra attachment motors with physical effect (motors on non-wheel ports just count
+degrees), pitch/roll (the table is flat), sound files, broadcasts, My Blocks, and the light-matrix
+pixel/brightness blocks. Those blocks still exist in the SPIKE App; they are just not in this palette.

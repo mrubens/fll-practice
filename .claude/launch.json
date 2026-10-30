@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "spike-sim", "runtimeExecutable": "python3", "runtimeArgs": ["serve.py", "8794"], "port": 8794 }
+  ]
+}

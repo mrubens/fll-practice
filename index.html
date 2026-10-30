@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SPIKE Sim</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/app.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/blockly@11.2.1/blockly.min.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand"><span class="logo">S</span><span>SPIKE Sim</span></div>
+  <input id="projectName" class="project-name" type="text" aria-label="Project name" maxlength="60" spellcheck="false">
+  <div class="actions">
+    <button type="button" id="btnNew" class="tb">New</button>
+    <button type="button" id="btnOpen" class="tb">Open .llsp3</button>
+    <button type="button" id="btnSave" class="tb primary">Save .llsp3</button>
+    <div class="menu-wrap">
+      <button type="button" id="btnProjects" class="tb">My projects</button>
+      <div id="projectsPanel" class="popover" hidden></div>
+    </div>
+    <button type="button" id="btnRobot" class="tb">Robot setup</button>
+    <button type="button" id="btnPython" class="tb">Python</button>
+    <button type="button" id="btnHub" class="tb hub-btn-connect">Connect hub</button>
+    <button type="button" id="btnSendHub" class="tb primary" hidden>Send to hub</button>
+    <button type="button" id="btnStopHub" class="tb" hidden>Stop hub</button>
+  </div>
+</header>
+<main class="layout">
+  <section class="editor">
+    <div id="blocklyDiv"></div>
+    <div class="editor-bar">
+      <div class="ws-tools">
+        <button type="button" id="btnFit" class="wt" title="Fit all blocks">&#8982;</button>
+        <button type="button" id="btnZoomOut" class="wt" title="Zoom out">&minus;</button>
+        <button type="button" id="btnZoomIn" class="wt" title="Zoom in">+</button>
+        <button type="button" id="btnUndo" class="wt" title="Undo">&#8630;</button>
+        <button type="button" id="btnRedo" class="wt" title="Redo">&#8631;</button>
+      </div>
+      <div class="run-controls">
+        <button type="button" id="btnStop" class="round stop" aria-label="Stop program"><span></span></button>
+        <button type="button" id="btnRun" class="round run" aria-label="Run program"><span></span></button>
+      </div>
+    </div>
+  </section>
+  <aside class="simpane">
+    <div class="view3d-wrap">
+      <div id="view3d"></div>
+      <div class="view-tools">
+        <button type="button" id="btnResetPos" class="vt" title="Put the robot back in the start box">Reset position</button>
+        <button type="button" id="btnTurnL" class="vt" title="Turn the robot left 15°">&#8634;</button>
+        <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
+        <button type="button" id="btnFollow" class="vt" title="Camera follows the robot">Follow</button>
+        <button type="button" id="btnCamera" class="vt" title="Reset the camera">Camera</button>
+      </div>
+      <p class="view-hint">Drag the robot to move it. Drag the table to orbit, scroll or pinch to zoom. Arrow keys press the hub buttons.</p>
+    </div>
+    <div id="hubPanel"></div>
+  </aside>
+</main>
+<div id="toasts" aria-live="polite"></div>
+<input type="file" id="fileOpen" accept=".llsp3,application/zip" hidden>
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
