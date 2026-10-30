@@ -4,6 +4,9 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawConditionalLineMaterial.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
+import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
+import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
 import { MECHANISMS } from './mechanisms.js';
 
@@ -58,45 +61,71 @@ function isDrivingBase(build) {
 }
 
 /**
- * A stand-in for a model while its LEGO parts load: a slow vortex of pale smoke rising out of the model's
- * footprint. Each puff is a soft sprite that orbits the center as it climbs, tightening and fading near the
- * top, then starts again from the mat. Its origin is on the mat.
+ * Blueprint outlines: while a model's bricks load, its silhouette is drawn as blue lines from a tiny
+ * stud-resolution voxel file (models/outline/<name>.json, made once from the LDraw model). The lines are
+ * the sharp edges of the voxel shape, in the same frame the model is placed in.
  */
-let smokeTexture = null;
-function smokeTex() {
-  if (smokeTexture) return smokeTexture;
-  const c = document.createElement('canvas'); c.width = c.height = 64;
-  const ctx = c.getContext('2d');
-  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.35, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
-  smokeTexture = new THREE.CanvasTexture(c);
-  return smokeTexture;
-}
-const SMOKE_VERT = `
-  uniform float uScale; attribute float aSize; attribute float aAlpha; varying float vAlpha;
-  void main() { vAlpha = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = aSize * uScale / max(1.0, -mv.z); gl_Position = projectionMatrix * mv; }`;
-const SMOKE_FRAG = `
-  uniform sampler2D map; uniform vec3 color; varying float vAlpha;
-  void main() { vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(color, t.a * vAlpha); }`;
-function shimmerBox(w, h, d, count = 48) {
-  const n = count;
-  const pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n);
-  const puffs = [];
-  const r0 = Math.min(w, d) * 0.45, top = h + 4;
-  for (let i = 0; i < n; i++) {
-    puffs.push({ a: Math.random() * Math.PI * 2, r: r0 * (0.4 + 0.6 * Math.random()), t: Math.random(), speed: 0.35 + 0.3 * Math.random(), spin: 1.4 + 0.8 * Math.random(), s: 2.2 + 2.2 * Math.random() });
+const outlineCache = new Map();
+function loadOutline(modelUrl) {
+  const url = modelUrl.replace(/^(.*\/)?([^/]+)\.mpd$/, (m, dir, base) => (dir || '') + 'outline/' + base + '.json');
+  if (!outlineCache.has(url)) {
+    outlineCache.set(url, fetch(url).then((r) => (r.ok ? r.json() : null)).then((d) => {
+      if (!d) return null;
+      const bin = atob(d.bits), bits = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bits[i] = bin.charCodeAt(i);
+      return { cell: d.cell, min: d.min, n: d.n, bits };
+    }).catch(() => null));
   }
-  const geo = new THREE.BufferGeometry();
-  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-  geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
-  geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
-  const mat = new THREE.ShaderMaterial({ uniforms: { map: { value: smokeTex() }, color: { value: new THREE.Color(0xDCE7F4) }, uScale: { value: 600 } }, vertexShader: SMOKE_VERT, fragmentShader: SMOKE_FRAG, transparent: true, depthWrite: false, blending: THREE.NormalBlending });
-  const pts = new THREE.Points(geo, mat);
-  pts.frustumCulled = false;
+  return outlineCache.get(url);
+}
+function blueprintLines(d) {
+  // Crisp outline: the model sliced into 1.6 cm bands, each band the convex hull of its filled cells,
+  // drawn as a ring at the band's top and bottom with uprights at the corners.
+  const [nx, ny, nz] = d.n, c = d.cell, BAND = 2;
+  const occ = (i, j, k) => { const idx = (k * ny + j) * nx + i; return (d.bits[idx >> 3] >> (idx & 7)) & 1; };
+  const hull = (pts) => {              // monotone chain on [x, z] points (corners of the cells)
+    pts.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+    const cross = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    const lower = [], upper = [];
+    for (const p of pts) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+    for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+    upper.pop(); lower.pop();
+    return lower.concat(upper);
+  };
+  const out = [];
+  const seg = (a, b) => { out.push(a[0], a[1], a[2], b[0], b[1], b[2]); };
+  for (let j0 = 0; j0 < ny; j0 += BAND) {
+    const j1 = Math.min(ny, j0 + BAND);
+    const seen = new Set(), pts = [];
+    for (let j = j0; j < j1; j++) for (let k = 0; k < nz; k++) for (let i = 0; i < nx; i++) {
+      if (!occ(i, j, k)) continue;
+      for (const [di, dk] of [[0, 0], [1, 0], [0, 1], [1, 1]]) {
+        const key = (i + di) * 4096 + (k + dk);
+        if (seen.has(key)) continue;
+        seen.add(key); pts.push([d.min[0] + (i + di) * c, d.min[2] + (k + dk) * c]);
+      }
+    }
+    if (pts.length < 3) continue;
+    const h = hull(pts);
+    if (h.length < 3) continue;
+    const y0 = d.min[1] + j0 * c, y1 = d.min[1] + j1 * c;
+    for (let q = 0; q < h.length; q++) {
+      const a = h[q], b = h[(q + 1) % h.length];
+      seg([a[0], y0, a[1]], [b[0], y0, b[1]]);
+      seg([a[0], y1, a[1]], [b[0], y1, b[1]]);
+      seg([a[0], y0, a[1]], [a[0], y1, a[1]]);
+    }
+  }
+  // fat lines (screen-space width) so the blueprint reads at any zoom; drawn in segment by segment
+  const geo = new LineSegmentsGeometry();
+  geo.setPositions(out);
+  const mat = new LineMaterial({ color: 0x1F5FD8, linewidth: 1.6, transparent: true, opacity: 0.85, depthWrite: false, worldUnits: false });
+  const lines = new LineSegments2(geo, mat);
+  lines.frustumCulled = false;
   const g = new THREE.Group();
-  g.add(pts);
-  g.userData = { shimmer: true, puffs, pos, size, alpha, geo, top, r0, w, d, h };
+  g.add(lines);
+  g.userData = { blueprint: true, geo, mat, total: out.length / 6, t: 0 };
+  geo.instanceCount = 0;
   return g;
 }
 /** Load a packed .mpd without flattening; resolves to a fresh clone of the raw part hierarchy (or null). */
@@ -385,14 +414,19 @@ export class Sim3D {
       m.visible = !o.model;             // a model entry never shows its collision box unless the file fails
       this.scene.add(m);
       this.obstacleMeshes.push(m);
-      let ghost = null;
-      if (o.model) {                    // building-up stand-in until the real bricks arrive
-        ghost = shimmerBox(o.w, o.h, o.d);
-        ghost.position.set(o.x, 0, o.y);
-        this.scene.add(ghost);
-        this.shimmers.push(ghost);
+      let ghost = null, loaded = false;
+      if (o.model) {                    // blueprint outline until the real bricks arrive
+        loadOutline(o.model).then((d) => {
+          if (!d || loaded || generation !== this.buildGeneration) return;
+          const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
+          ghost = blueprintLines(d);
+          ghost.position.set(pose.x, 0, pose.y);
+          ghost.rotation.y = (pose.heading || 0) * DEG;
+          this.scene.add(ghost);
+          this.shimmers.push(ghost);
+        });
       }
-      const unghost = () => { if (ghost) { this.scene.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); } };
+      const unghost = () => { loaded = true; if (ghost) { this.scene.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); ghost = null; } };
       const def = MECHANISMS[o.id];
       if (o.model && def) {
         loadLDrawRaw(o.model).then((raw) => {
@@ -575,13 +609,18 @@ export class Sim3D {
     const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
     if (isDrivingBase(build)) {
       const gen = this.robotBuildGen;
-      const ghost = shimmerBox(20, 9, 16, 64); ghost.position.set(-1, 0, 0); ghost.userData.robot = true;
-      g.add(ghost); this.shimmers.push(ghost);
+      let ghost = null, revealed = false;
+      loadOutline(modelUrl).then((d) => {
+        if (!d || revealed || gen !== this.robotBuildGen) return;
+        ghost = blueprintLines(d); ghost.userData.robot = true;
+        g.add(ghost); this.shimmers.push(ghost);
+      });
       const shown = [body, caster].concat(this.wheels);
       shown.forEach((n) => { n.visible = false; });
       this.revealRobot = () => {
         if (gen !== this.robotBuildGen || --this.robotPending > 0) return;
-        g.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost);
+        revealed = true;
+        if (ghost) { g.remove(ghost); this.shimmers = this.shimmers.filter((x) => x !== ghost); ghost = null; }
         shown.forEach((n) => { n.visible = true; });
         this.revealRobot = null;
       };
@@ -829,33 +868,22 @@ export class Sim3D {
 
   update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.watchPerformance(dt); }
 
-  /** The smoke swirls: each puff climbs the vortex, drifts inward and fades, then starts over on the mat. */
+  /** Blueprints draw themselves in over a second, then hold with a slow breath in the line brightness. */
   updateShimmer(dt) {
     if (!this.shimmers.length) return;
-    const step = Math.min(dt, 0.05);
-    // point size in pixels for a puff `aSize` cm across at the camera's distance
-    const scale = this.renderer.domElement.clientHeight * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * DEG / 2));
+    const now = performance.now();
+    const size = this.renderer.getSize(new THREE.Vector2()).multiplyScalar(this.renderer.getPixelRatio());
     for (const g of this.shimmers) {
       const u = g.userData;
-      g.children[0].material.uniforms.uScale.value = scale;
-      for (let i = 0; i < u.puffs.length; i++) {
-        const p = u.puffs[i];
-        p.t += step * p.speed;
-        if (p.t >= 1) { p.t -= 1; p.a = Math.random() * Math.PI * 2; p.r = u.r0 * (0.5 + 0.6 * Math.random()); }
-        p.a += step * p.spin * (1 + p.t);                  // spins faster as it rises
-        const r = p.r * (1 - 0.55 * p.t) * (1 + 0.12 * Math.sin(p.a * 3));
-        const y = 0.6 + p.t * u.top;
-        const m = Math.max(0.1, Math.min(u.w, u.d));
-        u.pos[i * 3] = Math.cos(p.a) * r * (u.w / m); u.pos[i * 3 + 1] = y; u.pos[i * 3 + 2] = Math.sin(p.a) * r * (u.d / m);
-        const fade = p.t < 0.15 ? p.t / 0.15 : (p.t > 0.6 ? 1 - (p.t - 0.6) / 0.4 : 1);
-        u.alpha[i] = 0.55 * fade;
-        u.size[i] = p.s * (1.2 + 1.6 * p.t);
-      }
-      u.geo.attributes.position.needsUpdate = true;
-      u.geo.attributes.aAlpha.needsUpdate = true;
-      u.geo.attributes.aSize.needsUpdate = true;
+      if (!u.t0) u.t0 = now;
+      u.t = (now - u.t0) / 1000;        // wall-clock, so a frame after a pause still shows the whole outline
+      const k = Math.min(1, u.t / 1.1);
+      u.geo.instanceCount = Math.floor(u.total * (1 - Math.pow(1 - k, 2)));
+      u.mat.resolution.copy(size);
+      u.mat.opacity = k < 1 ? 0.95 : 0.7 + 0.25 * Math.sin((u.t - 1.1) * 2.2);
     }
   }
+
 
 
   render() {
