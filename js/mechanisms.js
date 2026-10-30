@@ -142,20 +142,17 @@ export const MECHANISMS = {
   'M10 Fragile Microhabitat B': {
     pieces: { habitat: { kind: 'loose', anchor: [-6.2, 0, 0], planar: true, mass: 0.08, friction: 0.9, whole: true, shape: [{ box: [10.3, 8.4, 4], at: [0, 4.2, 0] }], parts: () => true } },
   },
-  // ---- M11: flip the lever up and the root cover falls forward onto the mat ----
-  // Model frame: +x is the front (the window and its cover), +z is the lever side. The brown root cover
-  // stands in front of the window, hinged on pins at its foot and leaning back a little against the box.
-  // The lever (brown stalk, red connector, tan hand) stands over the lever side; its hand hangs out at
-  // about 9 cm up, where the Guided Mission robot's arm sweeps up under it.
+  // ---- M11: pull the root cover forward onto the mat; a seed for M14 hangs on the left ----
+  // Model frame: +x is the front (the window and its cover), +z is the seed side. The brown root cover
+  // stands in front of the window, hinged on pins at its foot and leaning back a little against the box:
+  // push or pull its top forward past upright and it falls flat. The seed hangs from a red connector at
+  // the tip of the brown stalk, about 9 cm up; lift it by that connector and it comes away (used in M14).
   'M11 Window to the Past': {
-    base: [{ box: [7.4, 9, 8], at: [-0.2, 4.5, -2.2] }],
+    base: [{ box: [7.4, 6.5, 8], at: [-0.2, 3.25, -2.2] }],   // up to the green platform; the plants above bend out of the way
     pieces: {
-      // the lever: swings up and over about the red brick at the foot of the stalk; stays where it is put
-      lever: { kind: 'hinge', axis: [-1, 0, 0], anchor: [-1.37, 7.0, 0.4], range: [0, 130], damp: 2, gravity: false, mass: 0.015,
-        shape: [{ box: [0.8, 2.4, 2.8], at: [0, 1.2, 1.4] }, { box: [0.8, 2.4, 2.8], at: [0, 3.4, 4.0] }, { box: [2.6, 2.4, 4.0], at: [0, 2.6, 7.4] }],
-        parts: (p) => p.c[2] > 2 && p.c[1] > 8 },
-      // the root cover: released when the lever is up, tips forward and lies flat on the mat
-      cover: { kind: 'hinge', axis: [0, 0, -1], anchor: [4.23, 0.88, -2.38], range: [0, 86], mass: 0.04, locked: true, releaseWhen: (s) => s.lever.angle > 35, kick: [0.6, 0.1, 0],
+      seed: { kind: 'loose', anchor: [-1.37, 9.8, 7.4], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01,
+        shape: [{ box: [2.6, 2.2, 4.4], at: [0, 0, 0] }], parts: (p) => p.c[2] > 5 && p.c[1] > 9 },
+      cover: { kind: 'hinge', axis: [0, 0, -1], anchor: [4.23, 0.88, -2.38], range: [0, 86], mass: 0.04, friction: 1.2, damp: 0.6,
         shape: [{ box: [0.7, 6.2, 8.2], at: [-0.4, 3.1, 0] }], parts: (p) => p.c[0] > 2.7 && p.c[1] > 1.1 },
     },
   },

@@ -58,20 +58,47 @@ function isDrivingBase(build) {
 }
 
 /**
- * A stand-in for a model while its LEGO parts load: the model's outline, with a translucent block that
- * builds up inside it layer by layer under a bright scan line, then starts over. Its origin is on the mat.
+ * A stand-in for a model while its LEGO parts load: a slow vortex of pale smoke rising out of the model's
+ * footprint. Each puff is a soft sprite that orbits the center as it climbs, tightening and fading near the
+ * top, then starts again from the mat. Its origin is on the mat.
  */
-function shimmerBox(w, h, d) {
+let smokeTexture = null;
+function smokeTex() {
+  if (smokeTexture) return smokeTexture;
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,0.9)'); g.addColorStop(0.35, 'rgba(255,255,255,0.45)'); g.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = g; ctx.fillRect(0, 0, 64, 64);
+  smokeTexture = new THREE.CanvasTexture(c);
+  return smokeTexture;
+}
+const SMOKE_VERT = `
+  uniform float uScale; attribute float aSize; attribute float aAlpha; varying float vAlpha;
+  void main() { vAlpha = aAlpha; vec4 mv = modelViewMatrix * vec4(position, 1.0); gl_PointSize = aSize * uScale / max(1.0, -mv.z); gl_Position = projectionMatrix * mv; }`;
+const SMOKE_FRAG = `
+  uniform sampler2D map; uniform vec3 color; varying float vAlpha;
+  void main() { vec4 t = texture2D(map, gl_PointCoord); gl_FragColor = vec4(color, t.a * vAlpha); }`;
+function shimmerBox(w, h, d, count = 48) {
+  const n = count;
+  const pos = new Float32Array(n * 3), size = new Float32Array(n), alpha = new Float32Array(n);
+  const puffs = [];
+  const r0 = Math.min(w, d) * 0.45, top = h + 4;
+  for (let i = 0; i < n; i++) {
+    puffs.push({ a: Math.random() * Math.PI * 2, r: r0 * (0.4 + 0.6 * Math.random()), t: Math.random(), speed: 0.35 + 0.3 * Math.random(), spin: 1.4 + 0.8 * Math.random(), s: 2.2 + 2.2 * Math.random() });
+  }
+  const geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  geo.setAttribute('aSize', new THREE.BufferAttribute(size, 1));
+  geo.setAttribute('aAlpha', new THREE.BufferAttribute(alpha, 1));
+  const mat = new THREE.ShaderMaterial({ uniforms: { map: { value: smokeTex() }, color: { value: new THREE.Color(0xDCE7F4) }, uScale: { value: 600 } }, vertexShader: SMOKE_VERT, fragmentShader: SMOKE_FRAG, transparent: true, depthWrite: false, blending: THREE.NormalBlending });
+  const pts = new THREE.Points(geo, mat);
+  pts.frustumCulled = false;
   const g = new THREE.Group();
-  const edges = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w, h, d)), new THREE.LineBasicMaterial({ color: 0x7FA8E0, transparent: true, opacity: 0.8 }));
-  edges.position.y = h / 2;
-  const fill = new THREE.Mesh(new THREE.BoxGeometry(w, 1, d), new THREE.MeshStandardMaterial({ color: 0x9FBCE8, emissive: 0x6F9BE0, emissiveIntensity: 0.35, transparent: true, opacity: 0.45, roughness: 0.3, depthWrite: false }));
-  const scan = new THREE.Mesh(new THREE.BoxGeometry(w + 0.4, 0.18, d + 0.4), new THREE.MeshBasicMaterial({ color: 0xE8F2FF, transparent: true, opacity: 0.95 }));
-  g.add(edges, fill, scan);
-  g.userData = { shimmer: true, h, fill, scan, edges, phase: Math.random() };
+  g.add(pts);
+  g.userData = { shimmer: true, puffs, pos, size, alpha, geo, top, r0, w, d, h };
   return g;
 }
-
 /** Load a packed .mpd without flattening; resolves to a fresh clone of the raw part hierarchy (or null). */
 const rawCache = new Map();
 function loadLDrawRaw(url) {
@@ -548,7 +575,7 @@ export class Sim3D {
     const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
     if (isDrivingBase(build)) {
       const gen = this.robotBuildGen;
-      const ghost = shimmerBox(20, 9, 16); ghost.position.set(-1, 0, 0); ghost.userData.robot = true;
+      const ghost = shimmerBox(20, 9, 16, 64); ghost.position.set(-1, 0, 0); ghost.userData.robot = true;
       g.add(ghost); this.shimmers.push(ghost);
       const shown = [body, caster].concat(this.wheels);
       shown.forEach((n) => { n.visible = false; });
@@ -802,21 +829,34 @@ export class Sim3D {
 
   update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.watchPerformance(dt); }
 
-  /** The loading blocks build up layer by layer (about two seconds a cycle), each on its own phase. */
+  /** The smoke swirls: each puff climbs the vortex, drifts inward and fades, then starts over on the mat. */
   updateShimmer(dt) {
     if (!this.shimmers.length) return;
-    this.shimmerT = (this.shimmerT || 0) + dt;
+    const step = Math.min(dt, 0.05);
+    // point size in pixels for a puff `aSize` cm across at the camera's distance
+    const scale = this.renderer.domElement.clientHeight * this.renderer.getPixelRatio() / (2 * Math.tan(this.camera.fov * DEG / 2));
     for (const g of this.shimmers) {
-      const u = g.userData, c = (this.shimmerT / 2.2 + u.phase) % 1;
-      const grow = Math.min(1, c / 0.8);                       // rise for 80% of the cycle, hold full, start over
-      const k = 1 - Math.pow(1 - grow, 2);
-      const fh = Math.max(0.2, u.h * k);
-      u.fill.scale.y = fh; u.fill.position.y = fh / 2;
-      u.scan.position.y = fh + 0.1;
-      u.scan.material.opacity = c < 0.8 ? 0.95 : 0.95 * (1 - (c - 0.8) / 0.2);
-      u.edges.material.opacity = 0.55 + 0.35 * Math.sin(this.shimmerT * 2.5 + u.phase * 6.28);
+      const u = g.userData;
+      g.children[0].material.uniforms.uScale.value = scale;
+      for (let i = 0; i < u.puffs.length; i++) {
+        const p = u.puffs[i];
+        p.t += step * p.speed;
+        if (p.t >= 1) { p.t -= 1; p.a = Math.random() * Math.PI * 2; p.r = u.r0 * (0.5 + 0.6 * Math.random()); }
+        p.a += step * p.spin * (1 + p.t);                  // spins faster as it rises
+        const r = p.r * (1 - 0.55 * p.t) * (1 + 0.12 * Math.sin(p.a * 3));
+        const y = 0.6 + p.t * u.top;
+        const m = Math.max(0.1, Math.min(u.w, u.d));
+        u.pos[i * 3] = Math.cos(p.a) * r * (u.w / m); u.pos[i * 3 + 1] = y; u.pos[i * 3 + 2] = Math.sin(p.a) * r * (u.d / m);
+        const fade = p.t < 0.15 ? p.t / 0.15 : (p.t > 0.6 ? 1 - (p.t - 0.6) / 0.4 : 1);
+        u.alpha[i] = 0.55 * fade;
+        u.size[i] = p.s * (1.2 + 1.6 * p.t);
+      }
+      u.geo.attributes.position.needsUpdate = true;
+      u.geo.attributes.aAlpha.needsUpdate = true;
+      u.geo.attributes.aSize.needsUpdate = true;
     }
   }
+
 
   render() {
     const r = this.robot, g = this.robotGroup;

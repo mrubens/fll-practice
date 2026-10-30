@@ -94,7 +94,7 @@ export const MISSIONS = [
   { id: 'M11', name: 'Window to the Past', models: ['M11 Window to the Past'],
     text: 'Open the root window and document what you see.',
     tasks: [
-      { id: 'cover', label: 'The root cover is down, touching the mat', points: 20, how: 'Flip the lever with the hand on it up; the root cover in front of the window falls forward and lies on the mat. (This is what the Guided Mission does.)',
+      { id: 'cover', label: 'The root cover is down, touching the mat', points: 20, how: 'Push or pull the top of the root cover forward past upright; it tips over and lies flat on the mat. (The Guided Mission hooks it from the front with the arm and backs up.)',
         met: (c) => { const v = c.p('M11 Window to the Past').cover; return v.angle > 70 && v.bottom < 1.5; } },
     ] },
   { id: 'M12', name: 'Forest Elder', models: ['M12 Forest Elder', 'M12 Forest Elder post'], noEquipment: true,
