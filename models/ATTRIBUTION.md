@@ -9,7 +9,7 @@ The `.mpd` files in this folder are self-contained LDraw models (each one embeds
   [fll-sim](https://github.com/martijas/fll-sim) project (`apps/desktop/resources/missions` and
   `resources/robots`), whose model files carry the note "Model data for simulation use". Model placement on the
   mat also comes from fll-sim's measurements of the FIRST wireframe PDF.
-- `LDConfig.ldr`: LDraw colour definitions (LDraw library, CC BY 4.0).
+- `LDConfig.ldr`: LDraw color definitions (LDraw library, CC BY 4.0).
 
 LEGO® and SPIKE™ are trademarks of the LEGO Group; FIRST® LEGO® League is a trademark of FIRST. Neither
 sponsors or endorses this project.
@@ -21,7 +21,7 @@ sponsors or endorses this project.
    referenced file as a `0 FILE` section; name subparts `parts/s/<file>` and hi-res primitives `p/48/<file>`
    the way three.js's LDrawLoader looks them up). Low-resolution `8\` primitives keep the triangle count down.
 3. Reference it from `mat/season.json`: `"model": "models/<name>.mpd"` and `"modelPose": {x, y, heading}` on
-   the mission-model entry (cm from the table centre, y positive towards the south wall; heading 0 = facing
+   the mission-model entry (cm from the table center, y positive towards the south wall; heading 0 = facing
    north, positive = counter-clockwise from above). The entry's box stays as the collision shape.
 4. The robot body for the Training Camp preset is `models/driving-base.mpd` (origin at the axle midpoint on the
    mat, forward −z, left +x, y down, as in LDraw); the simulator keeps its own spinning wheels.

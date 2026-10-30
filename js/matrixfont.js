@@ -39,7 +39,7 @@ export function textColumns(text) {
   return cols;
 }
 
-/** A single character centred on the 5x5 matrix as a 25-element brightness array. */
+/** A single character centered on the 5x5 matrix as a 25-element brightness array. */
 export function charMatrix(ch) {
   const cols = glyphColumns(ch);
   const offset = Math.floor((5 - cols.length) / 2);

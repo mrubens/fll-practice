@@ -1,5 +1,5 @@
-// The table: an FLL-sized mat (236 x 114 cm) with walls, a black line loop, colour tiles and obstacles.
-// The mat is drawn once onto a canvas that is both the 3D texture and the colour-sensor lookup.
+// The table: an FLL-sized mat (236 x 114 cm) with walls, a black line loop, color tiles and obstacles.
+// The mat is drawn once onto a canvas that is both the 3D texture and the color-sensor lookup.
 
 export const TABLE = { w: 236, h: 114, wall: 2.5, wallHeight: 9 };
 export const PX_PER_CM = 4;
@@ -27,6 +27,14 @@ export function createMatCanvas() {
   canvas.width = TABLE.w * PX_PER_CM;
   canvas.height = TABLE.h * PX_PER_CM;
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.fillStyle = '#F5F2EA';
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  return { canvas, image: ctx.getImageData(0, 0, canvas.width, canvas.height) };
+}
+
+/** The built-in practice mat: a black line loop, color tiles and a start box (used when there is no season file). */
+export function drawPracticeMat(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
   const s = PX_PER_CM;
   const X = (cm) => (cm + TABLE.w / 2) * s;
   const Y = (cm) => (cm + TABLE.h / 2) * s;
@@ -40,7 +48,7 @@ export function createMatCanvas() {
   for (let cm = -110; cm <= 110; cm += 10) { ctx.beginPath(); ctx.moveTo(X(cm), 0); ctx.lineTo(X(cm), canvas.height); ctx.stroke(); }
   for (let cm = -50; cm <= 50; cm += 10) { ctx.beginPath(); ctx.moveTo(0, Y(cm)); ctx.lineTo(canvas.width, Y(cm)); ctx.stroke(); }
 
-  // Colour tiles.
+  // Color tiles.
   for (const t of TILES) {
     ctx.fillStyle = t.color;
     const half = t.size / 2;
@@ -72,8 +80,7 @@ export function createMatCanvas() {
     ctx.strokeRect(X(o.x - o.w / 2), Y(o.y - o.d / 2), o.w * s, o.d * s);
   }
 
-  const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-  return { canvas, image };
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
 function roundRect(ctx, x, y, w, h, r) {
@@ -95,7 +102,7 @@ export class World {
     const { canvas, image } = createMatCanvas();
     this.matCanvas = canvas;
     this.matImage = image;
-    this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
+    this.obstacles = [];               // filled by loadSeason(), or by usePracticeField() when there is no season
     this.startPose = { ...START_POSE };
     this.innerHalfW = TABLE.w / 2;
     this.innerHalfH = TABLE.h / 2;
@@ -108,15 +115,25 @@ export class World {
   /**
    * Load a season setup if `mat/season.json` exists next to the app:
    * { "mat": "mat/season.png", "launch": {x, y, heading}, "obstacles": [{id, x, y, w, d, h, color, movable}] }
-   * The mat image is drawn over the full table (236 x 114 cm) and sampled by the colour sensor like the drawn mat.
+   * The mat image is drawn over the full table (236 x 114 cm) and sampled by the color sensor like the drawn mat.
    */
+  /** The plain practice field (drawn mat + a few boxes). */
+  usePracticeField() {
+    this.matImage = drawPracticeMat(this.matCanvas);
+    this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
+    this.startPose = { ...START_POSE };
+    this.season = null;
+    this.listeners.forEach((fn) => fn('mat'));
+    this.listeners.forEach((fn) => fn('season'));
+  }
+
   async loadSeason(url = 'mat/season.json') {
     let cfg;
     try {
       const res = await fetch(url, { cache: 'no-cache' });
-      if (!res.ok) return false;
+      if (!res.ok) { this.usePracticeField(); return false; }
       cfg = await res.json();
-    } catch { return false; }
+    } catch { this.usePracticeField(); return false; }
     if (cfg.mat) await this.loadMatImage(cfg.mat);
     if (cfg.launch) this.startPose = { x: Number(cfg.launch.x) || 0, y: Number(cfg.launch.y) || 0, heading: Number(cfg.launch.heading) || 0 };
     if (Array.isArray(cfg.obstacles)) {
@@ -156,7 +173,7 @@ export class World {
     return true;
   }
 
-  /** RGB of the mat at a point (cm, table centre origin, y down). Off-mat is white. */
+  /** RGB of the mat at a point (cm, table center origin, y down). Off-mat is white. */
   sampleRGB(x, y) {
     const px = Math.floor((x + TABLE.w / 2) * PX_PER_CM);
     const py = Math.floor((y + TABLE.h / 2) * PX_PER_CM);

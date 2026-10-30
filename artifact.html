@@ -210,7 +210,8 @@ body.building #hubPanel { display: none; }
 .model-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
 .model-card .num { background: #E3000B; color: #fff; border-radius: 6px; padding: 2px 6px; font-weight: 800; font-size: 12px; }
 .model-card .title { font-weight: 800; font-size: 14px; flex: 1; }
-.model-card .close { border: 0; background: none; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
+.model-card .close { position: absolute; top: 6px; right: 8px; border: 0; background: none; font-size: 20px; color: var(--muted); cursor: pointer; line-height: 1; padding: 2px 6px; }
+.model-card .head { padding-right: 22px; }
 .model-card .text { margin: 4px 0 6px; color: #3F4653; }
 .model-card .task { display: flex; gap: 6px; align-items: baseline; padding: 2px 0; }
 .model-card .task .pts { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }

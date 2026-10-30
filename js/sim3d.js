@@ -279,7 +279,7 @@ export class Sim3D {
     ds.rotation.y = -d.angle * DEG;
     body.add(ds);
 
-    // Colour sensor pointing down, with a disc showing what it sees.
+    // Color sensor pointing down, with a disc showing what it sees.
     const c = geom.color;
     const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(c.fwd, 2.3, c.lat); body.add(cs);
     this.sensorDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
@@ -361,7 +361,7 @@ export class Sim3D {
     this.trailGeo.setDrawRange(0, this.trailCount);
   }
 
-  // ---- zone marker for the mission being practised ----
+  // ---- zone marker for the mission being practiced ----
   buildZoneMarker() {
     this.zoneRing = new THREE.Mesh(new THREE.RingGeometry(0.85, 1, 48), new THREE.MeshBasicMaterial({ color: 0x2FC25B, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthTest: false }));
     this.zoneRing.rotation.x = -Math.PI / 2;

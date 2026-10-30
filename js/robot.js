@@ -410,7 +410,7 @@ export function num(v) {
 }
 export const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
 
-/** Classify an RGB sample into a SPIKE colour code/name plus reflectivity (0..100). */
+/** Classify an RGB sample into a SPIKE color code/name plus reflectivity (0..100). */
 export function classify([r, g, b]) {
   const rn = r / 255, gn = g / 255, bn = b / 255;
   const max = Math.max(rn, gn, bn), min = Math.min(rn, gn, bn);

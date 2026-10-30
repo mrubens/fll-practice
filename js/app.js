@@ -53,14 +53,14 @@ const sim = new Sim3D($('#view3d'), world, robot);
 const hub = new HubPanel($('#hubPanel'), robot);
 const runtime = new Runtime({
   workspace, robot,
-  onChange: () => { updateRunState(); if (!runtime.running && practising) modelCard.setResult(practiceResult(scoring, practising)); },
+  onChange: () => { updateRunState(); if (!runtime.running && practicing) modelCard.setResult(practiceResult(scoring, practicing)); },
   onLog: (m) => toast(m, 'warn'),
 });
 robot.on('hint', (m) => toast(m, 'warn'));
 
 // ---------- missions: scripted interactions, scoresheet, practice cards ----------
 const scoring = new Scoring(robot, world);
-let practising = null;
+let practicing = null;
 scoring.on((ev) => {
   if (ev.type === 'done') { sim.celebrate(ev.obstacle, ev.action.animate); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} +${ev.action.points}`); }
   if (ev.type === 'lost') { toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} lost (${ev.action.points} pts)`, 'warn'); }
@@ -68,7 +68,7 @@ scoring.on((ev) => {
 const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
   onPractice: (m) => {
-    practising = m;
+    practicing = m;
     if (m) { runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m.actions[0])); }
     else sim.showZone(null);
   },
@@ -95,7 +95,7 @@ function updateRunState() {
   btnRun.disabled = runtime.running;
   btnStop.disabled = !runtime.running;
 }
-btnRun.addEventListener('click', () => { if (practising) robot.resetPose(); startRun(); });
+btnRun.addEventListener('click', () => { if (practicing) robot.resetPose(); startRun(); });
 btnStop.addEventListener('click', () => runtime.stop());
 updateRunState();
 

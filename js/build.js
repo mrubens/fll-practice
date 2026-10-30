@@ -3,7 +3,7 @@
 
 export const WHEELS = { '5.6': { diameter: 5.6, calibration: 17.5, label: 'Small (5.6 cm)' }, '8.8': { diameter: 8.8, calibration: 27.6, label: 'Large (8.8 cm)' } };
 export const MOUNTS = ['front', 'left', 'right', 'back'];
-export const COLOR_MOUNTS = { front: 'front centre', 'front-left': 'front left', 'front-right': 'front right', center: 'under the middle', back: 'back' };
+export const COLOR_MOUNTS = { front: 'front center', 'front-left': 'front left', 'front-right': 'front right', center: 'under the middle', back: 'back' };
 export const MODULES = {
   none: { label: 'none', motor: false },
   arm: { label: 'arm (lifts up and down)', motor: true },

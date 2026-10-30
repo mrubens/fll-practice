@@ -13,7 +13,7 @@
     "heading": -45
   },
   "robotModel": "models/driving-base.mpd",
-  "note": "Mission model footprints and poses from martijas/fll-sim (measured from the FIRST wireframe PDF); LDraw models reconstructed there from the official building instructions. Table interior 236 x 114 cm, mat 200 x 114 cm centred, flush with the south wall.",
+  "note": "Mission model footprints and poses from martijas/fll-sim (measured from the FIRST wireframe PDF); LDraw models reconstructed there from the official building instructions. Table interior 236 x 114 cm, mat 200 x 114 cm centered, flush with the south wall.",
   "obstacles": [
     {
       "id": "M01 Drone Survey",

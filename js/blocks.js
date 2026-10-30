@@ -278,7 +278,7 @@ export function buildToolbox() {
   return { kind: 'categoryToolbox', contents };
 }
 
-/** Toolbox category rendered as a coloured dot with a label, like the SPIKE palette. */
+/** Toolbox category rendered as a colored dot with a label, like the SPIKE palette. */
 class SpikeCategory extends B.ToolboxCategory {
   createIconDom_() {
     const dot = document.createElement('span');

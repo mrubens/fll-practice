@@ -7,7 +7,7 @@ export const PORTS = PORT_LETTERS.map((p) => [p, p]);
 export const PAIRS = [];
 for (const a of PORT_LETTERS) for (const b of PORT_LETTERS) if (a !== b) PAIRS.push([`${a}+${b}`, a + b]);
 
-// SPIKE colour codes (ColorFieldOption) as the app stores them.
+// SPIKE color codes (ColorFieldOption) as the app stores them.
 export const COLORS = [
   { code: '9', name: 'red', hex: '#E3000B' },
   { code: '7', name: 'yellow', hex: '#FFD500' },

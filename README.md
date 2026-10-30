@@ -13,22 +13,22 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
 - **Block editor** (Blockly, Scratch-style renderer) with the SPIKE categories: Movement, Motors, Light,
   Sound, Events, Control, Sensors, Operators, Variables. Block names, inputs, dropdowns and defaults
   match the SPIKE App.
-- **3D simulator** (three.js): an FLL-sized table (236 x 114 cm) with walls, a black line loop, colour tiles
-  and obstacles. The robot is a standard Driving Base: 5.6 cm wheels, 11.2 cm track, colour sensor
+- **3D simulator** (three.js): an FLL-sized table (236 x 114 cm) with walls, a black line loop, color tiles
+  and obstacles. The robot is a standard Driving Base: 5.6 cm wheels, 11.2 cm track, color sensor
   in front pointing down, distance sensor in front. Drag the robot to place it; orbit/zoom the camera.
-- **Hub panel**: 5x5 LED matrix, left/right buttons (click, or arrow keys), centre button light,
+- **Hub panel**: 5x5 LED matrix, left/right buttons (click, or arrow keys), center button light,
   yaw/timer readouts, live sensor and motor values per port. Beeps play through the speakers.
 - **Programs behave like Scratch/SPIKE**: every hat block is its own thread, `when ... button pressed`
   and `when <condition>` hats fire while the program runs, loops yield once per iteration, running stacks glow.
 - **Save / Open `.llsp3`**: files written here open in the SPIKE App; the LEGO lesson files
   (Training Camp etc.) open here. Projects also autosave in the browser (My projects).
 - **Robot builder**: a snap-together robot from a few parameters, previewed live in the 3D view: wheel size
-  (5.6 or 8.8 cm), track width, hub flat or upright, hub ports, colour-sensor and distance-sensor mount points,
+  (5.6 or 8.8 cm), track width, hub flat or upright, hub ports, color-sensor and distance-sensor mount points,
   and an attachment module (arm, sweeper, forklift or plow blade) on a front/left/right/back mount. The
   geometry, sensor positions, cm-per-rotation default and attachment physics all derive from it. The build is
   saved with the project and inside exported `.llsp3` files (as an extra `spikesim-build.json` entry the SPIKE
   App ignores). The Training Camp Driving Base is a preset so the LEGO lessons still match.
-- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image (200 x 114 cm, centred on the
+- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image (200 x 114 cm, centered on the
   236 cm table), the launch area and the mission models as real LEGO geometry: LDraw models of all 15 missions
   (plus the drone stand and the Forest Elder post) placed where the FIRST wireframe puts them, and the SPIKE
   Prime Driving Base itself built from real parts (hub, motors, sensors, frame). See `models/ATTRIBUTION.md`
@@ -41,7 +41,7 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
   the mission's rulebook points, its tasks and how the simulator detects each one. Interactions are scripted,
   not physics: each task has a zone on the table and a required robot action (drive through it, lower the
   attachment onto it, lower then lift, or stay out of it). When it happens the model pulses green (some also
-  move), the task ticks off and the score chip updates. "Practise this" puts the robot in the launch area,
+  move), the task ticks off and the score chip updates. "Practice this" puts the robot in the launch area,
   marks the first target with a green ring, draws the path, and reports how far from the target the robot
   stopped. Zones are approximate (built from the model positions); tune them in `js/missions.js`.
 - **My Blocks**: "Make a Block" with number/text and true/false inputs. Definitions, calls and argument
@@ -83,9 +83,9 @@ against the reference implementation) but has not yet been exercised with a phys
 |---|---|
 | `js/spec.js` | The block catalogue: opcodes, inputs, fields and selector menus exactly as the SPIKE App stores them |
 | `js/blocks.js` | Blockly setup: block definitions, custom fields (steering, LED image), theme, toolbox, dialogs |
-| `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behaviour |
+| `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behavior |
 | `js/robot.js` | Robot and hub model: motors, differential-drive kinematics, sensors, matrix, sound |
-| `js/world.js` | The table: mat drawing (also the colour-sensor lookup), obstacles, ray casts, collisions |
+| `js/world.js` | The table: mat drawing (also the color-sensor lookup), obstacles, ray casts, collisions |
 | `js/sim3d.js` | three.js scene, robot mesh, camera, drag-to-place |
 | `js/hub.js` | Hub panel UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |

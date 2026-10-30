@@ -33,7 +33,7 @@ export class Scoring {
     return total;
   }
 
-  /** Zone centre for an action (table cm). */
+  /** Zone center for an action (table cm). */
   zoneOf(action) {
     const t = action.trigger;
     if (!t.at) return null;
