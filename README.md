@@ -4,6 +4,8 @@ A browser-based simulator for LEGO® Education SPIKE™ Prime. Kids write progra
 Word Blocks as the SPIKE App, run them on a simulated Driving Base in 3D, and save the result as a
 `.llsp3` file that opens directly in the real SPIKE App 3 (desktop, tablet or web).
 
+**Use it here: <https://mrubens.github.io/spike-sim/>** (works on any tablet or laptop; nothing to install).
+
 Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Group.
 
 ## What's in it
@@ -25,15 +27,15 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
 
 ## Run it
 
-It is a static site. Any web server works, for example:
+The hosted copy at <https://mrubens.github.io/spike-sim/> is published from the `main` branch by GitHub Pages,
+so every push updates it. To run it locally, it is a static site and any web server works, for example:
 
 ```bash
 python3 serve.py 8794
 ```
 
-then open <http://localhost:8794>. To put it on the web for the team, upload this folder to
-any static host (GitHub Pages, Netlify, a school web server). It needs internet for the three CDN
-libraries (Blockly, three.js, JSZip) and the Nunito font.
+then open <http://localhost:8794>. It needs internet for the three CDN libraries (Blockly, three.js, JSZip)
+and the Nunito font.
 
 ## Getting a program onto the real robot
 
