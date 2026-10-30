@@ -15,6 +15,7 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
+html { color-scheme: light; }   /* the page is light; form controls must not pick up the OS dark theme */
 body { font-family: var(--font); font-weight: 600; color: var(--fg); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(10,141,255,.45); outline-offset: 2px; }
@@ -23,7 +24,7 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .topbar { display: flex; align-items: center; gap: 12px; padding: 8px max(16px, env(safe-area-inset-right, 0px)) 8px max(16px, env(safe-area-inset-left, 0px)); background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 17px; letter-spacing: .01em; }
 .logo { width: 30px; height: 30px; border-radius: 9px; background: var(--hub-yellow); color: #1E2430; display: grid; place-items: center; font-weight: 800; }
-.project-name { flex: 1 1 160px; min-width: 120px; max-width: 320px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; font-weight: 700; background: var(--bg); }
+.project-name { flex: 1 1 160px; min-width: 120px; max-width: 320px; border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; font: inherit; font-weight: 700; background: var(--bg); color: var(--fg); }
 .actions { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; align-items: center; }
 .tb { border: 1px solid var(--line); background: var(--panel); border-radius: 10px; padding: 7px 12px; font-weight: 700; font-size: 13px; }
 .tb:hover { background: var(--bg); }
