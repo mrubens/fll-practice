@@ -666,8 +666,10 @@ export class Sim3D {
         for (const z of [-0.45, 0.45]) put(moving, 'b7', [12.4 + 2.8 * Math.cos(P), -1.2 + 2.8 * Math.sin(P), z], [0, H, P, 'ZYX']);   // turn to x, then pitch
       } else if (module === 'sweeper') {
         put(pivot, 'motor', [0, 0, 0], [H, 0, 0]);                            // axle vertical: the arm swings sideways
-        for (const y of [-0.8, 0.8]) put(moving, 'b15', [6, y, 0], ALONG_X);
-        put(moving, 'b5', [12.4, -2, 0], UPRIGHT);                            // a 5-long hanging down at the tip
+        for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, 0, z], ALONG_X);   // two 15-longs side by side on the axle
+        put(moving, 'b3', [0.4, 0, 0], ACROSS);                               // tied together over the axle...
+        put(moving, 'b3', [11.6, 0, 0], ACROSS);                              // ...and at the tip
+        put(moving, 'b5', [12.4, -1.6, 0], UPRIGHT);                          // a red 5-long hanging from the tip hole
       } else if (module === 'lift') {
         put(pivot, 'motor', [-1.2, 0, 0], [0, Math.PI, 0]);
         for (const z of [-2.4, 2.4]) put(pivot, 'b15', [-1, 3, z], UPRIGHT);   // the mast, through the mount beams
