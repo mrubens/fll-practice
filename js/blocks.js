@@ -1,5 +1,6 @@
 // Blockly setup: SPIKE-style blocks (Zelos renderer), custom fields, theme, toolbox and dialogs.
 import { BLOCKS, SELECTORS, CATEGORIES, ICONS, KIND_SHADOW } from './spec.js';
+import { defineMyBlocks, registerMyBlocksCategory, makeBlockDialog } from './myblocks.js';
 
 const B = window.Blockly;
 
@@ -197,6 +198,7 @@ export function defineBlocks() {
   defs.push({ type: 'math_positive_number', message0: '%1', args0: [{ type: 'field_number', name: 'NUM', value: 1, min: 0 }], output: 'Number', style: 'math_blocks' });
   defs.push({ type: 'math_whole_number', message0: '%1', args0: [{ type: 'field_number', name: 'NUM', value: 10, min: 0, precision: 1 }], output: 'Number', style: 'math_blocks' });
   B.defineBlocksWithJsonArray(defs);
+  defineMyBlocks();
 }
 
 // ---------- theme ----------
@@ -257,7 +259,7 @@ export function toolboxBlock(spec, overrides = {}) {
   return entry;
 }
 
-const CATEGORY_ORDER = ['movement', 'motors', 'light', 'sound', 'events', 'control', 'sensors', 'operators', 'variables'];
+const CATEGORY_ORDER = ['movement', 'motors', 'light', 'sound', 'events', 'control', 'sensors', 'operators', 'variables', 'myblocks'];
 
 export function buildToolbox() {
   const contents = [];
@@ -266,6 +268,8 @@ export function buildToolbox() {
     const category = { kind: 'category', name: cat.name, categorystyle: `${key}_category` };
     if (key === 'variables') {
       category.custom = 'SPIKE_VARIABLES';
+    } else if (key === 'myblocks') {
+      category.custom = 'SPIKE_MYBLOCKS';
     } else {
       category.contents = BLOCKS.filter((b) => b.cat === key).map((b) => toolboxBlock(b));
     }
@@ -359,6 +363,7 @@ export function createWorkspace(div, options = {}) {
     move: { scrollbars: { horizontal: true, vertical: true }, drag: true, wheel: false },
   });
   registerVariablesCategory(ws);
+  registerMyBlocksCategory(ws, (w) => makeBlockDialog(w));
   return ws;
 }
 

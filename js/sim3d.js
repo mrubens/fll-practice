@@ -95,10 +95,24 @@ export class Sim3D {
     floor.receiveShadow = true;
     scene.add(floor);
 
-    for (const o of world.obstacles) {
+    this.matTex = matTex;
+    this.obstacleMeshes = [];
+    this.buildObstacles();
+    world.onChange((what) => {
+      if (what === 'mat') this.matTex.needsUpdate = true;
+      if (what === 'season') this.buildObstacles();
+    });
+  }
+
+  buildObstacles() {
+    for (const m of this.obstacleMeshes) this.scene.remove(m);
+    this.obstacleMeshes = [];
+    for (const o of this.world.obstacles) {
       const m = box(o.w, o.h, o.d, o.color);
       m.position.set(o.x, o.h / 2, o.y);
-      scene.add(m);
+      m.userData.obstacle = o;
+      this.scene.add(m);
+      this.obstacleMeshes.push(m);
     }
   }
 
@@ -172,6 +186,20 @@ export class Sim3D {
     this.sensorDisc.position.set(7.5, 0.08, 0);
     g.add(this.sensorDisc);
 
+    // Attachment arm (shown when a port is assigned in Robot setup).
+    this.armPivot = new THREE.Group();
+    const armMat = new THREE.MeshStandardMaterial({ color: 0xC3C9D3, roughness: 0.6 });
+    const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat);
+    beam.position.x = 6;
+    beam.castShadow = true;
+    const paddle = new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), new THREE.MeshStandardMaterial({ color: 0xE3000B, roughness: 0.6 }));
+    paddle.position.x = 12;
+    paddle.castShadow = true;
+    const motorBody = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat);
+    this.armPivot.add(beam, paddle, motorBody);
+    this.armPivot.visible = false;
+    g.add(this.armPivot);
+
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; } });
     this.robotGroup = g;
     this.scene.add(g);
@@ -241,12 +269,24 @@ export class Sim3D {
 
   render() {
     const r = this.robot, g = this.robotGroup;
+    for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; }
     g.position.set(r.x, 0, r.y);
     g.rotation.y = -r.heading * DEG;
     const cfg = r.config;
     this.wheels[0].rotation.z = -r.motors[cfg.right].angle * DEG;  // z = +1 side is the robot's right (y down => z right)
     this.wheels[1].rotation.z = -r.motors[cfg.left].angle * DEG;
     if (this.matrixDirty) { this.drawMatrix(); this.matrixDirty = false; }
+    const arm = r.arm();
+    this.armPivot.visible = !!arm;
+    if (arm) {
+      if (arm.mount === 'side') { this.armPivot.position.set(1, 6, 7.5); this.armPivot.rotation.set(0, -Math.PI / 2 + arm.angle * DEG, 0); }
+      else { this.armPivot.position.set(8, 6, 0); this.armPivot.rotation.set(0, 0, arm.angle * DEG); }
+    }
+    for (const m of this.obstacleMeshes) {
+      const o = m.userData.obstacle;
+      const hit = o.touched !== undefined && r.time - o.touched < 0.3;
+      m.material.emissive.setHex(hit ? 0x335533 : 0x000000);
+    }
     this.centerButton.material.color.set(r.hub.centerColor || '#FFFFFF');
     const sample = r.colorSample(cfg.color);
     if (sample) this.sensorDisc.material.color.setRGB(sample.rgb[0] / 255, sample.rgb[1] / 255, sample.rgb[2] / 255);

@@ -54,6 +54,7 @@ export const CATEGORIES = {
   sensors: { name: 'Sensors', colour: '#3DB7E8', secondary: '#2AA3D6', tertiary: '#1C89B8', icon: 'sensor' },
   operators: { name: 'Operators', colour: '#2FC25B', secondary: '#26AC4E', tertiary: '#1E8F40', icon: null },
   variables: { name: 'Variables', colour: '#FF8C1A', secondary: '#F07C08', tertiary: '#D06A00', icon: null },
+  myblocks: { name: 'My Blocks', colour: '#FF6680', secondary: '#F04F6C', tertiary: '#D03A58', icon: null },
 };
 
 // Selector shadow blocks ("menus"). Field name is always `field_<type>`, as in the SPIKE project files.
@@ -220,3 +221,6 @@ export function extensionOf(opcode) {
   const ns = opcode.split('_')[0];
   return ns.startsWith('flipper') ? ns : null;
 }
+
+// Scratch procedure ("My Blocks") opcodes handled by js/myblocks.js rather than the BLOCKS table.
+export const PROCEDURE_OPS = new Set(['procedures_definition', 'procedures_prototype', 'procedures_call', 'argument_reporter_string_number', 'argument_reporter_boolean']);

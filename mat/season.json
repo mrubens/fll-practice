@@ -1,0 +1,24 @@
+{
+  "name": "FIRST LEGO League BIOGLOW (2026-27)",
+  "mat": "mat/season.png",
+  "launch": { "x": -96, "y": 35, "heading": -45 },
+  "note": "Model positions are read off the Field Setup Guide placement diagram (page 2) and are approximate; footprints are placeholders.",
+  "obstacles": [
+    { "id": "M01 Drone Survey", "x": -14, "y": 49, "w": 14, "d": 10, "h": 8, "color": "#B8C0CC", "movable": false },
+    { "id": "M02 Exploding Seeds", "x": -43, "y": 3, "w": 12, "d": 12, "h": 10, "color": "#8FBF5A", "movable": false },
+    { "id": "M03 Flip the Rock", "x": -106, "y": -10, "w": 10, "d": 12, "h": 9, "color": "#9AA3AF", "movable": false },
+    { "id": "M04 Lucky Leaves", "x": -99, "y": -41, "w": 12, "d": 12, "h": 10, "color": "#5BAE4F", "movable": false },
+    { "id": "M05 Reaching Roots", "x": -70, "y": -49, "w": 12, "d": 10, "h": 12, "color": "#A66B3B", "movable": false },
+    { "id": "M06 Leafcutter Frenzy", "x": 60, "y": -49, "w": 14, "d": 10, "h": 9, "color": "#7CC36B", "movable": false },
+    { "id": "M07 Humongous Fungus", "x": 76, "y": -49, "w": 10, "d": 10, "h": 12, "color": "#E3A14D", "movable": false },
+    { "id": "M08 Tangled", "x": -54, "y": -49, "w": 10, "d": 10, "h": 10, "color": "#6B8E23", "movable": false },
+    { "id": "M09 Research Platform", "x": -41, "y": -49, "w": 12, "d": 10, "h": 10, "color": "#C8B46A", "movable": false },
+    { "id": "M10 Fragile Microhabitat A", "x": -26, "y": -45, "w": 8, "d": 8, "h": 6, "color": "#B2D8B2", "movable": false },
+    { "id": "M10 Fragile Microhabitat B", "x": 11, "y": -20, "w": 8, "d": 8, "h": 6, "color": "#B2D8B2", "movable": false },
+    { "id": "M11 Window to the Past", "x": 47, "y": -3, "w": 12, "d": 10, "h": 10, "color": "#8A7F6A", "movable": false },
+    { "id": "M12 Forest Elder", "x": 109, "y": -19, "w": 14, "d": 14, "h": 18, "color": "#6F4E2A", "movable": false },
+    { "id": "Dock NE (M13-15)", "x": 105, "y": -45, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false },
+    { "id": "Dock centre (M13-15)", "x": 0, "y": -6, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false },
+    { "id": "Dock S (M13-15)", "x": 34, "y": 48, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false }
+  ]
+}

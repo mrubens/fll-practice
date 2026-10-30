@@ -2,9 +2,10 @@
 // The mat is drawn once onto a canvas that is both the 3D texture and the colour-sensor lookup.
 
 export const TABLE = { w: 236, h: 114, wall: 2.5, wallHeight: 9 };
-export const PX_PER_CM = 2;
+export const PX_PER_CM = 4;
 
 export const START_POSE = { x: -95, y: 40, heading: 0 };
+export const MATCH_SECONDS = 150; // FLL match: 2 minutes 30 seconds
 
 export const OBSTACLES = [
   { id: 'crate', x: 95, y: 40, w: 14, d: 14, h: 10, color: '#B8C0CC' },
@@ -94,9 +95,65 @@ export class World {
     const { canvas, image } = createMatCanvas();
     this.matCanvas = canvas;
     this.matImage = image;
-    this.obstacles = OBSTACLES.map((o) => ({ ...o }));
+    this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
+    this.startPose = { ...START_POSE };
     this.innerHalfW = TABLE.w / 2;
     this.innerHalfH = TABLE.h / 2;
+    this.listeners = [];
+    this.season = null;
+  }
+
+  onChange(fn) { this.listeners.push(fn); }
+
+  /**
+   * Load a season setup if `mat/season.json` exists next to the app:
+   * { "mat": "mat/season.png", "launch": {x, y, heading}, "obstacles": [{id, x, y, w, d, h, color, movable}] }
+   * The mat image is drawn over the full table (236 x 114 cm) and sampled by the colour sensor like the drawn mat.
+   */
+  async loadSeason(url = 'mat/season.json') {
+    let cfg;
+    try {
+      const res = await fetch(url, { cache: 'no-cache' });
+      if (!res.ok) return false;
+      cfg = await res.json();
+    } catch { return false; }
+    if (cfg.mat) await this.loadMatImage(cfg.mat);
+    if (cfg.launch) this.startPose = { x: Number(cfg.launch.x) || 0, y: Number(cfg.launch.y) || 0, heading: Number(cfg.launch.heading) || 0 };
+    if (Array.isArray(cfg.obstacles)) {
+      this.obstacles = cfg.obstacles.map((o, i) => ({ id: o.id || `model${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y }));
+    }
+    this.season = cfg;
+    this.listeners.forEach((fn) => fn('season'));
+    return true;
+  }
+
+  /** Draw an image (e.g. the official season mat, 2 px/cm) over the whole mat canvas. */
+  loadMatImage(url) {
+    return new Promise((resolve, reject) => {
+      const img = new Image();
+      img.onload = () => {
+        const ctx = this.matCanvas.getContext('2d', { willReadFrequently: true });
+        ctx.drawImage(img, 0, 0, this.matCanvas.width, this.matCanvas.height);
+        this.matImage = ctx.getImageData(0, 0, this.matCanvas.width, this.matCanvas.height);
+        this.listeners.forEach((fn) => fn('mat'));
+        resolve(true);
+      };
+      img.onerror = () => reject(new Error('Could not load mat image ' + url));
+      img.src = url;
+    });
+  }
+
+  resetObstacles() {
+    for (const o of this.obstacles) { o.x = o.x0; o.y = o.y0; }
+    this.listeners.forEach((fn) => fn('obstacles'));
+  }
+
+  /** Push a movable box by (dx, dy), keeping it inside the walls. */
+  pushObstacle(o, dx, dy) {
+    if (!o.movable) return false;
+    o.x = Math.max(-this.innerHalfW + o.w / 2, Math.min(this.innerHalfW - o.w / 2, o.x + dx));
+    o.y = Math.max(-this.innerHalfH + o.d / 2, Math.min(this.innerHalfH - o.d / 2, o.y + dy));
+    return true;
   }
 
   /** RGB of the mat at a point (cm, table centre origin, y down). Off-mat is white. */
@@ -136,25 +193,42 @@ export class World {
     return best > maxDist ? Infinity : best;
   }
 
-  /** Keep a circle of radius r inside the walls and outside the obstacles. Returns the corrected point. */
-  resolveCircle(x, y, r) {
+  /** Penetration vector that would move a circle (x,y,r) out of box o, or null when they do not touch. */
+  circleBoxPush(x, y, r, o) {
+    const x0 = o.x - o.w / 2, x1 = o.x + o.w / 2, y0 = o.y - o.d / 2, y1 = o.y + o.d / 2;
+    const cx = Math.max(x0, Math.min(x1, x)), cy = Math.max(y0, Math.min(y1, y));
+    const ddx = x - cx, ddy = y - cy;
+    const dist = Math.hypot(ddx, ddy);
+    if (dist >= r) return null;
+    if (dist < 1e-6) {
+      const pushes = [[x0 - r - x, 0], [x1 + r - x, 0], [0, y0 - r - y], [0, y1 + r - y]];
+      pushes.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
+      return pushes[0];
+    }
+    const push = (r - dist) / dist;
+    return [ddx * push, ddy * push];
+  }
+
+  /**
+   * Keep a circle of radius r inside the walls and outside the obstacles. Movable boxes get pushed
+   * (the circle keeps most of its motion); fixed ones stop it. Returns the corrected point.
+   */
+  resolveCircle(x, y, r, { push = true } = {}) {
     const hw = this.innerHalfW - r, hh = this.innerHalfH - r;
     x = Math.max(-hw, Math.min(hw, x));
     y = Math.max(-hh, Math.min(hh, y));
     for (const o of this.obstacles) {
-      const x0 = o.x - o.w / 2, x1 = o.x + o.w / 2, y0 = o.y - o.d / 2, y1 = o.y + o.d / 2;
-      const cx = Math.max(x0, Math.min(x1, x)), cy = Math.max(y0, Math.min(y1, y));
-      let ddx = x - cx, ddy = y - cy;
-      const dist = Math.hypot(ddx, ddy);
-      if (dist >= r) continue;
-      if (dist < 1e-6) {
-        // Centre inside the box: push out along the shortest axis.
-        const pushes = [[x0 - r - x, 0], [x1 + r - x, 0], [0, y0 - r - y], [0, y1 + r - y]];
-        pushes.sort((a, b) => Math.hypot(a[0], a[1]) - Math.hypot(b[0], b[1]));
-        x += pushes[0][0]; y += pushes[0][1];
+      const p = this.circleBoxPush(x, y, r, o);
+      if (!p) continue;
+      if (push && o.movable) {
+        const before = [o.x, o.y];
+        this.pushObstacle(o, -p[0], -p[1]);
+        const moved = [o.x - before[0], o.y - before[1]];
+        const left = this.circleBoxPush(x, y, r, o);
+        if (left) { x += left[0]; y += left[1]; }
+        if (moved[0] || moved[1]) this.obstaclesDirty = true;
       } else {
-        const push = (r - dist) / dist;
-        x += ddx * push; y += ddy * push;
+        x += p[0]; y += p[1];
       }
     }
     return [x, y];

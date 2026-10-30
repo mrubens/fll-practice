@@ -1,6 +1,6 @@
 // Wires the editor, the simulator, the hub panel, project storage and file import/export together.
 import { createWorkspace, installDialogs } from './blocks.js';
-import { World } from './world.js';
+import { World, MATCH_SECONDS } from './world.js';
 import { Robot, PORT_LETTERS } from './robot.js';
 import { Sim3D } from './sim3d.js';
 import { HubPanel } from './hub.js';
@@ -217,20 +217,27 @@ $('#btnRobot').addEventListener('click', async () => {
       <label>Right wheel motor <select id="cfgRight">${opts(cfg.right)}</select></label>
       <label>Color sensor <select id="cfgColor">${opts(cfg.color)}</select></label>
       <label>Distance sensor <select id="cfgDist">${opts(cfg.distance)}</select></label>
+      <label>Attachment motor <select id="cfgArm"><option value="">none</option>${opts(cfg.attachment)}</select></label>
+      <label>Attachment mount <select id="cfgMount"><option value="front"${cfg.attachmentMount !== 'side' ? ' selected' : ''}>front arm (lifts)</option><option value="side"${cfg.attachmentMount === 'side' ? ' selected' : ''}>side arm (sweeps)</option></select></label>
     </div>
+    <p class="hint"><button type="button" class="tb" id="cfgPreset">Training Camp preset</button> motors C+D, color E, distance F, no attachment.</p>
     <div class="btns"><button type="button" class="cancel">Cancel</button><button type="button" class="ok">Save</button></div>
   </div>`;
   document.body.appendChild(back);
   back.querySelector('.cancel').addEventListener('click', () => back.remove());
+  back.querySelector('#cfgPreset').addEventListener('click', () => {
+    $('#cfgLeft').value = 'C'; $('#cfgRight').value = 'D'; $('#cfgColor').value = 'E'; $('#cfgDist').value = 'F'; $('#cfgArm').value = ''; $('#cfgMount').value = 'front';
+  });
   back.querySelector('.ok').addEventListener('click', () => {
-    const next = { left: $('#cfgLeft').value, right: $('#cfgRight').value, color: $('#cfgColor').value, distance: $('#cfgDist').value };
-    if (new Set(Object.values(next)).size < 4) { toast('Each port can only be used once.', 'error'); return; }
+    const next = { left: $('#cfgLeft').value, right: $('#cfgRight').value, color: $('#cfgColor').value, distance: $('#cfgDist').value, attachment: $('#cfgArm').value || null, attachmentMount: $('#cfgMount').value };
+    const used = [next.left, next.right, next.color, next.distance].concat(next.attachment ? [next.attachment] : []);
+    if (new Set(used).size < used.length) { toast('Each port can only be used once.', 'error'); return; }
     Object.assign(robot.config, next);
     store.config = next;
     saveStore();
     hub.updatePortTypes();
     back.remove();
-    toast(`Robot: wheels ${next.left}+${next.right}, color ${next.color}, distance ${next.distance}`);
+    toast(`Robot: wheels ${next.left}+${next.right}, color ${next.color}, distance ${next.distance}${next.attachment ? ', arm ' + next.attachment : ''}`);
   });
 });
 
@@ -242,7 +249,16 @@ $('#btnUndo').addEventListener('click', () => workspace.undo(false));
 $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 
 // ---------- sim view tools ----------
-$('#btnResetPos').addEventListener('click', () => { robot.resetPose(); });
+$('#btnResetPos').addEventListener('click', () => { robot.resetPose(); world.resetObstacles(); });
+$('#btnLaunch').addEventListener('click', () => {
+  runtime.stop();
+  world.resetObstacles();
+  robot.resetPose();
+  hub.matchLeft = MATCH_SECONDS;
+  hub.ensureAudio();
+  runtime.start();
+});
+world.loadSeason().then((ok) => { if (ok) toast('Season mat loaded.'); });
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
 $('#btnTurnR').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading + 15));
 $('#btnFollow').addEventListener('click', (e) => { sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });
@@ -382,6 +398,10 @@ function frame(now) {
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); acc -= STEP; }
     runtime.tick();
+    if (hub.matchLeft !== null && hub.matchLeft > 0) {
+      hub.matchLeft -= dt;
+      if (hub.matchLeft <= 0) { hub.matchLeft = 0; toast('Match over: 2:30 is up.', 'warn'); }
+    }
   } else {
     acc = 0;
   }
@@ -396,4 +416,4 @@ else createProject(SAMPLE_NAME, SAMPLE_STATE);
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
-window.spikeApp = { workspace, robot, runtime, sim, hub, store, compilePython: () => compilePython(workspace, robot.config), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name), importLlsp3, loadProject, createProject };
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, compilePython: () => compilePython(workspace, robot.config), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name), importLlsp3, loadProject, createProject };

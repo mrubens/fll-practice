@@ -17,8 +17,8 @@ const norm180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
 export class Robot {
   constructor(world) {
     this.world = world;
-    this.config = { left: 'C', right: 'D', color: 'E', distance: 'F' };
-    this.geom = { radius: 9, colorOffset: 7.5, distanceOffset: 9.5, distanceHeight: 5 };
+    this.config = { left: 'C', right: 'D', color: 'E', distance: 'F', attachment: null, attachmentMount: 'front' };
+    this.geom = { radius: 9, colorOffset: 7.5, distanceOffset: 9.5, distanceHeight: 5, armLength: 12 };
     this.listeners = {};
     this.reset();
     this.resetPose();
@@ -42,7 +42,7 @@ export class Robot {
     };
   }
 
-  resetPose(pose = START_POSE) {
+  resetPose(pose = this.world.startPose || START_POSE) {
     this.x = pose.x; this.y = pose.y; this.heading = pose.heading;
     this.hub.yawOffset = this.heading;
     this.emit('pose');
@@ -205,6 +205,26 @@ export class Robot {
     return Number.isFinite(d) ? Math.max(0, d) : null;
   }
 
+  /** Attachment arm state: pivot (cm), tip (cm), angle (deg), tip height (cm) and whether it is "down" near the mat. */
+  arm() {
+    const port = this.config.attachment;
+    if (!port || !this.motors[port]) return null;
+    const angle = this.motors[port].angle;
+    const h = this.heading * DEG;
+    const L = this.geom.armLength;
+    if (this.config.attachmentMount === 'side') {
+      // Horizontal sweep around a vertical axis on the robot's right side; angle 0 points sideways (right).
+      const px = this.x + Math.cos(h) * 1 - Math.sin(h) * 7.5, py = this.y + Math.sin(h) * 1 + Math.cos(h) * 7.5;
+      const a = h + Math.PI / 2 - angle * DEG;
+      return { mount: 'side', px, py, tx: px + Math.cos(a) * L, ty: py + Math.sin(a) * L, angle, tipHeight: 3, down: true };
+    }
+    // Front arm: lifts about a horizontal axis at the front; angle 0 = horizontal, positive = up.
+    const a = angle * DEG;
+    const reach = Math.cos(a) * L;
+    const px = this.x + Math.cos(h) * 8, py = this.y + Math.sin(h) * 8;
+    return { mount: 'front', px, py, tx: px + Math.cos(h) * reach, ty: py + Math.sin(h) * reach, angle, tipHeight: 6 + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
+  }
+
   yaw() { return Math.round(norm180(this.heading - this.hub.yawOffset)); }
   resetYaw() { this.hub.yawOffset = this.heading; }
   timer() { return this.time - this.hub.timerStart; }
@@ -317,6 +337,18 @@ export class Robot {
     const nx = this.x + Math.cos(h) * v * dt;
     const ny = this.y + Math.sin(h) * v * dt;
     [this.x, this.y] = this.world.resolveCircle(nx, ny, this.geom.radius);
+    const arm = this.arm();
+    this.armContact = null;
+    if (arm && arm.down) {
+      for (const o of this.world.obstacles) {
+        if (arm.tipHeight > o.h) continue;
+        const push = this.world.circleBoxPush(arm.tx, arm.ty, 2, o);
+        if (!push) continue;
+        this.armContact = o;
+        o.touched = this.time;
+        if (o.movable) this.world.pushObstacle(o, -push[0], -push[1]);
+      }
+    }
 
     // Hub goals.
     const hub = this.hub;

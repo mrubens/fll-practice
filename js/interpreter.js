@@ -2,6 +2,7 @@
 // loops yield once per iteration, event hats are edge-triggered every frame.
 import { num } from './robot.js';
 import { SELECTORS } from './spec.js';
+import { findDefinition, argKinds } from './myblocks.js';
 
 class StopSignal extends Error {}
 
@@ -97,6 +98,7 @@ export class Runtime {
         continue;
       }
       let val = false;
+      this.ctx = null;
       try { val = this.hatPredicate(hat); } catch (e) { console.error(e); }
       const prev = this.edge.get(hat.id) || false;
       if (val && !prev) this.launch(hat);
@@ -140,6 +142,7 @@ export class Runtime {
   }
 
   async exec(block, ctx) {
+    this.ctx = ctx;
     const h = HANDLERS[block.type];
     if (!h) { this.log(`"${block.type}" is not supported in the simulator yet.`); return; }
     await h.call(this, block, ctx);
@@ -161,12 +164,19 @@ export class Runtime {
       case 'math_number': case 'math_positive_number': case 'math_whole_number': return num(b.getFieldValue('NUM'));
       case 'text': return b.getFieldValue('TEXT');
       case 'data_variable': return this.getVar(b);
+      case 'argument_reporter_string_number': case 'argument_reporter_boolean': return this.getArg(b.getFieldValue('VALUE'), b.type === 'argument_reporter_boolean');
     }
     if (SELECTORS[b.type]) return b.getFieldValue('field_' + b.type);
     const r = REPORTERS[b.type];
     if (r) return r.call(this, b);
     this.log(`"${b.type}" is not supported in the simulator yet.`);
     return 0;
+  }
+
+  getArg(name, boolean) {
+    const frames = (this.ctx && this.ctx.frames) || [];
+    for (let i = frames.length - 1; i >= 0; i--) if (name in frames[i]) return frames[i][name];
+    return boolean ? false : 0;
   }
 
   getVar(block) {
@@ -296,6 +306,24 @@ const HANDLERS = {
   // Sensors
   async flippersensors_resetYaw() { this.robot.resetYaw(); },
   async flippersensors_resetTimer() { this.robot.resetTimer(); },
+
+  // My Blocks
+  async procedures_call(b, ctx) {
+    const proc = b.proc_;
+    const def = findDefinition(this.workspace, proc.proccode);
+    if (!def) { this.log(`My Block "${proc.proccode.split(' %')[0]}" has no definition.`); return; }
+    const kinds = argKinds(proc.proccode);
+    const frame = {};
+    def.proc.argumentids.forEach((id, i) => {
+      const name = def.proc.argumentnames[i];
+      frame[name] = kinds[i] === 'b' ? this.bool(b, id) : (this.value(b, id) ?? '');
+    });
+    ctx.frames = ctx.frames || [];
+    if (ctx.frames.length > 200) throw new Error('My Block calls itself too deeply.');
+    ctx.frames.push(frame);
+    try { await this.execStack(def.block.getNextBlock(), ctx); }
+    finally { ctx.frames.pop(); this.ctx = ctx; }
+  },
 
   // Variables
   async data_setvariableto(b) { this.setVar(b, this.value(b, 'VALUE') ?? ''); },

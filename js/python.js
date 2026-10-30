@@ -2,6 +2,7 @@
 // color_sensor, distance_sensor, hub.light_matrix, hub.motion_sensor, hub.button, hub.light, hub.sound, runloop).
 // Each hat block becomes its own async task so stacks run in parallel like Word Blocks.
 import { SELECTORS } from './spec.js';
+import { definitions, argKinds } from './myblocks.js';
 
 const B = window.Blockly;
 
@@ -152,6 +153,7 @@ async def wait_edge(pred):
 `;
 
 const INDENT = '    ';
+const pyIdent = (s) => String(s || '').toLowerCase().replace(/[^a-z0-9_]+/g, '_').replace(/^_+|_+$/g, '').replace(/^(\d)/, '_$1');
 const pyStr = (s) => JSON.stringify(String(s ?? ''));
 
 export function compileToPython(workspace, robotConfig) {
@@ -160,6 +162,20 @@ export function compileToPython(workspace, robotConfig) {
   const tasks = [];
   const warnings = new Set();
   const ctx = { warnings, counter: 0 };
+
+  const myBlockDefs = [];
+  // My Blocks -> async functions
+  const defs = definitions(workspace);
+  defs.forEach((d, i) => { d.pyName = 'my_block_' + (i + 1) + '_' + pyIdent(d.proc.proccode.split(' %')[0]); });
+  ctx.defs = defs;
+  for (const d of defs) {
+    const params = d.proc.argumentnames.map((n, i) => 'p_' + (pyIdent(n) || ('arg' + i)));
+    ctx.args = Object.fromEntries(d.proc.argumentnames.map((n, i) => [n, params[i]]));
+    const body = compileStack(d.block.getNextBlock(), ctx, 1);
+    ctx.args = null;
+    myBlockDefs.push([`async def ${d.pyName}(${params.join(', ')}):`, `${INDENT}# My Block "${d.proc.proccode.split(' %')[0]}"`, ...(body.length ? body : [INDENT + 'pass'])].join('\n'));
+  }
+
 
   tops.forEach((hat, i) => {
     const name = `stack_${i + 1}`;
@@ -193,7 +209,7 @@ export function compileToPython(workspace, robotConfig) {
     `\nstate['pair'] = (${pyStr(cfg.left)}, ${pyStr(cfg.right)})\n` +
     `motor_pair.pair(motor_pair.PAIR_1, PORTS[${pyStr(cfg.left)}], PORTS[${pyStr(cfg.right)}])\n`;
   const footer = tasks.length ? `\nrunloop.run(${tasks.map((t) => t + '()').join(', ')})\n` : '\n# No "when ..." hat blocks found.\n';
-  return { code: header + '\n' + out.join('\n\n') + '\n' + footer, warnings: [...warnings] };
+  return { code: header + '\n' + myBlockDefs.concat(out).join('\n\n') + '\n' + footer, warnings: [...warnings] };
 }
 
 function hatPredicate(hat, ctx) {
@@ -249,6 +265,12 @@ function expr(b, ctx) {
     }
     case 'text': return pyStr(b.getFieldValue('TEXT'));
     case 'data_variable': return `v.get(${pyStr(varName(b))}, 0)`;
+    case 'argument_reporter_string_number': case 'argument_reporter_boolean': {
+      const name = b.getFieldValue('VALUE');
+      if (ctx.args && name in ctx.args) return ctx.args[name];
+      ctx.warnings.add(`"${name}" is used outside its My Block.`);
+      return b.type === 'argument_reporter_boolean' ? 'False' : '0';
+    }
   }
   if (SELECTORS[b.type]) {
     const val = b.getFieldValue('field_' + b.type);
@@ -346,6 +368,14 @@ const STATEMENTS = {
     if (opt === 'this stack') return 'return';
     if (opt === 'other stacks') { c.warnings.add('"stop other stacks" is not supported in Python export.'); return 'pass  # stop other stacks'; }
     return ['motor_pair.stop(pair())', 'sys.exit()'];
+  },
+
+  procedures_call: (b, c) => {
+    const d = (c.defs || []).find((x) => x.proc.proccode === b.proc_.proccode);
+    if (!d) { c.warnings.add(`My Block "${b.proc_.proccode.split(' %')[0]}" has no definition.`); return 'pass  # missing My Block'; }
+    const kinds = argKinds(b.proc_.proccode);
+    const args = d.proc.argumentids.map((id, i) => (kinds[i] === 'b' ? bool(b, id, c) : (value(b, id, c) ?? '""')));
+    return `await ${d.pyName}(${args.join(', ')})`;
   },
 
   flippersensors_resetYaw: () => 'motion_sensor.reset_yaw(0)',

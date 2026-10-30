@@ -26,13 +26,15 @@ export class HubPanel {
             <div class="ro"><span class="k">pitch</span><span class="v">0°</span></div>
             <div class="ro"><span class="k">roll</span><span class="v">0°</span></div>
             <div class="ro"><span class="k">timer</span><span class="v" data-ro="timer">0.00</span></div>
+            <div class="ro match"><span class="k">match</span><span class="v" data-ro="match">2:30</span></div>
           </div>
           <div class="ports">${PORT_LETTERS.map((p) => `<div class="port" data-port="${p}"><b>${p}</b><span class="type"></span><span class="v"></span></div>`).join('')}</div>
         </div>
       </div>`;
     this.pixels = [...container.querySelectorAll('.px')];
     this.center = container.querySelector('.hub-center');
-    this.ro = { yaw: container.querySelector('[data-ro="yaw"]'), timer: container.querySelector('[data-ro="timer"]') };
+    this.ro = { yaw: container.querySelector('[data-ro="yaw"]'), timer: container.querySelector('[data-ro="timer"]'), match: container.querySelector('[data-ro="match"]') };
+    this.matchLeft = null;
     this.ports = {};
     for (const p of PORT_LETTERS) this.ports[p] = container.querySelector(`.port[data-port="${p}"]`);
 
@@ -69,7 +71,7 @@ export class HubPanel {
     const c = this.robot.config;
     for (const p of PORT_LETTERS) {
       const el = this.ports[p];
-      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : p === c.color ? 'color sensor' : p === c.distance ? 'distance' : 'motor';
+      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : p === c.color ? 'color sensor' : p === c.distance ? 'distance' : p === c.attachment ? 'arm motor' : 'motor';
       el.querySelector('.type').textContent = type;
       el.dataset.type = type;
     }
@@ -119,6 +121,12 @@ export class HubPanel {
     const r = this.robot;
     this.ro.yaw.textContent = `${r.yaw()}°`;
     this.ro.timer.textContent = r.timer().toFixed(2);
+    if (this.matchLeft !== null) {
+      const s = Math.max(0, Math.ceil(this.matchLeft));
+      this.ro.match.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+      this.ro.match.parentElement.classList.toggle('over', this.matchLeft <= 0);
+      this.ro.match.parentElement.classList.toggle('late', this.matchLeft > 0 && this.matchLeft <= 30);
+    }
     const c = r.config;
     for (const p of PORT_LETTERS) {
       const v = this.ports[p].querySelector('.v');

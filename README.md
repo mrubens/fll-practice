@@ -23,7 +23,16 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
 - **Save / Open `.llsp3`**: files written here open in the SPIKE App; the LEGO lesson files
   (Training Camp etc.) open here. Projects also autosave in the browser (My projects).
 - **Robot setup**: choose which hub ports the wheels and sensors use (default: motors C+D like the lesson
-  Driving Base, colour sensor E, distance sensor F).
+  Driving Base, colour sensor E, distance sensor F), plus an optional attachment motor shown as a front arm
+  (lifts) or side arm (sweeps) that touches the mission models.
+- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image, the mission-model boxes
+  (positions read off the Field Setup Guide placement diagram, so approximate) and the left launch area.
+  **Launch** puts the robot in the launch area, resets the models and runs the program with a 2:30 match clock.
+  The mat image comes from the public Robot Game Rulebook; replace `mat/season.png` (4 px/cm, 236 x 114 cm)
+  and edit `mat/season.json` for another season. Delete the file to get the plain practice mat back.
+- **My Blocks**: "Make a Block" with number/text and true/false inputs. Definitions, calls and argument
+  reporters are stored exactly as the SPIKE App stores them, so they round-trip through `.llsp3` files, run in
+  the simulator and compile to Python functions.
 
 ## Run it
 
@@ -66,6 +75,8 @@ against the reference implementation) but has not yet been exercised with a phys
 | `js/sim3d.js` | three.js scene, robot mesh, camera, drag-to-place |
 | `js/hub.js` | Hub panel UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
+| `js/myblocks.js` | My Blocks (Scratch procedures): block shapes, Make-a-Block dialog, mutations |
+| `mat/season.json`, `mat/season.png` | Season field: mat image, mission-model boxes, launch pose |
 | `js/python.js` | Compiles the blocks to SPIKE Python 3 (one async task per hat block) |
 | `js/ble.js` | Web Bluetooth client for the hub: COBS/XOR framing, CRC32 chunked upload, program start/stop |
 | `js/app.js` | Toolbar, project storage, main loop |
@@ -74,6 +85,5 @@ against the reference implementation) but has not yet been exercised with a phys
 
 ## Not simulated (yet)
 
-Force sensor, extra attachment motors with physical effect (motors on non-wheel ports just count
-degrees), pitch/roll (the table is flat), sound files, broadcasts, My Blocks, and the light-matrix
-pixel/brightness blocks. Those blocks still exist in the SPIKE App; they are just not in this palette.
+Force sensor, pitch/roll (the table is flat), sound files, broadcasts, and the light-matrix
+pixel/brightness blocks. Mission models are plain boxes that light up when touched; they do not move or score. Those blocks still exist in the SPIKE App; they are just not in this palette.

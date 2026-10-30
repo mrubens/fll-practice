@@ -1,7 +1,8 @@
 // Export/import of LEGO SPIKE App 3 Word Blocks project files (.llsp3).
 // Container: zip { manifest.json, scratch.sb3, icon.svg }; scratch.sb3 is a zip { project.json, <empty>.svg }.
 // Block shapes mirror files written by the SPIKE App itself.
-import { BLOCK_BY_OP, SELECTORS, PRIMITIVES, PRIMITIVE_BY_CODE, extensionOf } from './spec.js';
+import { BLOCK_BY_OP, SELECTORS, PRIMITIVES, PRIMITIVE_BY_CODE, PROCEDURE_OPS, extensionOf } from './spec.js';
+import { mutationFor, normalizeProc } from './myblocks.js';
 
 const B = window.Blockly;
 const EMPTY_ASSET = 'd41d8cd98f00b204e9800998ecf8427e'; // md5 of an empty file, as the app uses
@@ -51,6 +52,7 @@ export function workspaceToProject(workspace) {
     const id = sb3Id();
     const rec = { opcode: block.type, next: null, parent: parentId, inputs: {}, fields: {}, shadow: block.isShadow(), topLevel };
     if (topLevel) { const xy = block.getRelativeToSurfaceXY(); rec.x = Math.round(xy.x); rec.y = Math.round(xy.y); }
+    if (block.type === 'procedures_prototype' || block.type === 'procedures_call') rec.mutation = mutationFor(block);
     blocks[id] = rec;
     for (const input of block.inputList) {
       for (const f of input.fieldRow) {
@@ -76,7 +78,7 @@ export function workspaceToProject(workspace) {
 
   for (const top of workspace.getTopBlocks(true)) {
     if (top.isShadow()) continue;
-    if (!BLOCK_BY_OP[top.type] && !PRIMITIVES[top.type]) continue;
+    if (!BLOCK_BY_OP[top.type] && !PRIMITIVES[top.type] && !PROCEDURE_OPS.has(top.type)) continue;
     emitBlock(top, null, true);
   }
 
@@ -173,7 +175,8 @@ export function projectToState(project, warnings = []) {
     return Number(v) || 0;
   };
 
-  const convertShadow = (b) => {
+  const convertShadow = (b, id) => {
+    if (PROCEDURE_OPS.has(b.opcode)) return convertBlock(id);
     const prim = PRIMITIVES[b.opcode];
     if (prim) {
       const raw = (b.fields && b.fields[prim.field] && b.fields[prim.field][0]) ?? '';
@@ -205,17 +208,18 @@ export function projectToState(project, warnings = []) {
     }
     const b = blocks[ref];
     if (!b) return null;
-    return b.shadow ? convertShadow(b) : convertBlock(ref);
+    return b.shadow ? convertShadow(b, ref) : convertBlock(ref);
   };
 
   const convertBlock = (id) => {
     const b = blocks[id];
     if (!b) return null;
-    if (!BLOCK_BY_OP[b.opcode]) {
+    if (!BLOCK_BY_OP[b.opcode] && !PROCEDURE_OPS.has(b.opcode)) {
       dropped(b.opcode);
       return b.next ? convertBlock(b.next) : null;
     }
     const s = { type: b.opcode, id: B.utils.idGenerator.genUid(), fields: {}, inputs: {} };
+    if (b.mutation && (b.opcode === 'procedures_prototype' || b.opcode === 'procedures_call')) s.extraState = normalizeProc(b.mutation);
     if (b.topLevel) { s.x = Number(b.x) || 0; s.y = Number(b.y) || 0; }
     for (const [name, val] of Object.entries(b.fields || {})) {
       if (name === 'VARIABLE') s.fields[name] = { id: val[1], name: val[0], type: '' };

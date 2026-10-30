@@ -95,7 +95,11 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .hub-btn.hub-center { width: 36px; height: 36px; background: #fff; border-color: #B9C0CC; }
 .hub-btn.hub-center.lit { box-shadow: 0 0 10px 2px currentColor; }
 .hub-readouts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 8px; }
-.ro-row { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.ro-row { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 6px; }
+.ro.match .v { color: #1B7F3B; }
+.ro.match.late .v { color: #B7791F; }
+.ro.match.over .v { color: var(--stop); }
+.vt.launch { background: var(--run); color: #fff; border-color: var(--run); font-weight: 800; }
 .ro { background: #fff; border: 1px solid var(--line); border-radius: 10px; padding: 6px 8px; display: flex; flex-direction: column; gap: 2px; }
 .ro .k { font-size: 10px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .ro .v { font-size: 15px; font-weight: 800; font-variant-numeric: tabular-nums; }
@@ -173,6 +177,15 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .progress { height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
 .progress > i { display: block; height: 100%; width: 0; background: var(--accent); transition: width .15s; }
 
+/* ---- Make a Block dialog ---- */
+.mb-params { display: flex; flex-direction: column; gap: 6px; }
+.mb-param { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; }
+.mb-param .kind { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; width: 86px; }
+.mb-param input { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px; font: inherit; font-weight: 700; min-width: 0; }
+.mb-param .del { border: 0; background: none; color: var(--muted); font-size: 18px; cursor: pointer; }
+.mb-add { display: flex; gap: 6px; flex-wrap: wrap; }
+.mb-add button { border: 1px dashed #B9C0CC; background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/blockly@11.2.1/blockly.min.js"></script>
@@ -222,6 +235,7 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
     <div class="view3d-wrap">
       <div id="view3d"></div>
       <div class="view-tools">
+        <button type="button" id="btnLaunch" class="vt launch" title="Put the robot in the launch area, reset the mission models and run the program with a 2:30 match clock">Launch</button>
         <button type="button" id="btnResetPos" class="vt" title="Put the robot back in the start box">Reset position</button>
         <button type="button" id="btnTurnL" class="vt" title="Turn the robot left 15°">&#8634;</button>
         <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
