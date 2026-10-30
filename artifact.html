@@ -186,6 +186,22 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .mb-add { display: flex; gap: 6px; flex-wrap: wrap; }
 .mb-add button { border: 1px dashed #B9C0CC; background: var(--bg); border-radius: 8px; padding: 6px 10px; font-size: 12px; font-weight: 700; }
 
+/* ---- robot builder ---- */
+.builder { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); padding: 10px 12px 12px; overflow: auto; max-height: 55%; }
+.builder-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 8px; }
+.builder-head h3 { margin: 0; font-size: 15px; flex: 1; }
+.builder-presets { display: flex; gap: 6px; }
+.builder-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px; }
+.builder fieldset { border: 1px solid var(--line); border-radius: 12px; padding: 8px 10px 10px; margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.builder legend { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); padding: 0 4px; }
+.builder label { display: grid; grid-template-columns: 1fr 1.2fr; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+.builder select { font: inherit; font-weight: 700; font-size: 12px; color: var(--fg); padding: 5px 6px; border-radius: 8px; border: 1px solid var(--line); background: #fff; min-width: 0; }
+.builder .range { display: flex; align-items: center; gap: 6px; }
+.builder input[type=range] { flex: 1; min-width: 0; }
+.builder output { font-weight: 800; color: var(--fg); font-variant-numeric: tabular-nums; width: 56px; }
+.builder .hint { margin: 2px 0 0; font-size: 12px; color: var(--stop); min-height: 1em; }
+body.building #hubPanel { display: none; }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/blockly@11.2.1/blockly.min.js"></script>
@@ -206,7 +222,7 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
       <button type="button" id="btnProjects" class="tb">My projects</button>
       <div id="projectsPanel" class="popover" hidden></div>
     </div>
-    <button type="button" id="btnRobot" class="tb">Robot setup</button>
+    <button type="button" id="btnRobot" class="tb">Robot builder</button>
     <button type="button" id="btnPython" class="tb">Python</button>
     <button type="button" id="btnHub" class="tb hub-btn-connect">Connect hub</button>
     <button type="button" id="btnSendHub" class="tb primary" hidden>Send to hub</button>
@@ -245,7 +261,37 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
       <p class="view-hint">Drag the robot to move it. Drag the table to orbit, scroll or pinch to zoom. Arrow keys press the hub buttons.</p>
     </div>
     <div id="hubPanel"></div>
-  </aside>
+    <section id="builder" class="builder" hidden aria-label="Robot builder">
+      <div class="builder-head">
+        <h3>Robot builder</h3>
+        <div class="builder-presets">
+          <button type="button" class="tb" data-preset="training-camp">Training Camp preset</button>
+          <button type="button" class="tb" data-preset="big-wheels">Big wheels + arm</button>
+        </div>
+        <button type="button" id="builderDone" class="tb primary">Done</button>
+      </div>
+      <div class="builder-grid">
+        <fieldset><legend>Drive</legend>
+          <label>Wheels <select id="bWheel"></select></label>
+          <label>Track width <span class="range"><input id="bTrack" type="range" min="8" max="20" step="0.2"><output id="bTrackOut">11.2 cm</output></span></label>
+          <label>Hub <select id="bHub"><option value="flat">flat, display up</option><option value="upright">upright, display facing back</option></select></label>
+          <label>Left wheel motor <select id="bLeft"></select></label>
+          <label>Right wheel motor <select id="bRight"></select></label>
+        </fieldset>
+        <fieldset><legend>Sensors</legend>
+          <label>Color sensor port <select id="bColorPort"></select></label>
+          <label>Color sensor mount <select id="bColorMount"></select></label>
+          <label>Distance sensor port <select id="bDistPort"></select></label>
+          <label>Distance sensor mount <select id="bDistMount"></select></label>
+        </fieldset>
+        <fieldset><legend>Attachment</legend>
+          <label>Module <select id="bModule"></select></label>
+          <label>Mount point <select id="bMount"></select></label>
+          <label>Motor port <select id="bArmPort"></select></label>
+          <p class="hint" id="bIssues"></p>
+        </fieldset>
+      </div>
+    </section>
 </main>
 <div id="toasts" aria-live="polite"></div>
 <input type="file" id="fileOpen" accept=".llsp3,application/zip" hidden>

@@ -22,9 +22,12 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
   and `when <condition>` hats fire while the program runs, loops yield once per iteration, running stacks glow.
 - **Save / Open `.llsp3`**: files written here open in the SPIKE App; the LEGO lesson files
   (Training Camp etc.) open here. Projects also autosave in the browser (My projects).
-- **Robot setup**: choose which hub ports the wheels and sensors use (default: motors C+D like the lesson
-  Driving Base, colour sensor E, distance sensor F), plus an optional attachment motor shown as a front arm
-  (lifts) or side arm (sweeps) that touches the mission models.
+- **Robot builder**: a snap-together robot from a few parameters, previewed live in the 3D view: wheel size
+  (5.6 or 8.8 cm), track width, hub flat or upright, hub ports, colour-sensor and distance-sensor mount points,
+  and an attachment module (arm, sweeper, forklift or plow blade) on a front/left/right/back mount. The
+  geometry, sensor positions, cm-per-rotation default and attachment physics all derive from it. The build is
+  saved with the project and inside exported `.llsp3` files (as an extra `spikesim-build.json` entry the SPIKE
+  App ignores). The Training Camp Driving Base is a preset so the LEGO lessons still match.
 - **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image, the mission-model boxes
   (positions read off the Field Setup Guide placement diagram, so approximate) and the left launch area.
   **Launch** puts the robot in the launch area, resets the models and runs the program with a 2:30 match clock.
@@ -76,6 +79,7 @@ against the reference implementation) but has not yet been exercised with a phys
 | `js/hub.js` | Hub panel UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
 | `js/myblocks.js` | My Blocks (Scratch procedures): block shapes, Make-a-Block dialog, mutations |
+| `js/build.js` | Robot build parameters, presets, derived geometry and validation |
 | `mat/season.json`, `mat/season.png` | Season field: mat image, mission-model boxes, launch pose |
 | `js/python.js` | Compiles the blocks to SPIKE Python 3 (one async task per hat block) |
 | `js/ble.js` | Web Bluetooth client for the hub: COBS/XOR framing, CRC32 chunked upload, program start/stop |

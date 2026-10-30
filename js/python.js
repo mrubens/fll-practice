@@ -207,6 +207,8 @@ export function compileToPython(workspace, robotConfig) {
   const cfg = robotConfig || { left: 'A', right: 'B' };
   const header = HELPERS +
     `\nstate['pair'] = (${pyStr(cfg.left)}, ${pyStr(cfg.right)})\n` +
+    `state['cm_per_rot'] = ${Number(cfg.calibration) || 17.5}\n` +
+    (cfg.hub === 'upright' ? `# Hub mounted upright: pick the face pointing up, e.g. motion_sensor.set_yaw_face(motion_sensor.FRONT)\n` : '') +
     `motor_pair.pair(motor_pair.PAIR_1, PORTS[${pyStr(cfg.left)}], PORTS[${pyStr(cfg.right)}])\n`;
   const footer = tasks.length ? `\nrunloop.run(${tasks.map((t) => t + '()').join(', ')})\n` : '\n# No "when ..." hat blocks found.\n';
   return { code: header + '\n' + myBlockDefs.concat(out).join('\n\n') + '\n' + footer, warnings: [...warnings] };

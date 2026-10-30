@@ -71,7 +71,7 @@ export class HubPanel {
     const c = this.robot.config;
     for (const p of PORT_LETTERS) {
       const el = this.ports[p];
-      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : p === c.color ? 'color sensor' : p === c.distance ? 'distance' : p === c.attachment ? 'arm motor' : 'motor';
+      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : p === c.color ? 'color sensor' : p === c.distance ? 'distance' : p === c.attachment ? 'attachment' : 'motor';
       el.querySelector('.type').textContent = type;
       el.dataset.type = type;
     }

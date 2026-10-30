@@ -9,6 +9,7 @@ import { exportLlsp3, importLlsp3 } from './llsp3.js';
 import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
+import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 
 const B = window.Blockly;
 const $ = (sel) => document.querySelector(sel);
@@ -43,7 +44,9 @@ const modal = installDialogs();
 const workspace = createWorkspace($('#blocklyDiv'));
 const world = new World();
 const robot = new Robot(world);
-if (store.config) Object.assign(robot.config, store.config);
+// Older saves kept just the ports; fold them into a build.
+if (store.config && !store.lastBuild) { store.lastBuild = normalizeBuild({ ports: store.config }); delete store.config; }
+robot.applyBuild(store.lastBuild || defaultBuild());
 const sim = new Sim3D($('#view3d'), world, robot);
 const hub = new HubPanel($('#hubPanel'), robot);
 const runtime = new Runtime({
@@ -81,14 +84,17 @@ function loadProject(id) {
     B.serialization.workspaces.load(p.state, workspace);
   } finally { B.Events.enable(); }
   workspace.scroll(24, 16);
+  robot.applyBuild(p.build || store.lastBuild || defaultBuild());
+  if (hub.updatePortTypes) hub.updatePortTypes();
+  if (!runtime.running) robot.resetPose();
   nameInput.value = p.name;
   saveStore();
   document.title = `${p.name} · SPIKE Sim`;
 }
 
-function createProject(name, state) {
+function createProject(name, state, build) {
   const id = uid();
-  store.projects[id] = { id, name, state, updated: Date.now() };
+  store.projects[id] = { id, name, state, updated: Date.now(), build: normalizeBuild(build || store.lastBuild || defaultBuild()) };
   loadProject(id);
   return id;
 }
@@ -156,7 +162,7 @@ $('#btnSave').addEventListener('click', async () => {
   const p = currentProject();
   persistWorkspace();
   try {
-    const blob = await exportLlsp3(workspace, p.name);
+    const blob = await exportLlsp3(workspace, p.name, { build: robot.build });
     const base = p.name.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'Project';
     const downloads = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null;
     if (downloads) {
@@ -193,8 +199,8 @@ document.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataT
 
 async function openFile(file) {
   try {
-    const { name, state, warnings } = await importLlsp3(await file.arrayBuffer());
-    createProject(name || file.name.replace(/\.llsp3$/i, ''), state);
+    const { name, state, warnings, build } = await importLlsp3(await file.arrayBuffer());
+    createProject(name || file.name.replace(/\.llsp3$/i, ''), state, build);
     if (warnings.length) toast(warnings.slice(0, 3).join(' '), 'warn');
     else toast(`Opened ${file.name}`);
   } catch (err) {
@@ -203,43 +209,74 @@ async function openFile(file) {
   }
 }
 
-// ---------- robot setup ----------
-$('#btnRobot').addEventListener('click', async () => {
-  const cfg = { ...robot.config };
-  const back = document.createElement('div');
-  back.className = 'spike-modal-back';
-  const opts = (sel) => PORT_LETTERS.map((p) => `<option value="${p}"${p === sel ? ' selected' : ''}>${p}</option>`).join('');
-  back.innerHTML = `<div class="spike-modal" role="dialog" aria-modal="true">
-    <h3>Robot setup</h3>
-    <p class="hint">Which hub ports your real robot uses. The Driving Base from the lessons uses motors C + D.</p>
-    <div class="form">
-      <label>Left wheel motor <select id="cfgLeft">${opts(cfg.left)}</select></label>
-      <label>Right wheel motor <select id="cfgRight">${opts(cfg.right)}</select></label>
-      <label>Color sensor <select id="cfgColor">${opts(cfg.color)}</select></label>
-      <label>Distance sensor <select id="cfgDist">${opts(cfg.distance)}</select></label>
-      <label>Attachment motor <select id="cfgArm"><option value="">none</option>${opts(cfg.attachment)}</select></label>
-      <label>Attachment mount <select id="cfgMount"><option value="front"${cfg.attachmentMount !== 'side' ? ' selected' : ''}>front arm (lifts)</option><option value="side"${cfg.attachmentMount === 'side' ? ' selected' : ''}>side arm (sweeps)</option></select></label>
-    </div>
-    <p class="hint"><button type="button" class="tb" id="cfgPreset">Training Camp preset</button> motors C+D, color E, distance F, no attachment.</p>
-    <div class="btns"><button type="button" class="cancel">Cancel</button><button type="button" class="ok">Save</button></div>
-  </div>`;
-  document.body.appendChild(back);
-  back.querySelector('.cancel').addEventListener('click', () => back.remove());
-  back.querySelector('#cfgPreset').addEventListener('click', () => {
-    $('#cfgLeft').value = 'C'; $('#cfgRight').value = 'D'; $('#cfgColor').value = 'E'; $('#cfgDist').value = 'F'; $('#cfgArm').value = ''; $('#cfgMount').value = 'front';
+// ---------- robot builder ----------
+const builder = $('#builder');
+const B$ = (id) => document.getElementById(id);
+const portOptions = (sel, allowNone) => (allowNone ? '<option value="">none</option>' : '') + PORT_LETTERS.map((p) => `<option value="${p}"${p === sel ? ' selected' : ''}>${p}</option>`).join('');
+let buildOpen = false;
+function fillBuilder(b) {
+  B$('bWheel').innerHTML = Object.entries(WHEELS).map(([k, w]) => `<option value="${k}"${k === b.wheel ? ' selected' : ''}>${w.label}</option>`).join('');
+  B$('bTrack').value = b.track; B$('bTrackOut').value = `${b.track.toFixed(1)} cm`;
+  B$('bHub').value = b.hub;
+  B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
+  B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
+  B$('bColorMount').innerHTML = Object.entries(COLOR_MOUNTS).map(([k, l]) => `<option value="${k}"${k === b.colorMount ? ' selected' : ''}>${l}</option>`).join('');
+  B$('bDistMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.distanceMount ? ' selected' : ''}>${m}</option>`).join('');
+  B$('bModule').innerHTML = Object.entries(MODULES).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
+  B$('bMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.attachment.mount ? ' selected' : ''}>${m}</option>`).join('');
+  B$('bArmPort').innerHTML = portOptions(b.ports.attachment, true);
+  const motor = MODULES[b.attachment.module].motor;
+  B$('bArmPort').disabled = !motor; B$('bMount').disabled = b.attachment.module === 'none';
+  B$('bIssues').textContent = validateBuild(b).join(' ');
+}
+function readBuilder() {
+  return normalizeBuild({
+    preset: null, name: 'Custom robot',
+    wheel: B$('bWheel').value, track: Number(B$('bTrack').value), hub: B$('bHub').value,
+    ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value, attachment: B$('bArmPort').value || null },
+    colorMount: B$('bColorMount').value, distanceMount: B$('bDistMount').value,
+    attachment: { module: B$('bModule').value, mount: B$('bMount').value },
   });
-  back.querySelector('.ok').addEventListener('click', () => {
-    const next = { left: $('#cfgLeft').value, right: $('#cfgRight').value, color: $('#cfgColor').value, distance: $('#cfgDist').value, attachment: $('#cfgArm').value || null, attachmentMount: $('#cfgMount').value };
-    const used = [next.left, next.right, next.color, next.distance].concat(next.attachment ? [next.attachment] : []);
-    if (new Set(used).size < used.length) { toast('Each port can only be used once.', 'error'); return; }
-    Object.assign(robot.config, next);
-    store.config = next;
-    saveStore();
-    hub.updatePortTypes();
-    back.remove();
-    toast(`Robot: wheels ${next.left}+${next.right}, color ${next.color}, distance ${next.distance}${next.attachment ? ', arm ' + next.attachment : ''}`);
-  });
-});
+}
+function applyBuildFromUi(b) {
+  fillBuilder(b);
+  robot.applyBuild(b);
+  hub.updatePortTypes();
+  if (!runtime.running) robot.setPose(robot.x, robot.y);
+  const p = currentProject();
+  if (p) { p.build = b; p.updated = Date.now(); }
+  store.lastBuild = b;
+  saveStore();
+}
+builder.addEventListener('input', () => applyBuildFromUi(readBuilder()));
+builder.addEventListener('change', () => applyBuildFromUi(readBuilder()));
+builder.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => {
+  applyBuildFromUi(normalizeBuild({ ...PRESETS[btn.dataset.preset], preset: btn.dataset.preset }));
+  toast(`${PRESETS[btn.dataset.preset].name} loaded.`);
+}));
+let cameraBefore = null;
+function openBuilder() {
+  runtime.stop();
+  fillBuilder(robot.build);
+  builder.hidden = false;
+  document.body.classList.add('building');
+  buildOpen = true;
+  cameraBefore = { pos: sim.camera.position.clone(), target: sim.controls.target.clone(), follow: sim.follow };
+  sim.follow = false;
+  const r = robot;
+  sim.controls.target.set(r.x, 4, r.y);
+  sim.camera.position.set(r.x + 28, 26, r.y + 34);
+}
+function closeBuilder() {
+  builder.hidden = true;
+  document.body.classList.remove('building');
+  buildOpen = false;
+  if (cameraBefore) { sim.camera.position.copy(cameraBefore.pos); sim.controls.target.copy(cameraBefore.target); sim.follow = cameraBefore.follow; }
+  const issues = validateBuild(robot.build);
+  if (issues.length) toast(issues.join(' '), 'warn');
+}
+$('#btnRobot').addEventListener('click', () => (buildOpen ? closeBuilder() : openBuilder()));
+$('#builderDone').addEventListener('click', closeBuilder);
 
 // ---------- workspace tools ----------
 $('#btnFit').addEventListener('click', () => workspace.zoomToFit());
@@ -266,7 +303,7 @@ $('#btnCamera').addEventListener('click', () => { sim.follow = false; $('#btnFol
 
 // ---------- Python view ----------
 function currentPython() {
-  const res = compilePython(workspace, robot.config);
+  const res = compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub });
   if (res.warnings.length) toast(res.warnings.slice(0, 2).join(' '), 'warn');
   return res.code;
 }
@@ -416,4 +453,4 @@ else createProject(SAMPLE_NAME, SAMPLE_STATE);
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
-window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, compilePython: () => compilePython(workspace, robot.config), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name), importLlsp3, loadProject, createProject };
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };

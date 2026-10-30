@@ -3,12 +3,10 @@
 import { START_POSE } from './world.js';
 import { COLOR_BY_CODE } from './spec.js';
 import { textColumns, charMatrix } from './matrixfont.js';
+import { defaultBuild, normalizeBuild, geometryFor, portsOf } from './build.js';
 
 export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
 const ACCEL = 3600;                       // deg/s^2 ramp
-const WHEEL_DIAMETER = 5.6;               // cm (SPIKE Prime small wheel)
-const TRACK = 11.2;                       // cm between wheel centres
-const WHEEL_CIRC = Math.PI * WHEEL_DIAMETER;
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const DEG = Math.PI / 180;
@@ -17,11 +15,19 @@ const norm180 = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
 export class Robot {
   constructor(world) {
     this.world = world;
-    this.config = { left: 'C', right: 'D', color: 'E', distance: 'F', attachment: null, attachmentMount: 'front' };
-    this.geom = { radius: 9, colorOffset: 7.5, distanceOffset: 9.5, distanceHeight: 5, armLength: 12 };
     this.listeners = {};
+    this.applyBuild(defaultBuild());
     this.reset();
     this.resetPose();
+  }
+
+  /** Apply a robot build (see build.js): ports and geometry derive from it. */
+  applyBuild(build) {
+    this.build = normalizeBuild(build);
+    this.geom = geometryFor(this.build);
+    this.config = portsOf(this.build);
+    if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
+    this.emit('build');
   }
 
   on(event, fn) { (this.listeners[event] ||= []).push(fn); }
@@ -32,7 +38,7 @@ export class Robot {
     this.time = 0;
     this.motors = {};
     for (const p of PORT_LETTERS) this.motors[p] = { velocity: 0, target: 0, angle: 0, speedPct: 75, goal: null };
-    this.movement = { pair: null, speedPct: 50, cmPerRotation: 17.5, goal: null, hint: null };
+    this.movement = { pair: null, speedPct: 50, cmPerRotation: this.geom ? this.geom.calibration : 17.5, goal: null, hint: null };
     this.hub = {
       yawOffset: 0, timerStart: 0,
       matrix: new Array(25).fill(0), centerColor: null,
@@ -185,44 +191,58 @@ export class Robot {
 
   // ---------------- sensors ----------------
 
-  _pointAhead(offset) {
+  /** World point for a robot-relative offset (fwd along the heading, lat towards the robot's right). */
+  _point(fwd, lat) {
     const h = this.heading * DEG;
-    return [this.x + Math.cos(h) * offset, this.y + Math.sin(h) * offset];
+    return [this.x + Math.cos(h) * fwd - Math.sin(h) * lat, this.y + Math.sin(h) * fwd + Math.cos(h) * lat];
   }
 
   colorSample(port) {
     if (String(port).toUpperCase() !== this.config.color) return null;
-    const [px, py] = this._pointAhead(this.geom.colorOffset);
+    const [px, py] = this._point(this.geom.color.fwd, this.geom.color.lat);
     return classify(this.world.sampleRGB(px, py));
   }
 
   /** Distance in cm from the distance sensor, or null when nothing is in range / no sensor on that port. */
   distanceCm(port) {
     if (String(port).toUpperCase() !== this.config.distance) return null;
-    const h = this.heading * DEG;
-    const [px, py] = this._pointAhead(this.geom.distanceOffset);
-    const d = this.world.raycast(px, py, Math.cos(h), Math.sin(h), 200);
+    const d0 = this.geom.distance;
+    const a = (this.heading + d0.angle) * DEG;
+    const [px, py] = this._point(d0.fwd, d0.lat);
+    const d = this.world.raycast(px, py, Math.cos(a), Math.sin(a), 200);
     return Number.isFinite(d) ? Math.max(0, d) : null;
   }
 
-  /** Attachment arm state: pivot (cm), tip (cm), angle (deg), tip height (cm) and whether it is "down" near the mat. */
+  /**
+   * Attachment state: pivot and tip (cm), motor angle, tip height and whether it is low enough to touch models.
+   * Modules: arm (lifts about a horizontal axis), sweeper (swings about a vertical axis), lift (slides up), plow (fixed).
+   */
   arm() {
+    const a0 = this.geom.attachment;
+    if (!a0 || a0.module === 'none') return null;
     const port = this.config.attachment;
-    if (!port || !this.motors[port]) return null;
-    const angle = this.motors[port].angle;
-    const h = this.heading * DEG;
-    const L = this.geom.armLength;
-    if (this.config.attachmentMount === 'side') {
-      // Horizontal sweep around a vertical axis on the robot's right side; angle 0 points sideways (right).
-      const px = this.x + Math.cos(h) * 1 - Math.sin(h) * 7.5, py = this.y + Math.sin(h) * 1 + Math.cos(h) * 7.5;
-      const a = h + Math.PI / 2 - angle * DEG;
-      return { mount: 'side', px, py, tx: px + Math.cos(a) * L, ty: py + Math.sin(a) * L, angle, tipHeight: 3, down: true };
+    const motor = port ? this.motors[port] : null;
+    const angle = motor ? motor.angle : 0;
+    const [px, py] = this._point(a0.fwd, a0.lat);
+    const out = (this.heading + a0.angle) * DEG;
+    const L = a0.length;
+    const base = { module: a0.module, mount: a0.mount, px, py, angle };
+    switch (a0.module) {
+      case 'sweeper': {
+        const dir = out - angle * DEG;
+        return { ...base, tx: px + Math.cos(dir) * L, ty: py + Math.sin(dir) * L, tipHeight: 3, down: true };
+      }
+      case 'lift': {
+        const height = Math.max(1.5, Math.min(16, 1.5 + (angle / 360) * 6));
+        return { ...base, tx: px + Math.cos(out) * L * 0.6, ty: py + Math.sin(out) * L * 0.6, tipHeight: height, down: height < 12, liftHeight: height };
+      }
+      case 'plow':
+        return { ...base, tx: px + Math.cos(out) * 4, ty: py + Math.sin(out) * 4, tipHeight: 1.5, down: true };
+      default: {
+        const a = angle * DEG;
+        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight: a0.height + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
+      }
     }
-    // Front arm: lifts about a horizontal axis at the front; angle 0 = horizontal, positive = up.
-    const a = angle * DEG;
-    const reach = Math.cos(a) * L;
-    const px = this.x + Math.cos(h) * 8, py = this.y + Math.sin(h) * 8;
-    return { mount: 'front', px, py, tx: px + Math.cos(h) * reach, ty: py + Math.sin(h) * reach, angle, tipHeight: 6 + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
   }
 
   yaw() { return Math.round(norm180(this.heading - this.hub.yawOffset)); }
@@ -328,10 +348,11 @@ export class Robot {
       }
     }
     // Kinematics from the configured wheel motors.
-    const vL = (this.motors[this.config.left].velocity / 360) * WHEEL_CIRC;
-    const vR = (this.motors[this.config.right].velocity / 360) * WHEEL_CIRC;
+    const circ = Math.PI * this.geom.wheelDiameter;
+    const vL = (this.motors[this.config.left].velocity / 360) * circ;
+    const vR = (this.motors[this.config.right].velocity / 360) * circ;
     const v = (vL + vR) / 2;
-    const w = (vL - vR) / TRACK; // rad/s, clockwise positive (y axis points down)
+    const w = (vL - vR) / this.geom.track; // rad/s, clockwise positive (y axis points down)
     this.heading += (w * dt) / DEG;
     const h = this.heading * DEG;
     const nx = this.x + Math.cos(h) * v * dt;
@@ -342,7 +363,7 @@ export class Robot {
     if (arm && arm.down) {
       for (const o of this.world.obstacles) {
         if (arm.tipHeight > o.h) continue;
-        const push = this.world.circleBoxPush(arm.tx, arm.ty, 2, o);
+        const push = this.world.circleBoxPush(arm.tx, arm.ty, arm.module === 'plow' ? 5 : 2, o);
         if (!push) continue;
         this.armContact = o;
         o.touched = this.time;

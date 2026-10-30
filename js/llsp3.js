@@ -101,7 +101,7 @@ export function workspaceToProject(workspace) {
   return { project, extensions };
 }
 
-export async function exportLlsp3(workspace, name) {
+export async function exportLlsp3(workspace, name, extras = {}) {
   const JSZip = window.JSZip;
   const { project, extensions } = workspaceToProject(workspace);
   const sb3 = new JSZip();
@@ -122,6 +122,7 @@ export async function exportLlsp3(workspace, name) {
   zip.file('manifest.json', JSON.stringify(manifest), { compression: 'DEFLATE' });
   zip.file('scratch.sb3', sb3Data, { compression: 'DEFLATE' });
   zip.file('icon.svg', ICON_SVG, { compression: 'DEFLATE' });
+  if (extras.build) zip.file('spikesim-build.json', JSON.stringify(extras.build), { compression: 'DEFLATE' });
   return zip.generateAsync({ type: 'blob', mimeType: 'application/zip' });
 }
 
@@ -141,7 +142,10 @@ export async function importLlsp3(data) {
   const project = JSON.parse(await sb3.file('project.json').async('string'));
   const warnings = [];
   const state = projectToState(project, warnings);
-  return { name: manifest.name || 'Project', state, warnings };
+  let build = null;
+  const buildFile = zip.file('spikesim-build.json');
+  if (buildFile) { try { build = JSON.parse(await buildFile.async('string')); } catch { build = null; } }
+  return { name: manifest.name || 'Project', state, warnings, build };
 }
 
 export function projectToState(project, warnings = []) {

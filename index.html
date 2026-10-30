@@ -29,7 +29,7 @@
       <button type="button" id="btnProjects" class="tb">My projects</button>
       <div id="projectsPanel" class="popover" hidden></div>
     </div>
-    <button type="button" id="btnRobot" class="tb">Robot setup</button>
+    <button type="button" id="btnRobot" class="tb">Robot builder</button>
     <button type="button" id="btnPython" class="tb">Python</button>
     <button type="button" id="btnHub" class="tb hub-btn-connect">Connect hub</button>
     <button type="button" id="btnSendHub" class="tb primary" hidden>Send to hub</button>
@@ -68,7 +68,37 @@
       <p class="view-hint">Drag the robot to move it. Drag the table to orbit, scroll or pinch to zoom. Arrow keys press the hub buttons.</p>
     </div>
     <div id="hubPanel"></div>
-  </aside>
+    <section id="builder" class="builder" hidden aria-label="Robot builder">
+      <div class="builder-head">
+        <h3>Robot builder</h3>
+        <div class="builder-presets">
+          <button type="button" class="tb" data-preset="training-camp">Training Camp preset</button>
+          <button type="button" class="tb" data-preset="big-wheels">Big wheels + arm</button>
+        </div>
+        <button type="button" id="builderDone" class="tb primary">Done</button>
+      </div>
+      <div class="builder-grid">
+        <fieldset><legend>Drive</legend>
+          <label>Wheels <select id="bWheel"></select></label>
+          <label>Track width <span class="range"><input id="bTrack" type="range" min="8" max="20" step="0.2"><output id="bTrackOut">11.2 cm</output></span></label>
+          <label>Hub <select id="bHub"><option value="flat">flat, display up</option><option value="upright">upright, display facing back</option></select></label>
+          <label>Left wheel motor <select id="bLeft"></select></label>
+          <label>Right wheel motor <select id="bRight"></select></label>
+        </fieldset>
+        <fieldset><legend>Sensors</legend>
+          <label>Color sensor port <select id="bColorPort"></select></label>
+          <label>Color sensor mount <select id="bColorMount"></select></label>
+          <label>Distance sensor port <select id="bDistPort"></select></label>
+          <label>Distance sensor mount <select id="bDistMount"></select></label>
+        </fieldset>
+        <fieldset><legend>Attachment</legend>
+          <label>Module <select id="bModule"></select></label>
+          <label>Mount point <select id="bMount"></select></label>
+          <label>Motor port <select id="bArmPort"></select></label>
+          <p class="hint" id="bIssues"></p>
+        </fieldset>
+      </div>
+    </section>
 </main>
 <div id="toasts" aria-live="polite"></div>
 <input type="file" id="fileOpen" accept=".llsp3,application/zip" hidden>

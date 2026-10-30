@@ -94,6 +94,7 @@ export class Sim3D {
     this.installDrag();
     this.matrixDirty = true;
     robot.on('matrix', () => { this.matrixDirty = true; });
+    robot.on('build', () => this.buildRobot());
   }
 
   buildTable() {
@@ -157,92 +158,112 @@ export class Sim3D {
   }
 
   buildRobot() {
+    if (this.robotGroup) { this.scene.remove(this.robotGroup); this.robotGroup = null; }
+    const r = this.robot, build = r.build, geom = r.geom;
     const g = new THREE.Group();
+    const body = new THREE.Group();          // everything that rides on the wheels
+    body.position.y = geom.lift;
+    g.add(body);
     const grey = 0xD9DEE6, dark = 0x2A2F3A, yellow = 0xFFD500;
+    const halfTrack = geom.track / 2;
+    const chassisW = Math.max(13, geom.track + 1.6);
 
-    const chassis = box(16, 2.4, 13, grey); chassis.position.set(-0.5, 3.4, 0); g.add(chassis);
-    const motorL = box(6, 4, 3.6, 0xC3C9D3); motorL.position.set(0, 3.2, 3.6); g.add(motorL);
-    const motorR = box(6, 4, 3.6, 0xC3C9D3); motorR.position.set(0, 3.2, -3.6); g.add(motorR);
+    const chassis = box(16, 2.4, chassisW - 3, grey); chassis.position.set(-0.5, 3.4, 0); body.add(chassis);
+    for (const side of [1, -1]) {
+      const motor = box(6, 4, 3.6, 0xC3C9D3); motor.position.set(0, 3.2, side * (halfTrack - 2.2)); body.add(motor);
+    }
 
-    const hub = box(11.2, 3.2, 8.8, yellow); hub.position.set(-1, 6.2, 0); g.add(hub);
-    const top = box(11, 0.5, 8.6, 0xF7F8FA); top.position.set(-1, 8.05, 0); g.add(top);
-
-    // LED matrix (canvas texture) on the hub top.
+    // Hub: flat (display up) or upright (display facing back, standing on its port end).
+    const hubGroup = new THREE.Group();
+    const hub = box(11.2, 3.2, 8.8, yellow); hub.position.set(0, 1.6, 0); hubGroup.add(hub);
+    const top = box(11, 0.5, 8.6, 0xF7F8FA); top.position.set(0, 3.45, 0); hubGroup.add(top);
     const mc = document.createElement('canvas');
     mc.width = 160; mc.height = 160;
     this.matrixCanvas = mc;
     this.matrixTex = new THREE.CanvasTexture(mc);
     this.matrixTex.colorSpace = THREE.SRGBColorSpace;
     const matrix = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4), new THREE.MeshBasicMaterial({ map: this.matrixTex }));
-    matrix.rotation.x = -Math.PI / 2;
-    matrix.rotation.z = -Math.PI / 2;
-    matrix.position.set(0.6, 8.32, 0);
-    g.add(matrix);
-
-    // Hub buttons.
-    const btn = (x, z, color, r = 0.8) => {
-      const m = new THREE.Mesh(new THREE.CylinderGeometry(r, r, 0.4, 20), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
-      m.position.set(x, 8.45, z);
-      g.add(m);
-      return m;
+    matrix.rotation.x = -Math.PI / 2; matrix.rotation.z = -Math.PI / 2;
+    matrix.position.set(1.6, 3.72, 0);
+    hubGroup.add(matrix);
+    const btn = (x, z, color, rad = 0.8) => {
+      const m = new THREE.Mesh(new THREE.CylinderGeometry(rad, rad, 0.4, 20), new THREE.MeshStandardMaterial({ color, roughness: 0.5 }));
+      m.position.set(x, 3.85, z); hubGroup.add(m); return m;
     };
-    btn(-4.3, 2.6, 0xC9CED8); btn(-4.3, -2.6, 0xC9CED8);
-    this.centerButton = btn(-4.3, 0, 0xFFFFFF, 1.0);
+    btn(-3.3, 2.6, 0xC9CED8); btn(-3.3, -2.6, 0xC9CED8);
+    this.centerButton = btn(-3.3, 0, 0xFFFFFF, 1.0);
+    if (build.hub === 'upright') { hubGroup.rotation.z = Math.PI / 2; hubGroup.position.set(-4.5, 4.6 + 5.6, 0); }
+    else hubGroup.position.set(-1, 4.6, 0);
+    body.add(hubGroup);
 
-    // Wheels: group rotates about z; inner cylinder axis aligned with z.
+    // Wheels (in the root group: they sit on the mat whatever the size).
     this.wheels = [];
     for (const side of [1, -1]) {
       const wg = new THREE.Group();
-      const tire = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 2.8, 28), new THREE.MeshStandardMaterial({ color: 0x23272F, roughness: 0.9 }));
-      tire.rotation.x = Math.PI / 2;
-      tire.castShadow = true;
-      const rim = new THREE.Mesh(new THREE.CylinderGeometry(1.7, 1.7, 3.0, 20), new THREE.MeshStandardMaterial({ color: yellow, roughness: 0.6 }));
+      const tire = new THREE.Mesh(new THREE.CylinderGeometry(geom.wheelRadius, geom.wheelRadius, 2.8, 28), new THREE.MeshStandardMaterial({ color: 0x23272F, roughness: 0.9 }));
+      tire.rotation.x = Math.PI / 2; tire.castShadow = true;
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(geom.wheelRadius * 0.6, geom.wheelRadius * 0.6, 3.0, 20), new THREE.MeshStandardMaterial({ color: yellow, roughness: 0.6 }));
       rim.rotation.x = Math.PI / 2;
-      const spoke = box(2.4, 0.5, 3.1, 0x6B7280);
+      const spoke = box(geom.wheelRadius * 0.85, 0.5, 3.1, 0x6B7280);
       wg.add(tire, rim, spoke);
-      wg.position.set(0, 2.8, side * 5.6);
+      wg.position.set(0, geom.wheelRadius, side * halfTrack);
       g.add(wg);
       this.wheels.push(wg);
     }
-
     const caster = new THREE.Mesh(new THREE.SphereGeometry(1.4, 16, 12), new THREE.MeshStandardMaterial({ color: dark, roughness: 0.4 }));
-    caster.position.set(-7, 1.4, 0);
-    caster.castShadow = true;
-    g.add(caster);
+    caster.position.set(-7, 1.4, 0); caster.castShadow = true; g.add(caster);
+    if (geom.lift > 0.5) { const leg = box(2, geom.lift, 2, grey); leg.position.set(-7, 2.8 + geom.lift / 2, 0); g.add(leg); }
 
-    // Distance sensor (two eyes) at the front.
-    const ds = box(2.2, 3.2, 5.2, 0xF7F8FA); ds.position.set(8.2, 5.6, 0); g.add(ds);
+    // Distance sensor at its mount, facing out.
+    const d = geom.distance;
+    const ds = new THREE.Group();
+    const dsBox = box(2.2, 3.2, 5.2, 0xF7F8FA); ds.add(dsBox);
     for (const z of [1.45, -1.45]) {
       const eye = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.4, 20), new THREE.MeshStandardMaterial({ color: 0x1F2937, roughness: 0.3 }));
-      eye.rotation.z = Math.PI / 2;
-      eye.position.set(9.4, 5.6, z);
-      g.add(eye);
+      eye.rotation.z = Math.PI / 2; eye.position.set(1.2, 0, z); ds.add(eye);
     }
+    ds.position.set(d.fwd - 1.2, 5.6, d.lat);
+    ds.rotation.y = -d.angle * DEG;
+    body.add(ds);
 
     // Colour sensor pointing down, with a disc showing what it sees.
-    const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(7.5, 2.3, 0); g.add(cs);
+    const c = geom.color;
+    const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(c.fwd, 2.3, c.lat); body.add(cs);
     this.sensorDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     this.sensorDisc.rotation.x = -Math.PI / 2;
-    this.sensorDisc.position.set(7.5, 0.08, 0);
+    this.sensorDisc.position.set(c.fwd, 0.08, c.lat);
     g.add(this.sensorDisc);
 
-    // Attachment arm (shown when a port is assigned in Robot setup).
+    // Attachment module at its mount point.
+    const a = geom.attachment;
     this.armPivot = new THREE.Group();
+    this.armMoving = new THREE.Group();
+    this.armPivot.add(this.armMoving);
     const armMat = new THREE.MeshStandardMaterial({ color: 0xC3C9D3, roughness: 0.6 });
-    const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat);
-    beam.position.x = 6;
-    beam.castShadow = true;
-    const paddle = new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), new THREE.MeshStandardMaterial({ color: 0xE3000B, roughness: 0.6 }));
-    paddle.position.x = 12;
-    paddle.castShadow = true;
-    const motorBody = new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat);
-    this.armPivot.add(beam, paddle, motorBody);
-    this.armPivot.visible = false;
-    g.add(this.armPivot);
+    const red = new THREE.MeshStandardMaterial({ color: 0xE3000B, roughness: 0.6 });
+    if (a.module === 'arm' || a.module === 'sweeper') {
+      const beam = new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat); beam.position.x = 6;
+      const paddle = new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red); paddle.position.x = 12;
+      this.armMoving.add(beam, paddle);
+      this.armPivot.add(new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
+    } else if (a.module === 'lift') {
+      const mast = new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat); mast.position.set(1, 3, 0);
+      const fork = new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 7), red); fork.position.set(5, 0, 0);
+      this.armPivot.add(mast); this.armMoving.add(fork);
+    } else if (a.module === 'plow') {
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red); blade.position.set(4, -2.5, 0);
+      const strut = new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat); strut.position.set(2, 0, 0);
+      this.armPivot.add(blade, strut);
+    }
+    this.armPivot.visible = a.module !== 'none';
+    this.armPivot.position.set(a.fwd, 6, a.lat);
+    this.armPivot.rotation.y = -a.angle * DEG;
+    body.add(this.armPivot);
 
     g.traverse((m) => { if (m.isMesh) { m.castShadow = true; } });
     this.robotGroup = g;
     this.scene.add(g);
+    this.matrixDirty = true;
   }
 
   drawMatrix() {
@@ -317,10 +338,11 @@ export class Sim3D {
     this.wheels[1].rotation.z = -r.motors[cfg.left].angle * DEG;
     if (this.matrixDirty) { this.drawMatrix(); this.matrixDirty = false; }
     const arm = r.arm();
-    this.armPivot.visible = !!arm;
     if (arm) {
-      if (arm.mount === 'side') { this.armPivot.position.set(1, 6, 7.5); this.armPivot.rotation.set(0, -Math.PI / 2 + arm.angle * DEG, 0); }
-      else { this.armPivot.position.set(8, 6, 0); this.armPivot.rotation.set(0, 0, arm.angle * DEG); }
+      const mv = this.armMoving;
+      if (arm.module === 'arm') mv.rotation.set(0, 0, arm.angle * DEG);
+      else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
+      else if (arm.module === 'lift') mv.position.y = arm.liftHeight - 6;
     }
     for (const m of this.obstacleMeshes) {
       const o = m.userData.obstacle;
