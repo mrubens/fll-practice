@@ -130,6 +130,7 @@ export class World {
   /** The plain practice field (drawn mat + a few boxes). */
   usePracticeField() {
     this.matImage = drawPracticeMat(this.matCanvas);
+    this.matReady = true;
     this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
     this.startPose = { ...START_POSE };
     this.season = null;
@@ -164,6 +165,7 @@ export class World {
         const ctx = this.matCanvas.getContext('2d', { willReadFrequently: true });
         ctx.drawImage(img, 0, 0, this.matCanvas.width, this.matCanvas.height);
         this.matImage = ctx.getImageData(0, 0, this.matCanvas.width, this.matCanvas.height);
+        this.matReady = true;
         this.listeners.forEach((fn) => fn('mat'));
         resolve(true);
       };
@@ -192,8 +194,20 @@ export class World {
     const py = Math.floor((y + TABLE.h / 2) * PX_PER_CM);
     const img = this.matImage;
     if (px < 0 || py < 0 || px >= img.width || py >= img.height) return [255, 255, 255];
-    const i = (py * img.width + px) * 4;
-    return [img.data[i], img.data[i + 1], img.data[i + 2]];
+    // The real sensor sees a spot about 1 cm across, not a single pixel: average a small square.
+    const R = 4;
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let dy = -R; dy <= R; dy++) {
+      const yy = py + dy;
+      if (yy < 0 || yy >= img.height) continue;
+      for (let dx = -R; dx <= R; dx++) {
+        const xx = px + dx;
+        if (xx < 0 || xx >= img.width) continue;
+        const i = (yy * img.width + xx) * 4;
+        r += img.data[i]; g += img.data[i + 1]; b += img.data[i + 2]; n++;
+      }
+    }
+    return [r / n, g / n, b / n];
   }
 
   /** Segments (walls + obstacle sides) used by the distance sensor. */

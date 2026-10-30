@@ -83,6 +83,7 @@ sim.onPick = (obstacle) => {
 };
 /** Free run (no match rules): models and the sheet start fresh every time. During a launched match, Run is a relaunch. */
 function startRun() {
+  if (!world.matReady) { toast('The field is still loading. Try again in a moment.', 'warn'); return; }
   if (scoring.match.launched && !scoring.match.ended) { relaunch(); return; }
   hub.matchLeft = null;
   world.resetObstacles();
@@ -119,6 +120,7 @@ function relaunch() {
 
 /** Start a whole match: fresh field, equipment in home, inspection, 2:30 on the clock. */
 function startMatch() {
+  if (!world.matReady) { toast('The field is still loading. Try again in a moment.', 'warn'); return; }
   runtime.stop();
   world.resetObstacles();
   scoring.reset();

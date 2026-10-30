@@ -460,7 +460,7 @@ export function classify([r, g, b]) {
     hue = (hue * 60 + 360) % 360;
   }
   let code;
-  if (lum < 0.22) code = '0';
+  if (lum < 0.14) code = '0';
   else if (sat < 0.25) code = lum > 0.55 ? '10' : '-1';
   else if (hue < 18 || hue >= 335) code = '9';
   else if (hue < 68) code = '7';

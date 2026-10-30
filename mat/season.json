@@ -8,8 +8,8 @@
     "y": 0
   },
   "launch": {
-    "x": -76,
-    "y": 32,
+    "x": -90,
+    "y": 20,
     "heading": 0
   },
   "robotModel": "models/driving-base.mpd",
