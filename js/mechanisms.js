@@ -141,10 +141,15 @@ export const MECHANISMS = {
   'M11 Window to the Past': {
     base: [{ box: [8, 10, 8], at: [0.4, 5, -2.2] }],
     pieces: {
-      seed: { kind: 'loose', anchor: [-5.0, 2.4, -1.6], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01, kick: [-0.6, 0.4, 0],
-        shape: [{ box: [2, 2.2, 2], at: [0, 1.1, 0] }], parts: (p) => (p.color === '378') || (p.c[0] < -2.6 && p.c[1] < 8 && p.c[1] > 1.5 && ['19', '322', '4'].includes(p.color) && p.c[2] < 2) },
-      cover: { kind: 'hinge', axis: [-1, 0, 0], anchor: [1, 9.8, -6.6], range: [0, 175], mass: 0.05, damp: 0.5, gravity: false,
-        shape: [{ box: [8, 5.5, 1.4], at: [0, 2.8, -0.6] }], parts: (p) => p.c[2] < -6.4 && p.c[1] < 11 },
+      // the seed hangs off the red stalk on the model's front (+z); knock it and it drops to the mat
+      seed: { kind: 'loose', anchor: [-1.4, 9.0, 8.2], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01, kick: [0, 0.2, 0.8],
+        shape: [{ box: [2.4, 2.4, 2.6], at: [0, 0.6, 0.3] }], parts: (p) => p.c[2] > 5 && p.c[1] > 8.5 },
+      // the button on the model's left side (-x): push it in and the root cover is released
+      trigger: { kind: 'slider', axis: [1, 0, 0], anchor: [-3.4, 6.8, -1.6], range: [0, 2], damp: 1.5, gravity: false, mass: 0.02,
+        shape: [{ box: [1.6, 3, 7], at: [0, 0, 0] }], parts: (p) => p.c[0] < -2.4 && p.c[1] > 5.4 },
+      // the root cover: a long plate on top of the right side, hinged at its outer end, that swings down to the mat
+      cover: { kind: 'hinge', axis: [1, 0, 0], anchor: [3.3, 6.8, -8.8], range: [0, 110], mass: 0.04, locked: true, releaseWhen: (s) => s.trigger.ext > 1.2,
+        shape: [{ box: [1.2, 1.2, 10.4], at: [0, 0, 5.2] }], parts: (p) => p.c[0] > 2.8 && p.c[1] > 5.3 && p.c[1] < 7.2 && p.c[2] < 2 },
     },
   },
   // ---- M12: raise the cane against the tree; carry the support tie to the post ----
