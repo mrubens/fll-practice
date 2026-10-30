@@ -23,8 +23,6 @@ export class HubPanel {
         <div class="hub-readouts">
           <div class="ro-row">
             <div class="ro"><span class="k">yaw</span><span class="v" data-ro="yaw">0°</span></div>
-            <div class="ro"><span class="k">pitch</span><span class="v">0°</span></div>
-            <div class="ro"><span class="k">roll</span><span class="v">0°</span></div>
             <div class="ro"><span class="k">timer</span><span class="v" data-ro="timer">0.00</span></div>
             <div class="ro match"><span class="k">match</span><span class="v" data-ro="match">2:30</span></div>
           </div>

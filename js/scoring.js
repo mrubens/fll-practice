@@ -104,6 +104,8 @@ export class Scoring {
         if (met && !s.everMet) {
           s.everMet = true;
           if (this.primed && (!t.bonusOf || this.isDone(m.id, t.bonusOf))) this.emit({ type: 'done', mission: m, task: t, obstacle: this.world.obstacles.find((o) => m.models.includes(o.id)) });
+        } else if (!met && s.met && this.primed && !t.count) {
+          this.emit({ type: 'lost', mission: m, task: t });
         }
         s.met = met; s.count = count;
       }
