@@ -211,6 +211,12 @@ export class Physics {
       pc.body.setRotation(rq, true);
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0;
+      if (pc.carried) {
+        if (pc.carryJoint) this.world.removeImpulseJoint(pc.carryJoint, true);
+        pc.carryJoint = null; pc.carried = false;
+        pc.body.setGravityScale(pc.def.gravity === false ? 0 : 1, true);
+        for (const c of pc.colliders) c.setCollisionGroups(SHARED);
+      }
       if (pc.def.locked) {
         pc.locked = true; pc.released = false;
         pc.body.setEnabledTranslations(false, false, false, true); pc.body.setEnabledRotations(false, false, false, true);
@@ -522,9 +528,14 @@ export class Physics {
   robotContacts(time, speed, touched) {
     const cols = [this.bodyCollider, ...this.robotParts.map((p) => p.collider)];
     for (const c of cols) {
+      const armPart = c !== this.bodyCollider;
       this.world.contactPairsWith(c, (other) => {
+        // a pair exists as soon as bounding boxes overlap: only count it when the shapes really meet
+        let real = false;
+        this.world.contactPair(c, other, (m) => { for (let i = 0; i < m.numContacts(); i++) if (m.contactDist(i) <= 0.0005) { real = true; break; } });
+        if (!real) return;
         const pc = this.colliderToPiece.get(other.handle);
-        if (pc) { pc.touched = time; if (pc.o) touched.add(pc.o); }
+        if (pc) { pc.touched = time; if (pc.o) touched.add(pc.o); if (armPart && pc.def.carry && !pc.carried) { if (!pc.released) this.releasePiece(pc); this._carry(pc); } }
         const o = this.colliderToObstacle.get(other.handle);
         if (o) { touched.add(o); if (speed > (o.impact || 0)) o.impact = speed; }
       });
@@ -536,6 +547,26 @@ export class Physics {
       const sp = Math.hypot(v.x, v.z) / S;
       if (sp > (pc.o.impact || 0)) pc.o.impact = sp;
     }
+  }
+
+  /**
+   * A piece the attachment picks up (the M11 seed by its red connector) hooks onto the arm and rides with it:
+   * a fixed joint to the arm body, and no more collisions until the field is reset.
+   */
+  _carry(pc) {
+    if (!this.armBody) return;
+    const { R } = this;
+    const at = this.armBody.translation(), ar = this.armBody.rotation();
+    const pt = pc.body.translation(), pr = pc.body.rotation();
+    const qa = new THREE.Quaternion(ar.x, ar.y, ar.z, ar.w), qp = new THREE.Quaternion(pr.x, pr.y, pr.z, pr.w);
+    const local = new THREE.Vector3(pt.x - at.x, pt.y - at.y, pt.z - at.z).applyQuaternion(qa.clone().invert());
+    const rel = qa.clone().invert().multiply(qp);
+    const data = R.JointData.fixed({ x: local.x, y: local.y, z: local.z }, { x: rel.x, y: rel.y, z: rel.z, w: rel.w }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0, w: 1 });
+    pc.carryJoint = this.world.createImpulseJoint(data, this.armBody, pc.body, true);
+    pc.carryInfo = { arm: [at.x / S, at.y / S, at.z / S], seed: [pt.x / S, pt.y / S, pt.z / S], local: [local.x / S, local.y / S, local.z / S], angle: this.lastArmAngle, time: this.robot && this.robot.time };
+    pc.body.setGravityScale(0, true);
+    for (const c of pc.colliders) c.setCollisionGroups(0);
+    pc.carried = true;
   }
 
   /** Let loose pieces settle while no program runs (gravity keeps working between runs). */

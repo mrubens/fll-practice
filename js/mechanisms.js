@@ -150,7 +150,7 @@ export const MECHANISMS = {
   'M11 Window to the Past': {
     base: [{ box: [7.4, 6.5, 8], at: [-0.2, 3.25, -2.2] }],   // up to the green platform; the plants above bend out of the way
     pieces: {
-      seed: { kind: 'loose', anchor: [-1.37, 9.8, 7.4], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01,
+      seed: { kind: 'loose', anchor: [-1.37, 9.8, 7.4], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01, carry: true,
         shape: [{ box: [2.6, 2.2, 4.4], at: [0, 0, 0] }], parts: (p) => p.c[2] > 5 && p.c[1] > 9 },
       cover: { kind: 'hinge', axis: [0, 0, -1], anchor: [4.23, 0.88, -2.38], range: [0, 86], mass: 0.04, friction: 1.2, damp: 0.6,
         shape: [{ box: [0.7, 6.2, 8.2], at: [-0.4, 3.1, 0] }], parts: (p) => p.c[0] > 2.7 && p.c[1] > 1.1 },

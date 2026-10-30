@@ -92,7 +92,7 @@ export const MISSIONS = [
         met: (c) => { const h = c.p('M10 Fragile Microhabitat A').habitat; return h.moved < 1 && h.rotated < 6; } },
     ] },
   { id: 'M11', name: 'Window to the Past', models: ['M11 Window to the Past'],
-    text: 'Open the root window and document what you see.',
+    text: 'Open the root window and document what you see. The seed hanging on the left is not scored here: lift it by its red connector and the arm carries it off for M14.',
     tasks: [
       { id: 'cover', label: 'The root cover is down, touching the mat', points: 20, how: 'Push or pull the top of the root cover forward past upright; it tips over and lies flat on the mat. (The Guided Mission hooks it from the front with the arm and backs up.)',
         met: (c) => { const v = c.p('M11 Window to the Past').cover; return v.angle > 70 && v.bottom < 1.5; } },
