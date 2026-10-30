@@ -144,8 +144,9 @@ export class Sim3D {
       const label = labelFor(o.id);
       if (label) {
         // White number painted on the roof, readable from the default (south) camera.
-        const side = Math.min(o.w, o.d) * 0.9;
-        const roof = new THREE.Mesh(new THREE.PlaneGeometry(side, side), new THREE.MeshBasicMaterial({ map: labelTexture(label), transparent: true }));
+        const side = 7; // same size on every model, whatever its footprint
+        const roof = new THREE.Mesh(new THREE.PlaneGeometry(side, side), new THREE.MeshBasicMaterial({ map: labelTexture(label), transparent: true, depthTest: false }));
+        roof.renderOrder = 5;
         roof.rotation.x = -Math.PI / 2;
         roof.position.y = o.h / 2 + 0.05;
         m.add(roof);
