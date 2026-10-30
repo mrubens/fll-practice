@@ -29,7 +29,7 @@ export const PRESETS = {
   },
 };
 
-export function defaultBuild() { return normalizeBuild(PRESETS['training-camp']); }
+export function defaultBuild() { return normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }); }
 
 export function normalizeBuild(b) {
   const src = b || {};

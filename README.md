@@ -28,11 +28,15 @@ Not affiliated with the LEGO Group. LEGO and SPIKE are trademarks of the LEGO Gr
   geometry, sensor positions, cm-per-rotation default and attachment physics all derive from it. The build is
   saved with the project and inside exported `.llsp3` files (as an extra `spikesim-build.json` entry the SPIKE
   App ignores). The Training Camp Driving Base is a preset so the LEGO lessons still match.
-- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image, the mission-model boxes
-  (positions read off the Field Setup Guide placement diagram, so approximate) and the left launch area.
+- **FLL season field**: `mat/season.json` loads the BIOGLOW (2026-27) mat image (200 x 114 cm, centred on the
+  236 cm table), the launch area and the mission models as real LEGO geometry: LDraw models of all 15 missions
+  (plus the drone stand and the Forest Elder post) placed where the FIRST wireframe puts them, and the SPIKE
+  Prime Driving Base itself built from real parts (hub, motors, sensors, frame). See `models/ATTRIBUTION.md`
+  for sources and how to add models.
   **Launch** puts the robot in the launch area, resets the models and runs the program with a 2:30 match clock.
-  The mat image comes from the public Robot Game Rulebook; replace `mat/season.png` (4 px/cm, 236 x 114 cm)
-  and edit `mat/season.json` for another season. Delete the file to get the plain practice mat back.
+  The mat image comes from the public Robot Game Rulebook; replace `mat/season.png` (4 px/cm covering the
+  whole 236 x 114 cm table) and edit `mat/season.json` for another season. Delete the file to get the plain
+  practice mat back.
 - **My Blocks**: "Make a Block" with number/text and true/false inputs. Definitions, calls and argument
   reporters are stored exactly as the SPIKE App stores them, so they round-trip through `.llsp3` files, run in
   the simulator and compile to Python functions.
@@ -80,7 +84,8 @@ against the reference implementation) but has not yet been exercised with a phys
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
 | `js/myblocks.js` | My Blocks (Scratch procedures): block shapes, Make-a-Block dialog, mutations |
 | `js/build.js` | Robot build parameters, presets, derived geometry and validation |
-| `mat/season.json`, `mat/season.png` | Season field: mat image, mission-model boxes, launch pose |
+| `mat/season.json`, `mat/season.png` | Season field: mat image, mission models (collision boxes + LDraw files), launch pose |
+| `models/*.mpd` | Self-contained LDraw models: the 15 BIOGLOW missions and the SPIKE driving bases |
 | `js/python.js` | Compiles the blocks to SPIKE Python 3 (one async task per hat block) |
 | `js/ble.js` | Web Bluetooth client for the hub: COBS/XOR framing, CRC32 chunked upload, program start/stop |
 | `js/app.js` | Toolbar, project storage, main loop |
@@ -90,4 +95,4 @@ against the reference implementation) but has not yet been exercised with a phys
 ## Not simulated (yet)
 
 Force sensor, pitch/roll (the table is flat), sound files, broadcasts, and the light-matrix
-pixel/brightness blocks. Mission models are plain boxes that light up when touched; they do not move or score. Those blocks still exist in the SPIKE App; they are just not in this palette.
+pixel/brightness blocks. Mission models are rigid (their collision shapes are boxes); they do not move or score. Those blocks still exist in the SPIKE App; they are just not in this palette.

@@ -1,38 +1,72 @@
 // three.js view of the table and the robot.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
+import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawConditionalLineMaterial.js';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { TABLE } from './world.js';
 
 const DEG = Math.PI / 180;
+const LDU = 0.04; // 1 LDraw unit = 0.4 mm = 0.04 cm
 
-/** "M01 Drone Survey" -> "01", "Dock NE (M13-15)" -> "13-15", anything else -> its first word. */
-function labelFor(id) {
-  const s = String(id || '');
-  let m = /^M(\d+)/i.exec(s);
-  if (m) return m[1].padStart(2, '0');
-  m = /M(\d+-\d+)/i.exec(s);
-  if (m) return m[1];
-  return s.split(' ')[0].slice(0, 5);
+// ---- LDraw models (real LEGO geometry) ----
+let ldrawLoader = null, ldrawMaterials = null;
+const ldrawCache = new Map();
+function ldraw() {
+  if (!ldrawLoader) {
+    ldrawLoader = new LDrawLoader();
+    ldrawLoader.smoothNormals = true;
+    ldrawLoader.setConditionalLineMaterial(LDrawConditionalLineMaterial);
+    ldrawMaterials = ldrawLoader.preloadMaterials('models/LDConfig.ldr').catch(() => {});
+  }
+  return ldrawLoader;
+}
+/** Merge every mesh of an LDraw group into one mesh per material (far fewer draw calls). */
+function flattenLDraw(group) {
+  group.updateMatrixWorld(true);
+  const byMaterial = new Map();
+  group.traverse((o) => {
+    if (!o.isMesh || !o.geometry.attributes.position) return;
+    const geo = o.geometry.clone();
+    geo.applyMatrix4(o.matrixWorld);
+    for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal') geo.deleteAttribute(name);
+    if (geo.index) { const g2 = geo.toNonIndexed(); geo.dispose(); byMaterial.set(o.material, (byMaterial.get(o.material) || []).concat(g2)); }
+    else byMaterial.set(o.material, (byMaterial.get(o.material) || []).concat(geo));
+  });
+  const out = new THREE.Group();
+  for (const [material, geos] of byMaterial) {
+    const merged = mergeGeometries(geos, false);
+    geos.forEach((g) => g.dispose());
+    if (!merged) continue;
+    const mesh = new THREE.Mesh(merged, material);
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    out.add(mesh);
+  }
+  return out;
 }
 
-const labelCache = new Map();
-function labelTexture(text) {
-  if (labelCache.has(text)) return labelCache.get(text);
-  const c = document.createElement('canvas');
-  c.width = 128; c.height = 128;
-  const ctx = c.getContext('2d');
-  ctx.clearRect(0, 0, 128, 128);
-  ctx.fillStyle = '#FFFFFF';
-  ctx.font = `bold ${text.length > 2 ? 44 : 78}px Nunito, Arial, sans-serif`;
-  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 6; ctx.lineJoin = 'round';
-  ctx.strokeText(text, 64, 68);
-  ctx.fillText(text, 64, 68);
-  const tex = new THREE.CanvasTexture(c);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  tex.anisotropy = 4;
-  labelCache.set(text, tex);
-  return tex;
+// Loads run one after another: LDrawLoader shares one parse cache and parallel loads can race on embedded subparts.
+let ldrawQueue = Promise.resolve();
+/** Load a packed .mpd once (flattened); resolves to a fresh clone each time, or null when it cannot be loaded. */
+export function loadLDrawModel(url) {
+  if (!ldrawCache.has(url)) {
+    const job = ldrawQueue.then(async () => {
+      const loader = ldraw();
+      await ldrawMaterials;
+      return new Promise((resolve) => loader.load(url, (group) => resolve(flattenLDraw(group)), undefined, (err) => { console.warn('LDraw model failed', url, err); resolve(null); }));
+    });
+    ldrawQueue = job.catch(() => {});
+    ldrawCache.set(url, job);
+  }
+  return ldrawCache.get(url).then((g) => (g ? g.clone() : null));
+}
+/** Wrap an LDraw group so LDraw's y-down frame becomes y-up and LDU become cm. */
+function ldrawToWorld(group) {
+  const holder = new THREE.Group();
+  group.rotation.x = Math.PI;      // y down -> y up (also flips z: LDraw front -z -> +z)
+  group.scale.setScalar(LDU);
+  holder.add(group);
+  return holder;
 }
 
 function box(w, h, d, color, opts = {}) {
@@ -137,23 +171,33 @@ export class Sim3D {
 
   buildObstacles() {
     for (const m of this.obstacleMeshes) this.scene.remove(m);
+    for (const m of this.obstacleExtras || []) this.scene.remove(m);
     this.obstacleMeshes = [];
+    this.obstacleExtras = [];
+    this.buildGeneration = (this.buildGeneration || 0) + 1;
+    const generation = this.buildGeneration;
     for (const o of this.world.obstacles) {
       const m = box(o.w, o.h, o.d, o.color);
       m.position.set(o.x, o.h / 2, o.y);
       m.userData.obstacle = o;
-      const label = labelFor(o.id);
-      if (label) {
-        // White number painted on the roof, readable from the default (south) camera.
-        const side = 7; // same size on every model, whatever its footprint
-        const roof = new THREE.Mesh(new THREE.PlaneGeometry(side, side), new THREE.MeshBasicMaterial({ map: labelTexture(label), transparent: true, depthTest: false }));
-        roof.renderOrder = 5;
-        roof.rotation.x = -Math.PI / 2;
-        roof.position.y = o.h / 2 + 0.05;
-        m.add(roof);
-      }
+      m.visible = !o.model;             // a model entry never shows its collision box unless the file fails
       this.scene.add(m);
       this.obstacleMeshes.push(m);
+      if (o.model) {
+        loadLDrawModel(o.model).then((group) => {
+          if (generation !== this.buildGeneration) return;
+          if (!group) { m.visible = true; return; }
+          const holder = ldrawToWorld(group);
+          const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
+          holder.position.set(pose.x, 0, pose.y);
+          holder.rotation.y = (pose.heading || 0) * DEG;   // 0 = facing north, positive = counter-clockwise from above
+          holder.userData.obstacle = o;
+          holder.userData.offset = [pose.x - o.x, pose.y - o.y];
+          this.scene.add(holder);
+          this.obstacleExtras.push(holder);
+          o.hasModel = true;
+        });
+      }
     }
   }
 
@@ -264,6 +308,23 @@ export class Sim3D {
     this.robotGroup = g;
     this.scene.add(g);
     this.matrixDirty = true;
+
+    // Real LEGO body (packed LDraw model) for the Training Camp Driving Base; wheels stay the spinning primitives.
+    const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
+    if (build.preset === 'training-camp' && a.module === 'none') {
+      this.robotBuildGen = (this.robotBuildGen || 0) + 1;
+      const gen = this.robotBuildGen;
+      loadLDrawModel(modelUrl).then((group) => {
+        if (!group || gen !== this.robotBuildGen || this.robotGroup !== g) return;
+        // Model frame: origin at the axle midpoint on the table, forward -z, left +x, y down.
+        // Ours: x forward, y up, z right.  our = (-z_l, -y_l, -x_l), scaled to cm.
+        group.matrixAutoUpdate = false;
+        group.matrix.set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+        g.add(group);
+        body.visible = false;
+        this.robotLDraw = group;
+      });
+    }
   }
 
   drawMatrix() {
@@ -331,6 +392,11 @@ export class Sim3D {
   render() {
     const r = this.robot, g = this.robotGroup;
     for (const m of this.obstacleMeshes) { const o = m.userData.obstacle; m.position.x = o.x; m.position.z = o.y; }
+    for (const e of this.obstacleExtras) {
+      const o = e.userData.obstacle;
+      const off = e.userData.offset || [0, 0];
+      e.position.x = o.x + off[0]; e.position.z = o.y + off[1];
+    }
     g.position.set(r.x, 0, r.y);
     g.rotation.y = -r.heading * DEG;
     const cfg = r.config;

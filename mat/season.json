@@ -1,24 +1,276 @@
 {
   "name": "FIRST LEGO League BIOGLOW (2026-27)",
   "mat": "mat/season.png",
-  "launch": { "x": -96, "y": 35, "heading": -45 },
-  "note": "Model positions are read off the Field Setup Guide placement diagram (page 2) and are approximate; footprints are placeholders.",
+  "matSize": {
+    "w": 200.0,
+    "h": 114.0,
+    "x": 0,
+    "y": 0
+  },
+  "launch": {
+    "x": -78,
+    "y": 35,
+    "heading": -45
+  },
+  "robotModel": "models/driving-base.mpd",
+  "note": "Mission model footprints and poses from martijas/fll-sim (measured from the FIRST wireframe PDF); LDraw models reconstructed there from the official building instructions. Table interior 236 x 114 cm, mat 200 x 114 cm centred, flush with the south wall.",
   "obstacles": [
-    { "id": "M01 Drone Survey", "x": -14, "y": 49, "w": 14, "d": 10, "h": 8, "color": "#B8C0CC", "movable": false },
-    { "id": "M02 Exploding Seeds", "x": -43, "y": 3, "w": 12, "d": 12, "h": 10, "color": "#8FBF5A", "movable": false },
-    { "id": "M03 Flip the Rock", "x": -106, "y": -10, "w": 10, "d": 12, "h": 9, "color": "#9AA3AF", "movable": false },
-    { "id": "M04 Lucky Leaves", "x": -99, "y": -41, "w": 12, "d": 12, "h": 10, "color": "#5BAE4F", "movable": false },
-    { "id": "M05 Reaching Roots", "x": -70, "y": -49, "w": 12, "d": 10, "h": 12, "color": "#A66B3B", "movable": false },
-    { "id": "M06 Leafcutter Frenzy", "x": 60, "y": -49, "w": 14, "d": 10, "h": 9, "color": "#7CC36B", "movable": false },
-    { "id": "M07 Humongous Fungus", "x": 76, "y": -49, "w": 10, "d": 10, "h": 12, "color": "#E3A14D", "movable": false },
-    { "id": "M08 Tangled", "x": -54, "y": -49, "w": 10, "d": 10, "h": 10, "color": "#6B8E23", "movable": false },
-    { "id": "M09 Research Platform", "x": -41, "y": -49, "w": 12, "d": 10, "h": 10, "color": "#C8B46A", "movable": false },
-    { "id": "M10 Fragile Microhabitat A", "x": -26, "y": -45, "w": 8, "d": 8, "h": 6, "color": "#B2D8B2", "movable": false },
-    { "id": "M10 Fragile Microhabitat B", "x": 11, "y": -20, "w": 8, "d": 8, "h": 6, "color": "#B2D8B2", "movable": false },
-    { "id": "M11 Window to the Past", "x": 47, "y": -3, "w": 12, "d": 10, "h": 10, "color": "#8A7F6A", "movable": false },
-    { "id": "M12 Forest Elder", "x": 109, "y": -19, "w": 14, "d": 14, "h": 18, "color": "#6F4E2A", "movable": false },
-    { "id": "Dock NE (M13-15)", "x": 105, "y": -45, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false },
-    { "id": "Dock centre (M13-15)", "x": 0, "y": -6, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false },
-    { "id": "Dock S (M13-15)", "x": 34, "y": 48, "w": 10, "d": 10, "h": 8, "color": "#E3000B", "movable": false }
+    {
+      "id": "M01 Drone Survey",
+      "x": -11.8,
+      "y": 46.9,
+      "w": 6.8,
+      "d": 6.8,
+      "h": 12.0,
+      "color": "#7d8a99",
+      "movable": false,
+      "model": "models/m01.mpd",
+      "modelPose": {
+        "x": -11.8,
+        "y": 46.9,
+        "heading": 183.5
+      }
+    },
+    {
+      "id": "M02 Exploding Seeds",
+      "x": -37.1,
+      "y": 3.7,
+      "w": 6.2,
+      "d": 6.2,
+      "h": 15.0,
+      "color": "#6e8b3d",
+      "movable": false,
+      "model": "models/m02.mpd",
+      "modelPose": {
+        "x": -37.1,
+        "y": 3.7,
+        "heading": 45.5
+      }
+    },
+    {
+      "id": "M03 Flip the Rock",
+      "x": -91.8,
+      "y": -9.0,
+      "w": 13.2,
+      "d": 6.6,
+      "h": 8.0,
+      "color": "#8a8a8a",
+      "movable": false,
+      "model": "models/m03.mpd",
+      "modelPose": {
+        "x": -91.8,
+        "y": -9.0,
+        "heading": 356.5
+      }
+    },
+    {
+      "id": "M04 Lucky Leaves",
+      "x": -89.7,
+      "y": -46.6,
+      "w": 13.2,
+      "d": 13.2,
+      "h": 9.0,
+      "color": "#5f8f3a",
+      "movable": false,
+      "model": "models/m04.mpd",
+      "modelPose": {
+        "x": -89.7,
+        "y": -46.6,
+        "heading": 45.5
+      }
+    },
+    {
+      "id": "M05 Reaching Roots",
+      "x": -60.4,
+      "y": -53.7,
+      "w": 4.2,
+      "d": 8.8,
+      "h": 17.0,
+      "color": "#7a5230",
+      "movable": false,
+      "model": "models/m05.mpd",
+      "modelPose": {
+        "x": -60.4,
+        "y": -53.7,
+        "heading": 174.5
+      }
+    },
+    {
+      "id": "M06-07 Leafcutter Frenzy / Humongous Fungus",
+      "x": 54.3,
+      "y": -46.0,
+      "w": 15.5,
+      "d": 12.4,
+      "h": 11.0,
+      "color": "#b0703a",
+      "movable": false,
+      "model": "models/m06-07.mpd",
+      "modelPose": {
+        "x": 54.3,
+        "y": -46.0,
+        "heading": 356
+      }
+    },
+    {
+      "id": "M08-09 Tangled / Research Platform",
+      "x": -46.3,
+      "y": -47.8,
+      "w": 15.3,
+      "d": 12.8,
+      "h": 26.0,
+      "color": "#5d7c2e",
+      "movable": false,
+      "model": "models/m08-09.mpd",
+      "modelPose": {
+        "x": -46.3,
+        "y": -47.8,
+        "heading": 152
+      }
+    },
+    {
+      "id": "M10 Fragile Microhabitat A",
+      "x": -26.1,
+      "y": -45.3,
+      "w": 4.2,
+      "d": 4.7,
+      "h": 5.0,
+      "color": "#a58a5a",
+      "movable": false,
+      "model": "models/m10a.mpd",
+      "modelPose": {
+        "x": -26.1,
+        "y": -45.3,
+        "heading": 61.5
+      }
+    },
+    {
+      "id": "M10 Fragile Microhabitat B",
+      "x": 7.4,
+      "y": -16.4,
+      "w": 3.6,
+      "d": 3.6,
+      "h": 5.0,
+      "color": "#a58a5a",
+      "movable": false,
+      "model": "models/m10b.mpd",
+      "modelPose": {
+        "x": 7.4,
+        "y": -16.4,
+        "heading": 218
+      }
+    },
+    {
+      "id": "M11 Window to the Past",
+      "x": 42.7,
+      "y": -0.8,
+      "w": 9.0,
+      "d": 9.0,
+      "h": 11.0,
+      "color": "#7a5230",
+      "movable": false,
+      "model": "models/m11.mpd",
+      "modelPose": {
+        "x": 42.7,
+        "y": -0.8,
+        "heading": 138
+      }
+    },
+    {
+      "id": "M12 Forest Elder",
+      "x": 89.8,
+      "y": -22.0,
+      "w": 6.6,
+      "d": 6.6,
+      "h": 26.0,
+      "color": "#6b4a2b",
+      "movable": false,
+      "model": "models/m12.mpd",
+      "modelPose": {
+        "x": 89.8,
+        "y": -22.0,
+        "heading": 184
+      }
+    },
+    {
+      "id": "M12 Forest Elder post",
+      "x": 93.4,
+      "y": 3.3,
+      "w": 2.5,
+      "d": 6.0,
+      "h": 9.0,
+      "color": "#6b4a2b",
+      "movable": false,
+      "model": "models/m12-post.mpd",
+      "modelPose": {
+        "x": 93.4,
+        "y": 3.3,
+        "heading": 76
+      }
+    },
+    {
+      "id": "Dock farm (M13-15)",
+      "x": 0.9,
+      "y": -7.8,
+      "w": 13.0,
+      "d": 20.4,
+      "h": 4.0,
+      "color": "#c9c9c9",
+      "movable": false,
+      "model": "models/m13.mpd",
+      "modelPose": {
+        "x": 0.2,
+        "y": -5.7,
+        "heading": 89.5
+      }
+    },
+    {
+      "id": "Dock city (M13-15)",
+      "x": 27.8,
+      "y": 47.8,
+      "w": 9.5,
+      "d": 13.5,
+      "h": 4.0,
+      "color": "#c9c9c9",
+      "movable": false,
+      "model": "models/m14.mpd",
+      "modelPose": {
+        "x": 28.1,
+        "y": 47.7,
+        "heading": 90.5
+      }
+    },
+    {
+      "id": "Dock mine (M13-15)",
+      "x": 88.5,
+      "y": -46.1,
+      "w": 12.3,
+      "d": 12.3,
+      "h": 4.0,
+      "color": "#c9c9c9",
+      "movable": false,
+      "model": "models/m15.mpd",
+      "modelPose": {
+        "x": 87.2,
+        "y": -45.6,
+        "heading": 225.5
+      }
+    },
+    {
+      "id": "M01 Drone stand",
+      "x": 3.9,
+      "y": 34.7,
+      "w": 8,
+      "d": 8,
+      "h": 10,
+      "color": "#7d8a99",
+      "movable": false,
+      "label": "",
+      "model": "models/m01-stand.mpd",
+      "modelPose": {
+        "x": 3.9,
+        "y": 34.7,
+        "heading": 218.5
+      }
+    }
   ]
 }
