@@ -537,7 +537,8 @@ if (store.current && store.projects[store.current]) loadProject(store.current);
 else createProject(SAMPLE_NAME, SAMPLE_STATE);
 // First visit: start from FIRST's official Guided Mission program (Mission 11) with the robot it was written for.
 if (!store.guidedLoaded) {
-  fetch('samples/guided-mission-bioglow-11.llsp3', { cache: 'no-cache' }).then((res) => (res.ok ? res.arrayBuffer() : null)).then(async (buf) => {
+  const GUIDED = 'samples/guided-mission-bioglow-11.llsp3';
+  fetch(GUIDED, { cache: 'no-cache' }).then((res) => (res.ok ? res.arrayBuffer() : fetch('https://mrubens.github.io/fll-practice/' + GUIDED).then((r2) => (r2.ok ? r2.arrayBuffer() : null)))).then(async (buf) => {
     if (!buf) return;
     const { state } = await importLlsp3(buf);
     store.guidedLoaded = true;
