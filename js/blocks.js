@@ -6,7 +6,7 @@ const B = window.Blockly;
 
 // ---------- custom fields ----------
 
-/** Steering value (-100..100) displayed as "left: 30" / "straight" / "right: 30" like the SPIKE wheel widget. */
+/** Steering value (-100..100) displayed as "left: 30" / "straight" / "right: 30", edited with a SPIKE-style dial. */
 class FieldSteering extends B.FieldNumber {
   constructor(value, validator) {
     super(value ?? 0, -100, 100, 1, validator);
@@ -19,6 +19,89 @@ class FieldSteering extends B.FieldNumber {
     if (v > 0) return `right: ${v}`;
     if (v < 0) return `left: ${v}`;
     return 'straight';
+  }
+  /** Dial dropdown: drag the knob around the wheel (100 = half a turn, like the SPIKE app) or nudge with - / +. */
+  showEditor_() {
+    const NS = 'http://www.w3.org/2000/svg';
+    const el = (tag, attrs, parent) => {
+      const n = document.createElementNS(NS, tag);
+      for (const k in attrs) n.setAttribute(k, attrs[k]);
+      if (parent) parent.appendChild(n);
+      return n;
+    };
+    const div = B.DropDownDiv.getContentDiv();
+    div.innerHTML = '';
+    const wrap = document.createElement('div');
+    wrap.className = 'spike-steer-editor';
+    const SIZE = 200, C = SIZE / 2, R = 78, KNOB_R = 20, DEG = Math.PI / 180;
+    const svg = el('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, width: SIZE, height: SIZE, class: 'dial' });
+    el('circle', { cx: C, cy: C, r: R + 14, class: 'bg' }, svg);
+    for (let i = 0; i < 36; i++) {
+      const a = i * 10 * DEG, big = i % 9 === 0;
+      const r0 = R + 2, r1 = big ? R + 12 : R + 8;
+      el('line', {
+        x1: C + Math.sin(a) * r0, y1: C - Math.cos(a) * r0,
+        x2: C + Math.sin(a) * r1, y2: C - Math.cos(a) * r1, class: big ? 'tick big' : 'tick',
+      }, svg);
+    }
+    const wedge = el('path', { class: 'wedge' }, svg);
+    // steering-wheel glyph in the middle
+    el('circle', { cx: C, cy: C, r: 46, class: 'wheel' }, svg);
+    el('circle', { cx: C, cy: C, r: 36, class: 'wheel-in' }, svg);
+    for (let i = 0; i < 3; i++) {
+      el('rect', { x: C - 7, y: C - 38, width: 14, height: 30, rx: 4, class: 'spoke', transform: `rotate(${i * 120 + 180} ${C} ${C})` }, svg);
+    }
+    el('circle', { cx: C, cy: C, r: 10, class: 'hub' }, svg);
+    const pointer = el('line', { class: 'pointer' }, svg);
+    const knob = el('g', { class: 'knob' }, svg);
+    el('circle', { cx: 0, cy: 0, r: KNOB_R }, knob);
+    el('path', { d: 'M0 -8 L0 8 M-6 -2 L0 -8 L6 -2', class: 'arrow' }, knob);
+    const label = document.createElement('div');
+    label.className = 'readout';
+    const mkBtn = (txt, d) => {
+      const b = document.createElement('button');
+      b.type = 'button';
+      b.textContent = txt;
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); set(Number(this.getValue()) + d); });
+      return b;
+    };
+    const paint = () => {
+      const v = Number(this.getValue()) || 0, a = v * 1.8 * DEG;
+      const kx = C + Math.sin(a) * R, ky = C - Math.cos(a) * R;
+      knob.setAttribute('transform', `translate(${kx} ${ky}) rotate(${v * 1.8})`);
+      pointer.setAttribute('x1', C); pointer.setAttribute('y1', C);
+      pointer.setAttribute('x2', kx); pointer.setAttribute('y2', ky);
+      const rr = R + 14, ex = C + Math.sin(a) * rr, ey = C - Math.cos(a) * rr;
+      wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - rr} A${rr} ${rr} 0 ${Math.abs(v) > 50 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
+      label.textContent = this.getText();
+    };
+    const set = (v) => {
+      this.setValue(Math.max(-100, Math.min(100, Math.round(v))));
+      paint();
+    };
+    const fromPointer = (e) => {
+      const r = svg.getBoundingClientRect();
+      const dx = (e.clientX - r.left) * (SIZE / r.width) - C;
+      const dy = (e.clientY - r.top) * (SIZE / r.height) - C;
+      set(Math.atan2(dx, -dy) / DEG / 1.8);
+    };
+    let dragging = false;
+    svg.addEventListener('pointerdown', (e) => { e.preventDefault(); dragging = true; svg.setPointerCapture(e.pointerId); fromPointer(e); });
+    svg.addEventListener('pointermove', (e) => { if (dragging) fromPointer(e); });
+    svg.addEventListener('pointerup', () => { dragging = false; });
+    svg.addEventListener('pointercancel', () => { dragging = false; });
+    const row = document.createElement('div');
+    row.className = 'row';
+    row.appendChild(mkBtn('−', -1));
+    row.appendChild(label);
+    row.appendChild(mkBtn('+', 1));
+    wrap.appendChild(svg);
+    wrap.appendChild(row);
+    div.appendChild(wrap);
+    paint();
+    const block = this.getSourceBlock();
+    B.DropDownDiv.setColour(block.getColour(), block.getColourTertiary ? block.getColourTertiary() : block.getColour());
+    B.DropDownDiv.showPositionedByField(this);
   }
 }
 B.fieldRegistry.register('field_steering', FieldSteering);
