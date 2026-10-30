@@ -121,7 +121,7 @@ function loadProject(id) {
   if (!runtime.running) robot.resetPose();
   nameInput.value = p.name;
   saveStore();
-  document.title = `${p.name} · SPIKE Sim`;
+  document.title = `${p.name} · FLL Practice`;
 }
 
 function createProject(name, state, build) {
@@ -150,7 +150,7 @@ nameInput.addEventListener('change', () => {
   if (!p) return;
   p.name = nameInput.value.trim() || 'Untitled';
   nameInput.value = p.name;
-  document.title = `${p.name} · SPIKE Sim`;
+  document.title = `${p.name} · FLL Practice`;
   saveStore();
 });
 

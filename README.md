@@ -1,10 +1,12 @@
-# FLL BIOGLOW practice simulator (SPIKE Sim)
+# FLL Practice
+
+BIOGLOW practice simulator for SPIKE Prime teams.
 
 A browser simulator for FIRST® LEGO® League Challenge teams using LEGO® Education SPIKE™ Prime. The team
 writes programs with the same Word Blocks as the SPIKE App, runs them on a to-scale BIOGLOW (2026-27) field
 with the real mission models, sees what scores, and then takes the exact same program to the real robot.
 
-**Use it here: <https://mrubens.github.io/spike-sim/>** (any laptop or tablet, nothing to install).
+**Use it here: <https://mrubens.github.io/fll-practice/>** (any laptop or tablet, nothing to install).
 
 Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO League are their trademarks.
 
