@@ -453,6 +453,7 @@ export class Sim3D {
       ray.setFromCamera(ndc, this.camera);
     };
     el.addEventListener('pointerdown', (e) => {
+      this.pressAt = { x: e.clientX, y: e.clientY, t: performance.now() };
       if (this.locked) return;
       toNdc(e);
       const hits = ray.intersectObject(this.robotGroup, true);
@@ -468,6 +469,16 @@ export class Sim3D {
       if (ray.ray.intersectPlane(plane, hit)) this.robot.setPose(hit.x, hit.z);
     });
     const end = (e) => {
+      // A short, still press on a mission model is a click: report it.
+      if (!this.dragging && this.pressAt && performance.now() - this.pressAt.t < 400 && Math.hypot(e.clientX - this.pressAt.x, e.clientY - this.pressAt.y) < 6) {
+        toNdc(e);
+        const targets = this.obstacleExtras.concat(this.obstacleMeshes.filter((m) => m.visible));
+        const hits = ray.intersectObjects(targets, true);
+        let obj = hits.length ? hits[0].object : null;
+        while (obj && !obj.userData.obstacle) obj = obj.parent;
+        if (this.onPick) this.onPick(obj ? obj.userData.obstacle : null);
+      }
+      this.pressAt = null;
       if (!this.dragging) return;
       this.dragging = false;
       this.controls.enabled = true;
@@ -478,7 +489,29 @@ export class Sim3D {
     el.addEventListener('pointercancel', end);
   }
 
-  update(dt) { this.updateEffects(dt); }
+  /** Smoothly move the camera to look at a point from a given offset; remembers where it was. */
+  flyTo(point, offset = [24, 22, 30]) {
+    if (!this.flyBack) this.flyBack = { pos: this.camera.position.clone(), target: this.controls.target.clone(), follow: this.follow };
+    this.follow = false;
+    this.fly = { t: 0, fromPos: this.camera.position.clone(), fromTarget: this.controls.target.clone(), toPos: new THREE.Vector3(point.x + offset[0], offset[1], point.y + offset[2]), toTarget: new THREE.Vector3(point.x, 4, point.y) };
+  }
+  flyHome() {
+    if (!this.flyBack) return;
+    this.fly = { t: 0, fromPos: this.camera.position.clone(), fromTarget: this.controls.target.clone(), toPos: this.flyBack.pos, toTarget: this.flyBack.target };
+    this.follow = this.flyBack.follow;
+    this.flyBack = null;
+  }
+  updateFly(dt) {
+    const f = this.fly;
+    if (!f) return;
+    f.t = Math.min(1, f.t + dt / 0.7);
+    const k = 1 - Math.pow(1 - f.t, 3);
+    this.camera.position.lerpVectors(f.fromPos, f.toPos, k);
+    this.controls.target.lerpVectors(f.fromTarget, f.toTarget, k);
+    if (f.t >= 1) this.fly = null;
+  }
+
+  update(dt) { this.updateEffects(dt); this.updateFly(dt); }
 
   render() {
     const r = this.robot, g = this.robotGroup;

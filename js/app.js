@@ -11,7 +11,7 @@ import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { WHEELS, MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring, practiceResult } from './scoring.js';
-import { MissionsPanel } from './missionsui.js';
+import { ModelCard } from './missionsui.js';
 
 const B = window.Blockly;
 const $ = (sel) => document.querySelector(sel);
@@ -53,7 +53,7 @@ const sim = new Sim3D($('#view3d'), world, robot);
 const hub = new HubPanel($('#hubPanel'), robot);
 const runtime = new Runtime({
   workspace, robot,
-  onChange: () => { updateRunState(); if (!runtime.running && practising) missionsPanel.showResult(practiceResult(scoring, practising)); },
+  onChange: () => { updateRunState(); if (!runtime.running && practising) modelCard.setResult(practiceResult(scoring, practising)); },
   onLog: (m) => toast(m, 'warn'),
 });
 robot.on('hint', (m) => toast(m, 'warn'));
@@ -65,11 +65,20 @@ scoring.on((ev) => {
   if (ev.type === 'done') { sim.celebrate(ev.obstacle, ev.action.animate); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} +${ev.action.points}`); }
   if (ev.type === 'lost') { toast(`${ev.mission.id} ${ev.mission.name}: ${ev.action.label} lost (${ev.action.points} pts)`, 'warn'); }
 });
-const missionsPanel = new MissionsPanel($('#missionsPanel'), {
+const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
-  onPractice: (m) => { practising = m; runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m.actions[0])); },
-  onStopPractice: () => { practising = null; sim.showZone(null); },
+  onPractice: (m) => {
+    practising = m;
+    if (m) { runtime.stop(); world.resetObstacles(); robot.resetPose(); scoring.reset(); sim.resetEffects(); sim.clearTrail(); sim.showZone(scoring.zoneOf(m.actions[0])); }
+    else sim.showZone(null);
+  },
+  onClose: () => { sim.flyHome(); },
 });
+sim.onPick = (obstacle) => {
+  if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
+  modelCard.show(obstacle);
+  sim.flyTo({ x: obstacle.x, y: obstacle.y });
+};
 function startRun() {
   world.resetObstacles();
   scoring.reset();
@@ -476,4 +485,4 @@ else createProject(SAMPLE_NAME, SAMPLE_STATE);
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
-window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, missionsPanel, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, modelCard, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };

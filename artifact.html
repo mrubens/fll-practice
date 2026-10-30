@@ -202,33 +202,24 @@ body.resizing iframe, body.resizing canvas { pointer-events: none; }
 .builder .hint { margin: 2px 0 0; font-size: 12px; color: var(--stop); min-height: 1em; }
 body.building #hubPanel { display: none; }
 
-/* ---- missions panel ---- */
-.missions { flex: 0 0 auto; border-top: 1px solid var(--line); background: var(--panel); padding: 8px 12px 12px; max-height: 42%; overflow: auto; }
-.missions-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
-.missions-head h3 { margin: 0; font-size: 14px; }
-.missions-head .score { font-size: 13px; color: var(--muted); }
-.missions-head .score b { font-size: 18px; color: var(--fg); }
-.mission-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 6px; }
-.mission { border: 1px solid var(--line); border-radius: 10px; padding: 4px 6px; background: #fff; }
-.mission.part { border-color: #B7791F; }
-.mission.full { border-color: var(--run); background: #F1FBF4; }
-.mission.active { box-shadow: 0 0 0 2px var(--accent); }
-.mission.flash { animation: missionflash 1.2s ease; }
-@keyframes missionflash { 0% { background: #D6F5E0; } 100% { background: #fff; } }
-.mission .pick { display: grid; grid-template-columns: 26px 1fr auto; gap: 6px; align-items: center; width: 100%; border: 0; background: none; padding: 2px 0; text-align: left; font-weight: 700; font-size: 12px; cursor: pointer; }
-.mission .mid { background: #E3000B; color: #fff; border-radius: 6px; text-align: center; font-size: 11px; padding: 2px 0; }
-.mission .mpts { color: var(--muted); font-variant-numeric: tabular-nums; }
-.mission .actions { display: flex; flex-direction: column; gap: 1px; padding: 2px 0 2px 32px; }
-.mission .act { font-size: 11px; color: var(--muted); }
-.mission .act.done { color: #1B7F3B; }
-.mission .act.lost { color: var(--stop); }
-.mission .act i { font-style: normal; color: #9AA3AF; }
-.mission-card { border: 1px solid var(--accent); border-radius: 10px; padding: 8px 10px; margin-bottom: 8px; background: #EAF4FF; font-size: 12px; }
-.mission-card .card-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
-.mission-card p { margin: 6px 0; }
-.mission-card ul { margin: 4px 0; padding-left: 18px; }
-.mission-card .how { color: var(--muted); }
-.mission-card .result { background: #fff; border-radius: 8px; padding: 6px 8px; }
+
+/* ---- score chip + model card (shown when a mission model is clicked) ---- */
+.score-chip { margin-left: auto; align-self: center; background: rgba(30,36,48,.85); color: #fff; border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.view-tools { right: 10px; }
+.model-card { position: absolute; right: 10px; top: 52px; width: min(300px, calc(100% - 20px)); background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 10px 28px rgba(30,36,48,.18); padding: 10px 12px; font-size: 12px; backdrop-filter: blur(6px); }
+.model-card .head { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+.model-card .num { background: #E3000B; color: #fff; border-radius: 6px; padding: 2px 6px; font-weight: 800; font-size: 12px; }
+.model-card .title { font-weight: 800; font-size: 14px; flex: 1; }
+.model-card .close { border: 0; background: none; font-size: 18px; color: var(--muted); cursor: pointer; line-height: 1; }
+.model-card .text { margin: 4px 0 6px; color: #3F4653; }
+.model-card .task { display: flex; gap: 6px; align-items: baseline; padding: 2px 0; }
+.model-card .task .pts { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
+.model-card .task.done { color: #1B7F3B; }
+.model-card .task.lost { color: var(--stop); }
+.model-card .how { color: var(--muted); }
+.model-card .foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+.model-card .foot .total { font-weight: 800; }
+.model-card .result { margin: 8px 0 0; background: #EAF4FF; border-radius: 8px; padding: 6px 8px; }
 
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
@@ -285,11 +276,12 @@ body.building #hubPanel { display: none; }
         <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
         <button type="button" id="btnFollow" class="vt" title="Camera follows the robot">Follow</button>
         <button type="button" id="btnCamera" class="vt" title="Reset the camera">Camera</button>
+        <span class="score-chip" id="scoreChip" title="Mission points this run">0 pts</span>
       </div>
-      <p class="view-hint">Drag the robot to move it. Drag the table to orbit, scroll or pinch to zoom. Arrow keys press the hub buttons.</p>
+      <div class="model-card" id="modelCard" hidden></div>
+      <p class="view-hint">Drag the robot to move it. Click a mission model to see what it scores. Arrow keys press the hub buttons.</p>
     </div>
     <div id="hubPanel"></div>
-    <section id="missionsPanel" class="missions" aria-label="Missions"></section>
     <section id="builder" class="builder" hidden aria-label="Robot builder">
       <div class="builder-head">
         <h3>Robot builder</h3>

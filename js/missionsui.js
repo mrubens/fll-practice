@@ -1,79 +1,67 @@
-// Scoresheet and mission practice cards (the "Missions" panel under the hub).
-import { MISSIONS, MAX_SCORE } from './missions.js';
+// A small card over the 3D view for the mission model that was clicked, plus the score chip.
+import { MISSIONS } from './missions.js';
 
-export class MissionsPanel {
-  constructor(container, { scoring, onPractice, onStopPractice }) {
-    this.scoring = scoring;
-    this.onPractice = onPractice;
-    this.onStopPractice = onStopPractice;
-    this.practising = null;
-    container.innerHTML = `
-      <div class="missions-head">
-        <h3>Missions</h3>
-        <div class="score"><b data-score>0</b> / ${MAX_SCORE} pts</div>
-      </div>
-      <div class="mission-card" hidden></div>
-      <div class="mission-list"></div>`;
-    this.scoreEl = container.querySelector('[data-score]');
-    this.list = container.querySelector('.mission-list');
-    this.card = container.querySelector('.mission-card');
-    this.renderList();
+const HOW = { push: 'drive into it', arm: 'lower the attachment onto it', lift: 'lower the attachment, then lift', visit: 'stop at it', avoid: 'keep away from it', auto: '' };
+
+export function missionsForObstacle(obstacle) {
+  return MISSIONS.filter((m) => m.models.includes(obstacle.id));
+}
+
+export class ModelCard {
+  constructor(card, chip, { scoring, onPractice, onClose }) {
+    this.card = card; this.chip = chip; this.scoring = scoring;
+    this.onPractice = onPractice; this.onClose = onClose;
+    this.obstacle = null; this.practising = null; this.result = null;
     scoring.on((ev) => {
-      if (ev.type === 'score' || ev.type === 'reset') this.renderList();
-      if (ev.type === 'done') this.flash(ev.mission.id);
+      this.chip.textContent = `${scoring.score} pts`;
+      if (this.obstacle) this.render();
     });
   }
 
-  renderList() {
-    const sheet = this.scoring.sheet();
-    this.scoreEl.textContent = String(this.scoring.score);
-    this.list.innerHTML = sheet.map((row) => `
-      <div class="mission${row.points === row.max ? ' full' : row.points ? ' part' : ''}${this.practising === row.mission.id ? ' active' : ''}" data-id="${row.mission.id}">
-        <button type="button" class="pick" title="${row.mission.text.replace(/"/g, '&quot;')}">
-          <span class="mid">${row.mission.id.slice(1)}</span>
-          <span class="mname">${row.mission.name}</span>
-          <span class="mpts">${row.points}/${row.max}</span>
-        </button>
-        <div class="actions">${row.actions.map((a) => `<span class="act${a.done ? ' done' : ''}${a.lost ? ' lost' : ''}">${a.done ? '&#10003;' : a.lost ? '&#10007;' : '&#9675;'} ${a.action.label} <i>${a.action.points}</i></span>`).join('')}</div>
-      </div>`).join('');
-    this.list.querySelectorAll('.pick').forEach((btn) => btn.addEventListener('click', () => this.select(btn.parentElement.dataset.id)));
-  }
-
-  flash(missionId) {
-    const el = this.list.querySelector(`.mission[data-id="${missionId}"]`);
-    if (el) { el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1200); }
-  }
-
-  select(missionId) {
-    const m = MISSIONS.find((x) => x.id === missionId);
-    if (!m) return;
-    if (this.practising === missionId) { this.stop(); return; }
-    this.practising = missionId;
+  show(obstacle) {
+    this.obstacle = obstacle;
+    this.result = null;
     this.card.hidden = false;
-    const kinds = { push: 'drive into it', arm: 'lower the attachment onto it', lift: 'lower the attachment, then lift', visit: 'stop at it', avoid: 'stay away from it', auto: '' };
-    this.card.innerHTML = `
-      <div class="card-head"><b>${m.id} ${m.name}</b><button type="button" class="tb" data-stop>Stop practising</button></div>
-      <p>${m.text}</p>
-      <ul>${m.actions.map((a) => `<li><b>${a.points} pts</b> ${a.label}${kinds[a.trigger.kind] ? ` <span class="how">(${kinds[a.trigger.kind]})</span>` : ''}</li>`).join('')}</ul>
-      <p class="result" data-result>Press <b>Run</b> (or Launch). The green ring marks the first target; the blue line is your path.</p>`;
-    this.card.querySelector('[data-stop]').addEventListener('click', () => this.stop());
-    this.renderList();
-    this.onPractice(m);
+    this.render();
   }
 
-  stop() {
-    this.practising = null;
+  close() {
     this.card.hidden = true;
-    this.renderList();
-    this.onStopPractice();
+    this.obstacle = null;
+    this.onClose();
   }
 
-  showResult(res) {
-    const el = this.card.querySelector('[data-result]');
-    if (!el || !res) return;
-    const dist = res.dist.toFixed(0), off = Math.abs(res.off).toFixed(0);
-    const where = res.dist < 10 ? 'at the target' : `${dist} cm from the target`;
-    const turn = Math.abs(res.off) < 10 ? 'facing it' : `turned ${off}° ${res.off > 0 ? 'left' : 'right'} of it`;
-    el.innerHTML = `Robot stopped <b>${where}</b>, ${turn}. Scored <b>${res.points}</b> pts on this mission (${res.done}/${res.total} tasks).`;
+  setResult(res) { this.result = res; if (this.obstacle) this.render(); }
+
+  render() {
+    const missions = missionsForObstacle(this.obstacle);
+    const sheet = this.scoring.sheet();
+    const blocks = missions.map((m) => {
+      const row = sheet.find((s) => s.mission.id === m.id);
+      const tasks = row.actions.map((a) => `<div class="task${a.done ? ' done' : ''}${a.lost ? ' lost' : ''}"><span>${a.done ? '&#10003;' : a.lost ? '&#10007;' : '&#9675;'}</span><span>${a.action.label}${HOW[a.action.trigger.kind] ? ` <span class="how">· ${HOW[a.action.trigger.kind]}</span>` : ''}</span><span class="pts">${a.action.points}</span></div>`).join('');
+      const practising = this.practising === m.id;
+      return `<div class="mission-block" data-mission="${m.id}">
+        <div class="head"><span class="num">${m.id.slice(1)}</span><span class="title">${m.name}</span></div>
+        <p class="text">${m.text}</p>
+        ${tasks}
+        <div class="foot"><span class="total">${row.points} / ${row.max} pts</span><button type="button" class="tb${practising ? '' : ' primary'}" data-practice="${m.id}">${practising ? 'Stop practising' : 'Practise this'}</button></div>
+        ${practising && this.result ? `<p class="result">${this.resultText(this.result)}</p>` : practising ? '<p class="result">Press Run or Launch. The green ring is the first target; the blue line is your path.</p>' : ''}
+      </div>`;
+    });
+    this.card.innerHTML = `<button type="button" class="close" aria-label="Close">&times;</button>` +
+      (blocks.length ? blocks.join('<hr>') : `<div class="head"><span class="title">${this.obstacle.id}</span></div><p class="text">No scored tasks for this model.</p>`);
+    this.card.querySelector('.close').addEventListener('click', () => this.close());
+    this.card.querySelectorAll('[data-practice]').forEach((b) => b.addEventListener('click', () => {
+      const id = b.dataset.practice;
+      if (this.practising === id) { this.practising = null; this.onPractice(null); }
+      else { this.practising = id; this.result = null; this.onPractice(MISSIONS.find((m) => m.id === id)); }
+      this.render();
+    }));
+  }
+
+  resultText(res) {
+    const where = res.dist < 10 ? 'at the target' : `${res.dist.toFixed(0)} cm from the target`;
+    const turn = Math.abs(res.off) < 10 ? 'facing it' : `turned ${Math.abs(res.off).toFixed(0)}° ${res.off > 0 ? 'left' : 'right'} of it`;
+    return `Robot stopped <b>${where}</b>, ${turn}. ${res.points} pts (${res.done}/${res.total} tasks).`;
   }
 }

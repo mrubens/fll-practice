@@ -64,11 +64,12 @@
         <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
         <button type="button" id="btnFollow" class="vt" title="Camera follows the robot">Follow</button>
         <button type="button" id="btnCamera" class="vt" title="Reset the camera">Camera</button>
+        <span class="score-chip" id="scoreChip" title="Mission points this run">0 pts</span>
       </div>
-      <p class="view-hint">Drag the robot to move it. Drag the table to orbit, scroll or pinch to zoom. Arrow keys press the hub buttons.</p>
+      <div class="model-card" id="modelCard" hidden></div>
+      <p class="view-hint">Drag the robot to move it. Click a mission model to see what it scores. Arrow keys press the hub buttons.</p>
     </div>
     <div id="hubPanel"></div>
-    <section id="missionsPanel" class="missions" aria-label="Missions"></section>
     <section id="builder" class="builder" hidden aria-label="Robot builder">
       <div class="builder-head">
         <h3>Robot builder</h3>
