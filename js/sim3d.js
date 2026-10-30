@@ -19,17 +19,18 @@ const labelCache = new Map();
 function labelTexture(text) {
   if (labelCache.has(text)) return labelCache.get(text);
   const c = document.createElement('canvas');
-  c.width = text.length > 2 ? 192 : 128; c.height = 128;
+  c.width = 128; c.height = 128;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#E3000B';
-  ctx.beginPath(); ctx.roundRect(4, 4, c.width - 8, c.height - 8, 26); ctx.fill();
-  ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 8; ctx.stroke();
+  ctx.clearRect(0, 0, 128, 128);
   ctx.fillStyle = '#FFFFFF';
-  ctx.font = `bold ${text.length > 2 ? 60 : 76}px Nunito, Arial, sans-serif`;
+  ctx.font = `bold ${text.length > 2 ? 44 : 78}px Nunito, Arial, sans-serif`;
   ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText(text, c.width / 2, c.height / 2 + 4);
+  ctx.strokeStyle = 'rgba(0,0,0,0.35)'; ctx.lineWidth = 6; ctx.lineJoin = 'round';
+  ctx.strokeText(text, 64, 68);
+  ctx.fillText(text, 64, 68);
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   labelCache.set(text, tex);
   return tex;
 }
@@ -142,12 +143,12 @@ export class Sim3D {
       m.userData.obstacle = o;
       const label = labelFor(o.id);
       if (label) {
-        const sprite = new THREE.Sprite(new THREE.SpriteMaterial({ map: labelTexture(label), transparent: true, depthTest: false }));
-        const w = label.length > 2 ? 9 : 6;
-        sprite.scale.set(w, 6, 1);
-        sprite.position.set(0, o.h / 2 + 4.5, 0);
-        sprite.renderOrder = 10;
-        m.add(sprite);
+        // White number painted on the roof, readable from the default (south) camera.
+        const side = Math.min(o.w, o.d) * 0.9;
+        const roof = new THREE.Mesh(new THREE.PlaneGeometry(side, side), new THREE.MeshBasicMaterial({ map: labelTexture(label), transparent: true }));
+        roof.rotation.x = -Math.PI / 2;
+        roof.position.y = o.h / 2 + 0.05;
+        m.add(roof);
       }
       this.scene.add(m);
       this.obstacleMeshes.push(m);
