@@ -258,7 +258,7 @@ $('#btnLaunch').addEventListener('click', () => {
   hub.ensureAudio();
   runtime.start();
 });
-world.loadSeason().then((ok) => { if (ok) toast('Season mat loaded.'); });
+world.loadSeason().then((ok) => { if (ok) { if (!runtime.running) robot.resetPose(); toast('Season mat loaded.'); } });
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
 $('#btnTurnR').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading + 15));
 $('#btnFollow').addEventListener('click', (e) => { sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });
