@@ -53,6 +53,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
   keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
+- **Practice one mission.** **Models** over the 3D view lists the fifteen missions with a checkbox each: untick
+  the rest and their models leave the table and the scoresheet, so a kid can drive at one model without the others
+  in the way. The choice is remembered.
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance

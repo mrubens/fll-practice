@@ -109,6 +109,7 @@ export class World {
     this.innerHalfH = TABLE.h / 2;
     this.listeners = [];
     this.season = null;
+    this.hiddenIds = new Set();        // season models taken off the table (see setHiddenModels)
     this.table = TABLE;
     this.robot = null;             // set by Robot.applyBuild
     this.physics = null;           // Rapier collision layer (see physics.js); null until loaded or when it cannot load
@@ -167,9 +168,20 @@ export class World {
       this.obstacles = cfg.obstacles.map((o, i) => ({ id: o.id || `model${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
     }
     this.season = cfg;
+    this.allObstacles = this.obstacles;
+    this.obstacles = this.allObstacles.filter((o) => !this.hiddenIds.has(o.id));
     if (this.physics) this.physics.rebuildObstacles();
     this.listeners.forEach((fn) => fn('season'));
     return true;
+  }
+
+  /** Show only some of the season's mission models (a Set of obstacle ids to hide); the others leave the table. */
+  setHiddenModels(ids) {
+    this.hiddenIds = new Set(ids);
+    if (!this.season || !this.allObstacles) return;
+    this.obstacles = this.allObstacles.filter((o) => !this.hiddenIds.has(o.id));
+    if (this.physics) this.physics.rebuildObstacles();
+    this.listeners.forEach((fn) => fn('season'));
   }
 
   /** Draw an image (e.g. the official season mat, 2 px/cm) over the whole mat canvas. */

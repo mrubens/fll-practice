@@ -12,6 +12,7 @@ import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
+import { MISSIONS } from './missions.js';
 import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 
@@ -380,9 +381,38 @@ function applyBoardUi() {
   const season = !!world.season;
   $('#btnLaunch').hidden = !season;
   $('#scoreChip').hidden = !season;
-  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); }
+  $('#btnModels').hidden = !season;
+  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); modelsPanel.hidden = true; }
   boardSelect.value = (world.board && world.board.id) || 'season';
 }
+
+// ---------- which mission models are on the table ----------
+// Kids can practice one mission at a time: untick the others and their models leave the table (and the scoresheet).
+const modelsPanel = $('#modelsPanel');
+const hiddenMissions = new Set(store.hiddenMissions || []);
+function applyHiddenMissions() {
+  const ids = new Set();
+  for (const m of MISSIONS) if (hiddenMissions.has(m.id)) m.models.forEach((id) => ids.add(id));
+  world.setHiddenModels(ids);
+  scoring.reset();
+  modelCard.renderChip();
+  store.hiddenMissions = [...hiddenMissions]; saveStore();
+}
+function renderModelsPanel() {
+  modelsPanel.innerHTML = `<h4><span>Models on the table</span><button type="button" data-all="1">All</button><button type="button" data-all="0">None</button></h4>` +
+    MISSIONS.map((m) => `<label class="${hiddenMissions.has(m.id) ? 'off' : ''}"><input type="checkbox" data-mission="${m.id}"${hiddenMissions.has(m.id) ? '' : ' checked'}><span class="m">${m.id}</span><span>${m.name}</span></label>`).join('');
+  modelsPanel.querySelectorAll('[data-mission]').forEach((cb) => cb.addEventListener('change', () => {
+    if (cb.checked) hiddenMissions.delete(cb.dataset.mission); else hiddenMissions.add(cb.dataset.mission);
+    applyHiddenMissions(); renderModelsPanel();
+  }));
+  modelsPanel.querySelectorAll('[data-all]').forEach((b) => b.addEventListener('click', () => {
+    hiddenMissions.clear();
+    if (b.dataset.all === '0') MISSIONS.forEach((m) => hiddenMissions.add(m.id));
+    applyHiddenMissions(); renderModelsPanel();
+  }));
+}
+$('#btnModels').addEventListener('click', () => { modelsPanel.hidden = !modelsPanel.hidden; if (!modelsPanel.hidden) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); renderModelsPanel(); } });
+world.setHiddenModels(new Set(MISSIONS.filter((m) => hiddenMissions.has(m.id)).flatMap((m) => m.models)));
 async function switchBoard(id, quiet) {
   const b = boardById(id);
   runtime.stop();

@@ -87,12 +87,16 @@ export class Scoring {
   }
 
   /** Called every simulation sub-step while a program runs (and once after resets). */
+  /** A mission whose models have all been taken off the table is not in play. */
+  inPlay(m) { const h = this.world.hiddenIds; return !h || !m.models.every((id) => h.has(id)); }
+
   update(dt) {
     if (this.match.ended) return;
     if (!this.world.physics) return;
     const c = this.ctx();
     let changed = false;
     for (const m of MISSIONS) {
+      if (!this.inPlay(m)) continue;
       try { if (m.watch) m.watch(c); } catch { /* model not loaded yet */ }
       for (const t of m.tasks) {
         const s = this.state[m.id + '.' + t.id];
@@ -118,6 +122,7 @@ export class Scoring {
     const c = this.ctx();
     let total = 0;
     for (const m of MISSIONS) {
+      if (!this.inPlay(m)) { this.missionPoints[m.id] = { points: 0, zero: false }; continue; }
       let pts = 0;
       let zero = false;
       try { zero = !!(m.zeroIf && m.zeroIf(c)); } catch { zero = false; }
@@ -142,7 +147,7 @@ export class Scoring {
 
   /** Scoresheet rows. */
   sheet() {
-    return MISSIONS.map((m) => ({
+    return MISSIONS.filter((m) => this.inPlay(m)).map((m) => ({
       mission: m,
       tasks: m.tasks.map((t) => { const s = this.state[m.id + '.' + t.id]; return { task: t, done: s.met && (!t.bonusOf || this.isDone(m.id, t.bonusOf)), count: s.count }; }),
       points: (this.missionPoints[m.id] || { points: 0 }).points,
