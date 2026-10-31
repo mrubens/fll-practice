@@ -2,6 +2,8 @@
 
 BIOGLOW practice simulator for SPIKE Prime teams.
 
+<img width="1080" height="648" alt="image" src="https://github.com/user-attachments/assets/afcd0404-a1b2-4c84-a2f7-19342ca51e63" />
+
 A browser simulator for FIRST® LEGO® League Challenge teams using LEGO® Education SPIKE™ Prime. The team
 writes programs with the same Word Blocks as the SPIKE App, runs them on a to-scale BIOGLOW (2026-27) field
 with the real mission models, sees what scores, and then takes the exact same program to the real robot.
