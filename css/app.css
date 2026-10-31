@@ -140,9 +140,10 @@ select.vt { cursor: pointer; color: var(--fg); }
 .spikeCatDot { width: 22px; height: 22px; border-radius: 50%; display: block; box-shadow: inset 0 -2px 0 rgba(0,0,0,.15); }
 .blocklyTreeLabel { font: 700 9.5px/1.1 var(--font) !important; text-transform: uppercase; letter-spacing: .03em; color: #5B6472 !important; white-space: normal !important; text-align: center; cursor: pointer; }
 .blocklyTreeRow.spikeSelected .blocklyTreeLabel { color: var(--fg) !important; }
-.blocklyFlyoutButton { fill: #fff; stroke: var(--line); }
-.blocklyFlyoutButton:hover { fill: #EEF1F6; }
-.blocklyFlyoutButton .blocklyText { fill: var(--fg); font-weight: 700; }
+.blocklyFlyoutButton { cursor: pointer; }
+.blocklyFlyoutButton rect, .blocklyFlyoutButton .blocklyFlyoutButtonBackground { fill: #FF6680 !important; stroke: #D03A58 !important; stroke-width: 1.5; rx: 10; ry: 10; }
+.blocklyFlyoutButton:hover rect, .blocklyFlyoutButton:hover .blocklyFlyoutButtonBackground { fill: #F04F6C !important; }
+.blocklyFlyoutButton .blocklyText { fill: #fff !important; font-weight: 800; }
 .blocklyMainBackground { stroke: none; }
 .blocklyText { font-family: var(--font) !important; }
 .spike-running { filter: drop-shadow(0 0 6px #FFD400) drop-shadow(0 0 2px #FFD400); }
