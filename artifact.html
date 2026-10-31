@@ -261,6 +261,10 @@ body.building #hubPanel { display: none; }
 .model-card .task .pts { margin-left: auto; color: var(--muted); font-variant-numeric: tabular-nums; }
 .model-card .task.done { color: #1B7F3B; }
 .model-card .task.lost { color: var(--stop); }
+.model-card .task { position: relative; }
+.model-card .hint-btn { display: inline-block; width: 16px; height: 16px; margin-left: 4px; border-radius: 50%; border: 1px solid var(--line); background: #F2F4F8; color: var(--muted); font-size: 10px; font-weight: 800; line-height: 14px; text-align: center; padding: 0; cursor: help; vertical-align: 1px; }
+.model-card .hint-btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+.model-card .hint-pop { position: absolute; left: 18px; right: 0; top: 100%; z-index: 3; margin-top: 2px; background: #1E2430; color: #fff; border-radius: 8px; padding: 6px 8px; font-size: 11px; font-weight: 600; line-height: 1.35; box-shadow: 0 6px 18px rgba(30,36,48,.25); }
 .model-card .how { color: var(--muted); }
 .model-card .foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .model-card .foot .total { font-weight: 800; }
