@@ -51,8 +51,6 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .ws-tools { display: flex; gap: 6px; }
 .wt { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.95); font-size: 18px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(30,36,48,.08); }
 .wt:hover { background: #fff; border-color: #B9C0CC; }
-.wt.gh { color: var(--fg); text-decoration: none; }
-.wt.gh:hover { color: #000; }
 .run-controls { display: flex; gap: 10px; }
 .round { width: 58px; height: 58px; border-radius: 50%; border: 0; display: grid; place-items: center; box-shadow: 0 6px 16px rgba(30,36,48,.18); transition: transform .12s ease; }
 .round:active { transform: scale(.94); }
@@ -143,6 +141,10 @@ select.vt { cursor: pointer; color: var(--fg); }
 
 /* ---- Blockly overrides ---- */
 .blocklyToolboxDiv { background: #fff !important; border-right: 1px solid var(--line); padding: 6px 0 !important; }
+.blocklyToolboxDiv { display: flex !important; flex-direction: column; }
+.blocklyToolboxDiv .blocklyToolboxContents, .blocklyToolboxDiv .blocklyToolboxCategoryGroup { flex: 1 1 auto; }
+.toolbox-gh { flex: 0 0 auto; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 10px 0 8px; color: var(--muted); text-decoration: none; font-size: 10px; font-weight: 700; letter-spacing: .04em; }
+.toolbox-gh:hover { color: var(--fg); }
 .blocklyToolboxCategory { margin: 0 !important; }
 .blocklyTreeRow { display: flex; flex-direction: column; align-items: center; gap: 4px; height: auto !important; line-height: 1.1 !important; padding: 7px 2px !important; margin: 2px 5px !important; border-radius: 10px; cursor: pointer; border-left: 0 !important; width: 72px; }
 .blocklyTreeRow:hover, .blocklyTreeRow.spikeSelected { background: #EEF1F6 !important; }
