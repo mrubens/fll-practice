@@ -56,10 +56,7 @@ export class ModelCard {
     this.render();
   }
 
-  hideHint() { if (this.hintOpen) { this.hintOpen.remove(); this.hintOpen = null; } }
-
   close() {
-    this.hideHint();
     this.card.hidden = true;
     this.obstacle = null;
     this.onClose();
@@ -72,8 +69,7 @@ export class ModelCard {
       const row = sheet.find((s) => s.mission.id === m.id);
       const tasks = row.tasks.filter((t) => t.task.points > 0 || t.task.count).map((t) => {
         const pts = t.task.count ? `${t.count * t.task.each}` : `${t.task.points}`;
-        const hint = t.task.how ? ` <button type="button" class="hint-btn" aria-label="Hint" data-hint="${t.task.how.replace(/"/g, '&quot;')}">?</button>` : '';
-        return `<div class="task${t.done ? ' done' : ''}"><span>${t.done ? '&#10003;' : '&#9675;'}</span><span>${t.task.label}${hint}</span><span class="pts">${pts}</span></div>`;
+        return `<div class="task${t.done ? ' done' : ''}"><span>${t.done ? '&#10003;' : '&#9675;'}</span><span>${t.task.label}</span><span class="pts">${pts}</span></div>`;
       }).join('') + (row.zero ? '<div class="task lost"><span>&#10007;</span><span>This mission scores zero right now (see the rulebook note on the card).</span><span class="pts">0</span></div>' : '') +
         (m.noEquipment ? '<p class="note">No equipment constraint: nothing scores if the model is touching the robot when the match ends.</p>' : '');
       return `<div class="mission-block" data-mission="${m.id}">
@@ -86,12 +82,5 @@ export class ModelCard {
     this.card.innerHTML = `<button type="button" class="close" aria-label="Close">&times;</button>` +
       (blocks.length ? blocks.join('<hr>') : `<div class="head"><span class="title">${this.obstacle.id}</span></div><p class="text">No scored tasks for this model.</p>`);
     this.card.querySelector('.close').addEventListener('click', () => this.close());
-    // Hints hide behind a "?" that shows them on hover, or on a tap (touch screens have no hover).
-    this.card.querySelectorAll('.hint-btn').forEach((b) => {
-      const show = () => { this.hideHint(); const tip = document.createElement('div'); tip.className = 'hint-pop'; tip.textContent = b.dataset.hint; b.closest('.task').appendChild(tip); this.hintOpen = tip; };
-      b.addEventListener('mouseenter', show);
-      b.addEventListener('mouseleave', () => this.hideHint());
-      b.addEventListener('click', (e) => { e.stopPropagation(); if (this.hintOpen && this.hintOpen.parentElement === b.closest('.task')) this.hideHint(); else show(); });
-    });
   }
 }
