@@ -51,6 +51,8 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .ws-tools { display: flex; gap: 6px; }
 .wt { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.95); font-size: 18px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(30,36,48,.08); }
 .wt:hover { background: #fff; border-color: #B9C0CC; }
+.wt.gh { color: var(--fg); text-decoration: none; }
+.wt.gh:hover { color: #000; }
 .run-controls { display: flex; gap: 10px; }
 .round { width: 58px; height: 58px; border-radius: 50%; border: 0; display: grid; place-items: center; box-shadow: 0 6px 16px rgba(30,36,48,.18); transition: transform .12s ease; }
 .round:active { transform: scale(.94); }
