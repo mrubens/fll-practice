@@ -74,7 +74,9 @@ export function geometryFor(build) {
     lift, radius: Math.max(9, build.track / 2 + 2.5),
     footprint: drivingBase ? { x0: -8, x1: 7.2, z0: -8.4, z1: 8.4 } : null,
     color: { fwd: cf, lat: cl }, distance: { fwd: df, lat: dl, angle: da, height: 5 + lift },
-    attachment: { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift },
+    // The arm's motor sits at 8.6 cm with its liftarms hung 2.6 cm below the axle: the beams run at 6 cm when
+    // horizontal and clear the hub (8 cm) when swung right back over the robot.
+    attachment: { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: (build.attachment.module === 'arm' ? 8.6 : 6) + lift, drop: build.attachment.module === 'arm' ? 2.6 : 0 },
   };
 }
 

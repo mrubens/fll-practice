@@ -261,7 +261,7 @@ export class Robot {
       }
       default: {
         const a = angle * DEG;
-        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight: a0.height + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
+        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight: a0.height - (a0.drop || 0) * Math.cos(a) + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
       }
     }
   }

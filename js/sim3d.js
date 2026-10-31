@@ -567,9 +567,10 @@ export class Sim3D {
     const red = new THREE.MeshStandardMaterial({ color: 0xE3000B, roughness: 0.6 });
     const prim = [];                        // the placeholder boxes, hidden once the LEGO parts arrive
     const add = (parent, mesh, pos) => { if (pos) mesh.position.set(...pos); parent.add(mesh); prim.push(mesh); return mesh; };
+    const dy = -(a.drop || 0);
     if (a.module === 'arm' || a.module === 'sweeper') {
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat), [6, 0, 0]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, 0, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat), [6, dy, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, dy, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
     } else if (a.module === 'lift') {
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat), [1, 3, 0]);
@@ -588,7 +589,7 @@ export class Sim3D {
     }
     if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
-    this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), 6, a.lat);
+    this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), a.height - geom.lift, a.lat);   // body already rides at geom.lift
     this.armPivot.rotation.y = -a.angle * DEG;
     body.add(this.armPivot);
 
@@ -643,6 +644,7 @@ export class Sim3D {
    */
   legoAttachment(module, primitives) {
     const gen = this.robotBuildGen;
+    const dy = -(this.robot.geom.attachment.drop || 0);   // the arm's beams hang this far below the motor axle
     const pivot = this.armPivot, moving = this.armMoving;
     if (this.robotLego) this.robotPending++;
     const place = (group, pos, rot) => { group.matrixAutoUpdate = false; const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...rot)); m.setPosition(...pos); group.matrix.copy(m); return group; };
@@ -657,13 +659,16 @@ export class Sim3D {
       // Every module starts from two 7-long beams lying on top of the base's front frame and reaching the mount,
       // so whatever hangs off the mount is visibly bolted to the robot.
       const mountX = module === 'basket' ? -12.8 : -2.8;
-      for (const z of [-2.4, 2.4]) put(pivot, 'b7', [mountX, -0.8, z], ALONG_X);
+      const g = this.robot.geom;
+      const mountY = 5.2 - (g.attachment.height - g.lift);                 // the frame's top is 4.8 cm up
+      for (let y = mountY; y <= -0.7; y += 0.8) for (const z of [-2.4, 2.4]) put(pivot, 'b7', [mountX, y, z], ALONG_X);   // stacked up to the mount
       if (module === 'arm') {
         put(pivot, 'motor', [0, 0, 0], [0, Math.PI, 0]);                      // output axle lateral at the pivot
-        for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, 0, z], ALONG_X);
-        put(moving, 'b5', [12.4, 0, 0], [0, 0, H]);                           // red paddle across the end, holes forward
+        if (dy) put(moving, 'b3', [0, dy / 2, 0], UPRIGHT);                   // riser from the axle down to the beams
+        for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, dy, z], ALONG_X);
+        put(moving, 'b5', [12.4, dy, 0], [0, 0, H]);                          // red paddle across the end, holes forward
         const P = 12 * DEG;                                                   // the fork: two tines, pitched up 12 degrees
-        for (const z of [-0.45, 0.45]) put(moving, 'b7', [12.4 + 2.8 * Math.cos(P), -1.2 + 2.8 * Math.sin(P), z], [0, H, P, 'ZYX']);   // turn to x, then pitch
+        for (const z of [-0.45, 0.45]) put(moving, 'b7', [12.4 + 2.8 * Math.cos(P), dy - 1.2 + 2.8 * Math.sin(P), z], [0, H, P, 'ZYX']);   // turn to x, then pitch
       } else if (module === 'sweeper') {
         put(pivot, 'motor', [0, 0, 0], [H, 0, 0]);                            // axle vertical: the arm swings sideways
         for (const z of [-0.8, 0.8]) put(moving, 'b15', [6, 0, z], ALONG_X);   // two 15-longs side by side on the axle

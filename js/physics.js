@@ -385,11 +385,12 @@ export class Physics {
       this.robotParts.push({ collider, node, half: size.map((v) => v / 2), onArm: !!onArm });
     };
     if (a.module === 'arm' || a.module === 'sweeper') {
-      part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle (a little narrower than it looks, so it fits the loops)
+      const dy = -(a.drop || 0);                         // the arm's beams hang below the axle
+      part(moving, [13.6, 2.4, 2.6], [6.8, dy, 0]);     // beam + paddle (a little narrower than it looks, so it fits the loops)
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
       // the fork: two tines ahead of the paddle, pitched up 12 degrees so they run level when the arm is lowered 12 degrees
       // (a hair narrower than the beams, so they clear the cube's posts)
-      if (a.module === 'arm') for (const z of [-0.45, 0.45]) part(moving, [5.6, 0.7, 0.7], [12.4 + 2.8 * Math.cos(12 * DEG), -1.2 + 2.8 * Math.sin(12 * DEG), z], 12);
+      if (a.module === 'arm') for (const z of [-0.45, 0.45]) part(moving, [5.6, 0.7, 0.7], [12.4 + 2.8 * Math.cos(12 * DEG), dy - 1.2 + 2.8 * Math.sin(12 * DEG), z], 12);
     } else if (a.module === 'basket') {
       part(moving, [10, 0.8, 12], [-5, -0.4, 0]);       // floor
       part(moving, [0.8, 4, 12], [-9.6, 2, 0]);         // back
