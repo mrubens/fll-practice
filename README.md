@@ -58,6 +58,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Practice one mission.** **Models** over the 3D view lists the fifteen missions with a checkbox each: untick
   the rest and their models leave the table and the scoresheet, so a kid can drive at one model without the others
   in the way. The choice is remembered.
+- **Drive by hand.** With no program running, W A S D drive the robot (W with A or D arcs, A or D alone pivots)
+  and Q and E raise and lower the attachment. Physics, pushing and scoring work as in a free run; during a launched
+  match the keys are ignored, since only the robot may act.
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance

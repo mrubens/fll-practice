@@ -1,7 +1,7 @@
 // Wires the editor, the simulator, the hub panel, project storage and file import/export together.
 import { createWorkspace, installDialogs } from './blocks.js';
 import { World, MATCH_SECONDS } from './world.js';
-import { Robot, PORT_LETTERS } from './robot.js';
+import { Robot, PORT_LETTERS, MAX_DEG_PER_S } from './robot.js';
 import { Sim3D } from './sim3d.js';
 import { HubPanel } from './hub.js';
 import { Runtime } from './interpreter.js';
@@ -560,6 +560,35 @@ hubUi();
 let last = performance.now();
 let acc = 0;
 const STEP = 1 / 200;
+
+// ---------- keyboard driving (WASD, Q/E for the attachment) when no program is running ----------
+const drive = { keys: new Set(), warned: false };
+const typing = () => { const a = document.activeElement; return !!(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)); };
+document.addEventListener('keydown', (e) => {
+  const k = e.key.toLowerCase();
+  if (!'wasdqe'.includes(k) || k.length !== 1 || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
+  if (runtime.running) return;
+  if (scoring.match.launched && !scoring.match.ended) { if (!drive.warned) { drive.warned = true; toast('Hands off during a match: the robot drives itself. Press Run for free driving.', 'warn'); } return; }
+  drive.keys.add(k); e.preventDefault();
+});
+document.addEventListener('keyup', (e) => drive.keys.delete(e.key.toLowerCase()));
+window.addEventListener('blur', () => drive.keys.clear());
+scoring.on((ev) => { if (ev.type === 'reset' || ev.type === 'end') drive.warned = false; });
+/** Set wheel and arm targets from the held keys; returns true while anything should keep moving. */
+function driveFromKeys() {
+  const k = drive.keys, cfg = robot.config;
+  const fwd = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0);
+  const turn = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0);          // d turns right (clockwise)
+  const v = MAX_DEG_PER_S * 0.5;
+  let l = 0, r = 0;
+  if (fwd) { l = r = fwd * v; if (turn) { if (turn > 0) r *= 0.3; else l *= 0.3; } }   // arcs while moving
+  else if (turn) { l = turn * v * 0.6; r = -turn * v * 0.6; }                           // pivots in place
+  robot.motors[cfg.left].target = l; robot.motors[cfg.right].target = r;
+  const arm = cfg.attachment && robot.motors[cfg.attachment];
+  if (arm) arm.target = ((k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0)) * MAX_DEG_PER_S * 0.2;
+  const moving = [robot.motors[cfg.left], robot.motors[cfg.right], arm].some((m) => m && (m.target !== 0 || Math.abs(m.velocity) > 1));
+  return moving;
+}
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
@@ -567,6 +596,11 @@ function frame(now) {
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     runtime.tick();
+    sim.addTrailPoint(robot.x, robot.y);
+  } else if (drive.keys.size || driveFromKeys()) {
+    driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
+    acc += dt;
+    while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     sim.addTrailPoint(robot.x, robot.y);
   } else {
     acc = 0;
