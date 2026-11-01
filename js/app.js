@@ -675,12 +675,16 @@ function driveDown(k) {
   drive.keys.add(k);
   return true;
 }
+// The arrow keys drive like W A S D when no program is running (while one runs they press the hub's buttons).
+const ARROWS = { ArrowUp: 'w', ArrowDown: 's', ArrowLeft: 'a', ArrowRight: 'd' };
+const driveKey = (e) => { const k = e.key.toLowerCase(); return ARROWS[e.key] || ('wasdqe'.includes(k) && k.length === 1 ? k : null); };
 document.addEventListener('keydown', (e) => {
-  const k = e.key.toLowerCase();
-  if (!'wasdqe'.includes(k) || k.length !== 1 || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
+  const k = driveKey(e);
+  if (!k || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
+  if (ARROWS[e.key] && (runtime.running || replay.active)) return;
   if (driveDown(k)) e.preventDefault();
 });
-document.addEventListener('keyup', (e) => drive.keys.delete(e.key.toLowerCase()));
+document.addEventListener('keyup', (e) => { const k = driveKey(e); if (k) drive.keys.delete(k); });
 window.addEventListener('blur', () => drive.keys.clear());
 // Touch controls (shown by the stylesheet on touch screens only). The thumbstick is analog: how far it is pushed
 // sets the speed, sideways sets the steering. The buttons act like holding a key.
@@ -765,7 +769,7 @@ async function frame(now) {
   } else {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
-    if (sim.chase && (drive.idle += dt) > 1.2) sim.endChase();   // and flies back once the robot has sat still a moment
+    if (sim.chase && (drive.idle += dt) > 3) sim.endChase();     // and flies back once the robot has sat still a few seconds
   }
   hub.update(now);
   if (!replay.active) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be

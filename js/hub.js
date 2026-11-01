@@ -48,8 +48,9 @@ export class HubPanel {
       btn.addEventListener('keyup', (e) => { if (e.key === ' ' || e.key === 'Enter') up(); });
     }
     // Arrow keys press the hub buttons when the focus is not in a text field.
+    // (while no program runs the arrows drive the robot instead; see app.js)
     document.addEventListener('keydown', (e) => {
-      if (e.repeat || isTyping()) return;
+      if (e.repeat || isTyping() || !document.body.classList.contains('running')) return;
       if (e.key === 'ArrowLeft') robot.setButton('left', true);
       if (e.key === 'ArrowRight') robot.setButton('right', true);
     });
