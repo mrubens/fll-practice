@@ -47,7 +47,7 @@ class FieldSteering extends B.FieldNumber {
     const pointer = el('line', { class: 'pointer' }, svg);
     const wheel = el('g', { class: 'wheel' }, svg);
     el('circle', { cx: C, cy: C, r: WHEEL_R, class: 'wheel-face' }, wheel);
-    // three windows between swept spokes (centres at 12, 4 and 8 o'clock), so the spokes sit at 6, 10 and 2
+    // three windows between swept spokes (centers at 12, 4 and 8 o'clock), so the spokes sit at 6, 10 and 2
     const P = (r, deg) => `${(C + Math.sin(deg * DEG) * r).toFixed(2)} ${(C - Math.cos(deg * DEG) * r).toFixed(2)}`;
     for (const base of [0, 120, 240]) {
       const ro = 38, ri = 15, half = 44, hub = 24, sweep = 14;

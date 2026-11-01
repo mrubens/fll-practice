@@ -96,6 +96,9 @@ select.vt { cursor: pointer; color: var(--fg); }
 .models-panel label.off { color: var(--muted); }
 .models-panel input { accent-color: var(--accent); }
 .vt[hidden], .score-chip[hidden] { display: none; }
+.mat-readout { position: absolute; left: 10px; top: 92px; z-index: 4; pointer-events: none; background: rgba(30,36,48,.82); color: #fff; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.35; backdrop-filter: blur(4px); }
+.mat-readout small { display: block; font-weight: 600; color: #D6DAE3; }
+.mat-readout b { color: #FFD500; }
 .view-hint { position: absolute; left: 10px; right: 10px; bottom: 6px; margin: 0; font-size: 11px; color: #4B5563; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; pointer-events: none; }
 
 /* ---- hub panel ---- */
@@ -350,7 +353,8 @@ body.building #hubPanel { display: none; }
       <div class="models-panel" id="modelsPanel" hidden></div>
       <div class="model-card" id="modelCard" hidden></div>
       <div id="hubPanel"></div>
-      <p class="view-hint">Drag the robot to move it, or drive it with W A S D (Q and E move the arm). Click a mission model to see what it scores. Arrow keys press the hub buttons.</p>
+      <div class="mat-readout" id="matReadout" hidden></div>
+      <p class="view-hint">Drag the robot to move it, or drive it with W A S D (Q and E move the arm). Click a mission model to see what it scores. Shift-drag on the mat to measure. Arrow keys press the hub buttons.</p>
     </div>
     <section id="builder" class="builder" hidden aria-label="Robot builder">
       <div class="builder-head">

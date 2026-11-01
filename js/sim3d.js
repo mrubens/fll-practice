@@ -827,9 +827,22 @@ export class Sim3D {
       ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
       ray.setFromCamera(ndc, this.camera);
     };
+    const matPoint = (e) => { toNdc(e); return ray.ray.intersectPlane(plane, hit) ? { x: hit.x, y: hit.z } : null; };
+    el.addEventListener('pointerleave', () => { if (this.onMatPoint) this.onMatPoint(null); });
     el.addEventListener('pointerdown', (e) => {
       this.pressAt = { x: e.clientX, y: e.clientY, t: performance.now() };
       if (this.locked) return;
+      // Shift-drag on the mat lays a ruler between two points.
+      if (e.shiftKey) {
+        const p = matPoint(e);
+        if (!p) return;
+        this.ruler = { a: p, b: { ...p } }; this.rulerDrag = true;
+        this.updateRuler();
+        this.controls.enabled = false;
+        el.setPointerCapture(e.pointerId);
+        el.style.cursor = 'crosshair';
+        return;
+      }
       toNdc(e);
       const hits = ray.intersectObject(this.robotGroup, true);
       if (!hits.length) return;
@@ -839,11 +852,25 @@ export class Sim3D {
       el.style.cursor = 'grabbing';
     });
     el.addEventListener('pointermove', (e) => {
-      if (!this.dragging) return;
+      if (this.rulerDrag) {
+        const p = matPoint(e);
+        if (p) { this.ruler.b = p; this.updateRuler(); if (this.onMatPoint) this.onMatPoint(p); }
+        return;
+      }
+      if (!this.dragging) { if (this.onMatPoint) this.onMatPoint(matPoint(e)); return; }
       toNdc(e);
       if (ray.ray.intersectPlane(plane, hit)) this.robot.setPose(hit.x, hit.z);
     });
     const end = (e) => {
+      if (this.rulerDrag) {
+        this.rulerDrag = false;
+        this.controls.enabled = true;
+        el.style.cursor = '';
+        try { el.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        if (this.ruler && Math.hypot(this.ruler.b.x - this.ruler.a.x, this.ruler.b.y - this.ruler.a.y) < 0.5) this.clearRuler();
+        this.pressAt = null;
+        return;
+      }
       // A short, still press on a mission model is a click: report it.
       if (!this.dragging && this.pressAt && performance.now() - this.pressAt.t < 400 && Math.hypot(e.clientX - this.pressAt.x, e.clientY - this.pressAt.y) < 6) {
         toNdc(e);
@@ -852,6 +879,7 @@ export class Sim3D {
         let obj = hits.length ? hits[0].object : null;
         while (obj && !obj.userData.obstacle) obj = obj.parent;
         if (this.onPick) this.onPick(obj ? obj.userData.obstacle : null);
+        if (!obj && this.ruler) this.clearRuler();          // a plain click on the mat puts the ruler away
       }
       this.pressAt = null;
       if (!this.dragging) return;
@@ -862,6 +890,29 @@ export class Sim3D {
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
+  }
+
+  // ---- ruler: a line laid on the mat with shift-drag ----
+  updateRuler() {
+    if (!this.rulerLine) {
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.BufferAttribute(new Float32Array(6), 3));
+      this.rulerLine = new THREE.Line(geo, new THREE.LineBasicMaterial({ color: 0xE3000B, depthTest: false }));
+      this.rulerLine.renderOrder = 8;
+      const endMat = new THREE.MeshBasicMaterial({ color: 0xE3000B, depthTest: false });
+      this.rulerEnds = [0, 1].map(() => { const m = new THREE.Mesh(new THREE.CircleGeometry(0.9, 20), endMat); m.rotation.x = -Math.PI / 2; m.renderOrder = 8; return m; });
+      this.scene.add(this.rulerLine, ...this.rulerEnds);
+    }
+    const { a, b } = this.ruler;
+    const pos = this.rulerLine.geometry.attributes.position;
+    pos.setXYZ(0, a.x, 0.3, a.y); pos.setXYZ(1, b.x, 0.3, b.y); pos.needsUpdate = true;
+    this.rulerEnds[0].position.set(a.x, 0.3, a.y); this.rulerEnds[1].position.set(b.x, 0.3, b.y);
+    this.rulerLine.visible = true; this.rulerEnds.forEach((m) => { m.visible = true; });
+  }
+  clearRuler() {
+    this.ruler = null;
+    if (this.rulerLine) { this.rulerLine.visible = false; this.rulerEnds.forEach((m) => { m.visible = false; }); }
+    if (this.onMatPoint) this.onMatPoint(this.lastMatPoint || null);
   }
 
   /** Smoothly move the camera to look at a point from a given offset; remembers where it was. */

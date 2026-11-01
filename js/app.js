@@ -73,6 +73,27 @@ const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
   onClose: () => { sim.flyHome(); },
 });
+// Where the cursor is on the mat, measured the way teams measure on the real table: from the left wall and
+// from the near (south) wall, plus how far and which way from the robot. A shift-drag ruler shows its length.
+const matReadout = $('#matReadout');
+sim.onMatPoint = (p) => {
+  sim.lastMatPoint = p;
+  if (!p && !sim.ruler) { matReadout.hidden = true; return; }
+  const parts = [];
+  if (sim.ruler) {
+    const r = sim.ruler, len = Math.hypot(r.b.x - r.a.x, r.b.y - r.a.y);
+    const ang = ((Math.atan2(r.b.y - r.a.y, r.b.x - r.a.x) / DEG - robot.heading + 540) % 360) - 180;
+    parts.push(`<b>Ruler ${len.toFixed(1)} cm</b><small>${Math.abs(ang) < 0.5 ? 'straight ahead of the robot' : `${Math.abs(ang).toFixed(0)}° ${ang > 0 ? 'right' : 'left'} of the robot's heading`}</small>`);
+  }
+  if (p) {
+    const fromLeft = p.x + world.innerHalfW, fromNear = world.innerHalfH - p.y;
+    const dist = Math.hypot(p.x - robot.x, p.y - robot.y);
+    const bearing = ((Math.atan2(p.y - robot.y, p.x - robot.x) / DEG - robot.heading + 540) % 360) - 180;
+    parts.push(`${fromLeft.toFixed(1)} cm from the left wall · ${fromNear.toFixed(1)} cm from the near wall<small>${dist.toFixed(1)} cm from the robot, ${Math.abs(bearing) < 0.5 ? 'straight ahead' : `${Math.abs(bearing).toFixed(0)}° to the ${bearing > 0 ? 'right' : 'left'}`}</small>`);
+  }
+  matReadout.innerHTML = parts.join('');
+  matReadout.hidden = false;
+};
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
   if (!world.season) return;                 // only the season table has mission cards
@@ -375,6 +396,7 @@ $('#btnLaunch').addEventListener('click', () => {
   startMatch();
 });
 // ---------- boards (tables) ----------
+const DEG = Math.PI / 180;
 const boardSelect = $('#boardSelect');
 boardSelect.innerHTML = BOARDS.map((b) => `<option value="${b.id}">${b.name}</option>`).join('');
 /** Match rules, scores and mission cards only make sense on the season table. */

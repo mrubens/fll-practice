@@ -57,6 +57,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Practice one mission.** **Models** over the 3D view lists the fifteen missions with a checkbox each: untick
   the rest and their models leave the table and the scoresheet, so a kid can drive at one model without the others
   in the way. The choice is remembered.
+- **Measure on the mat.** Hovering the mat shows where the cursor is, measured the way teams measure on the real
+  table (from the left wall and from the near wall) and how far and which way it is from the robot. Shift-drag lays
+  a ruler and shows its length and its angle to the robot's heading.
 - **Drive by hand.** With no program running, W A S D drive the robot (W with A or D arcs, A or D alone pivots)
   and Q and E raise and lower the attachment. Physics, pushing and scoring work as in a free run; during a launched
   match the keys are ignored, since only the robot may act.

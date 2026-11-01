@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { MECHANISMS } from './mechanisms.js';
 
-const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for metres)
+const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
 const DEG = Math.PI / 180;
 const SKIN = 0.25;              // cm the controller keeps between the robot and whatever it touches
 const STALL_MARGIN = 0.35;      // cm the attachment shape is shrunk by for "would this motor move hit something" tests
@@ -508,7 +508,7 @@ export class Physics {
     pass(this.bodyCollider);
     for (const part of this.robotParts) pass(part.collider);
     if (this.robotParts.length) pass(this.bodyCollider);
-    // Several physics substeps per robot step: the arm can sweep a centimetre per step, and jointed pieces need
+    // Several physics substeps per robot step: the arm can sweep a centimeter per step, and jointed pieces need
     // the kinematic push spread over small moves to react properly.
     const SUB = this.substeps || this.sim.physicsSubsteps || 3;
     const h0 = robot.heading, a0 = this.lastArmAngle ?? angle;
@@ -565,7 +565,7 @@ export class Physics {
   _carry(pc) {
     if (!this.armBody) return;
     const { R } = this;
-    // The piece hangs from the arm by its connector: a ball joint 1.6 cm above the piece's centre, so it dangles
+    // The piece hangs from the arm by its connector: a ball joint 1.6 cm above the piece's center, so it dangles
     // under gravity and swings as the robot moves instead of sticking out at whatever angle it was caught.
     const at = this.armBody.translation(), ar = this.armBody.rotation();
     const pt = pc.body.translation(), pr = pc.body.rotation();
