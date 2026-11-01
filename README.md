@@ -34,9 +34,11 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   habitats are only standing on the mat, so bumping them costs the points. Collisions are real too: the robot
   and its attachment stop at walls and models, a motor pressing the arm into something stalls (its "run for"
   block gives up after a moment, like the hub), and the whole thing runs at 200 Hz with substeps.
-- **The robot is real LEGO.** The Training Camp and Guided Mission presets show the actual SPIKE Prime Driving Base
-  built from the LDraw part library, with a medium motor, a 15-long liftarm arm and a red liftarm paddle for the
-  attachment, and the color sensor lens-down at the front. Pan the 3D view with a two-finger scroll on a touchpad
+- **The robot is real LEGO.** The Training Camp and Guided Mission presets show the FIRST robot guide's Driving Base
+  (drive motors on C and D, the accessory motor E at the front with its 12-tooth bevel gear, the color sensor hung
+  at the front right as in Driving Base 3) built from the LDraw part library, and the arm is the Driving Base 2 arm
+  from the same guide: its bracket pins to the hub, its bevel gear meshes with the motor's, and it swings on a real
+  axle between resting on the mat and its elbows meeting the hub. Pan the 3D view with a two-finger scroll on a touchpad
   (pinch or mouse wheel zooms, drag orbits, shift-drag pans).
 - **Start from FIRST's own Guided Mission.** On the first visit the app opens FIRST's published Guided Mission for
   Mission 11 with the robot it was written for (Driving Base, color sensor on B, arm motor on E). Press Launch and

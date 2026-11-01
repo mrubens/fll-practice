@@ -55,7 +55,7 @@ export function normalizeBuild(b) {
     track: base.track,
     hub: 'flat',
     ports,
-    colorMount: COLOR_MOUNTS[src.colorMount] ? src.colorMount : 'front',
+    colorMount: 'front-right',   // the Driving Base carries its colour sensor at the front right
     distanceMount: MOUNTS.includes(src.distanceMount) ? src.distanceMount : 'front',
     attachment,
   };
@@ -66,23 +66,26 @@ export function geometryFor(build) {
   const wheel = WHEELS[build.wheel];
   const r = wheel.diameter / 2;
   const lift = r - 2.8; // everything rides higher on big wheels
-  const colorMounts = { front: [7.5, 0], 'front-left': [7.5, -4], 'front-right': [7.5, 4], center: [0, 0], back: [-8, 0] };
+  const colorMounts = { front: [7.5, 0], 'front-left': [7.5, -4], 'front-right': [6.4, 4], center: [0, 0], back: [-8, 0] };   // front-right: where Driving Base 3 hangs it
   const sensorMounts = { front: [9.5, 0, 0], right: [0, 7.5, 90], back: [-9.5, 0, 180], left: [0, -7.5, -90] };
   const mountPoints = { front: [8, 0, 0], right: [1, 7.5, 90], back: [-8, 0, 180], left: [1, -7.5, -90] };
   const [cf, cl] = colorMounts[build.colorMount];
   const [df, dl, da] = sensorMounts[build.distanceMount];
   const [af, al, aa] = mountPoints[build.attachment.mount];
   // The LEGO Driving Base (small wheels, 11.2 cm track, flat hub) has a known footprint, measured from its model:
-  // 8 cm behind the axle to 7.2 ahead, 16.8 wide. Other builds are treated as a circle.
+  // 5.2 cm behind the axle (the caster) to 7.6 ahead (the motor and colour sensor), 16.8 wide. Other builds are a circle.
   const drivingBase = build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright';
   return {
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,
     lift, radius: Math.max(9, build.track / 2 + 2.5),
-    footprint: drivingBase ? { x0: -8, x1: 7.2, z0: -8.4, z1: 8.4 } : null,
+    footprint: drivingBase ? { x0: -5.2, x1: 7.6, z0: -8.4, z1: 8.4 } : null,
     color: { fwd: cf, lat: cl }, distance: { fwd: df, lat: dl, angle: da, height: 5 + lift },
-    // The arm's motor sits at 8.6 cm with its liftarms hung 2.6 cm below the axle: the beams run at 6 cm when
-    // horizontal and clear the hub (8 cm) when swung right back over the robot.
-    attachment: { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: (build.attachment.module === 'arm' ? 8.6 : 6) + lift, drop: build.attachment.module === 'arm' ? 2.6 : 0 },
+    // The arm is the Driving Base 2 arm from the FIRST robot guide: its axle is 6.4 cm ahead of the wheels and
+    // 5.2 cm up, geared off the motor E gear; the cross bar at its tip is 7.15 cm from the axle, 23.5 degrees below
+    // horizontal at rest. Other modules still hang from a mount 8 cm ahead.
+    attachment: build.attachment.module === 'arm'
+      ? { module: 'arm', mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 }
+      : { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 },
   };
 }
 

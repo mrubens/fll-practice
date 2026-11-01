@@ -9,7 +9,7 @@ import { exportLlsp3, importLlsp3 } from './llsp3.js';
 import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
-import { MOUNTS, COLOR_MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
+import { MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
@@ -409,7 +409,6 @@ let buildOpen = false;
 function fillBuilder(b) {
   B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
   B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
-  B$('bColorMount').innerHTML = Object.entries(COLOR_MOUNTS).map(([k, l]) => `<option value="${k}"${k === b.colorMount ? ' selected' : ''}>${l}</option>`).join('');
   B$('bDistMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.distanceMount ? ' selected' : ''}>${m}</option>`).join('');
   B$('bModule').innerHTML = Object.entries(MODULES).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
   const motor = MODULES[b.attachment.module].motor;
@@ -420,7 +419,7 @@ function readBuilder() {
   return normalizeBuild({
     preset: null, name: 'Custom robot',
     ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value },
-    colorMount: B$('bColorMount').value, distanceMount: B$('bDistMount').value,
+    distanceMount: B$('bDistMount').value,
     attachment: { module: B$('bModule').value },
   });
 }
@@ -757,4 +756,18 @@ if (store.guidedVersion !== 3) {
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
-window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, modelCard, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };
+/** Test hook: run the current program from the robot's pose flat out with no drawing; resolves with the score when it ends. */
+async function fastRun(maxSeconds = 600) {
+  if (runtime.running || replay.active) runtime.stop();
+  startRun();
+  if (!runtime.running) return null;
+  replay.active = true; updateRunState();
+  const limit = 200 * maxSeconds;
+  let steps = 0;
+  await drain();
+  while (runtime.running && steps < limit) { simStep(); steps++; if (steps % 8 === 0) sim.addTrailPoint(robot.x, robot.y); await drain(); }
+  if (runtime.running) runtime.stop();
+  replay.active = false; sim.render(); updateRunState();
+  return { steps, seconds: +(steps / 200).toFixed(1), score: scoring.score, met: Object.entries(scoring.state).filter(([, v]) => v.met).map(([k]) => k) };
+}
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, modelCard, fastRun, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };

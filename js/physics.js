@@ -451,13 +451,15 @@ export class Physics {
       const collider = this.world.createCollider(desc, onArm ? armBody : body);
       this.robotParts.push({ collider, node, half: size.map((v) => v / 2), onArm: !!onArm });
     };
-    if (a.module === 'arm' || a.module === 'sweeper') {
-      const dy = -(a.drop || 0);                         // the arm's beams hang below the axle
-      part(moving, [13.6, 2.4, 2.6], [6.8, dy, 0]);     // beam + paddle (a little narrower than it looks, so it fits the loops)
+    if (a.module === 'arm') {
+      // The Driving Base 2 arm, in the frame of its axle: two double-bent liftarms (a short leg up to the elbow,
+      // a long leg down to the tip), the 9-long cross bar with its angle connectors, and the bracket on the hub.
+      for (const z of [-1.6, 1.6]) { part(moving, [3.4, 0.8, 0.8], [1.23, 1.03, z], 40); part(moving, [6.6, 0.8, 0.8], [4.5, -0.4, z], -50); }
+      part(moving, [1.6, 1.6, 8.6], [6.56, -2.85, 0]);
+      part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);
+    } else if (a.module === 'sweeper') {
+      part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
-      // the fork: two tines ahead of the paddle, pitched up 12 degrees so they run level when the arm is lowered 12 degrees
-      // (a hair narrower than the beams, so they clear the cube's posts)
-      if (a.module === 'arm') for (const z of [-0.45, 0.45]) part(moving, [5.6, 0.7, 0.7], [12.4 + 2.8 * Math.cos(12 * DEG), dy - 1.2 + 2.8 * Math.sin(12 * DEG), z], 12);
     } else if (a.module === 'basket') {
       part(moving, [10, 0.8, 12], [-5, -0.4, 0]);       // floor
       part(moving, [0.8, 4, 12], [-9.6, 2, 0]);         // back

@@ -543,7 +543,8 @@ export class Sim3D {
       const eye = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.4, 20), new THREE.MeshStandardMaterial({ color: 0x1F2937, roughness: 0.3 }));
       eye.rotation.z = Math.PI / 2; eye.position.set(1.2, 0, z); ds.add(eye);
     }
-    ds.position.set(d.fwd - 3.3, 5.6, d.lat + (geom.distance.angle === 0 ? -3.2 : 0));   // sits on the frame, beside the attachment motor
+    if (geom.distance.angle === 0) ds.position.set(3.3, 8.8, -2.4);                       // on top of the hub at the front left, as in Driving Base 2
+    else ds.position.set(d.fwd - 3.3, 5.6, d.lat);
     ds.rotation.y = -d.angle * DEG;
     body.add(ds);
 
@@ -551,7 +552,7 @@ export class Sim3D {
     const c = geom.color;
     const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(c.fwd, 2.3, c.lat); body.add(cs);
     const csMount = new THREE.Group(); csMount.position.set(c.fwd, 0, c.lat); body.add(csMount);
-    this.legoColorSensor(csMount, cs);
+    if (!isDrivingBase(build)) this.legoColorSensor(csMount, cs);   // the Driving Base model has its sensor built in
     this.sensorDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
     this.sensorDisc.rotation.x = -Math.PI / 2;
     this.sensorDisc.position.set(c.fwd, 0.08, c.lat);
@@ -567,7 +568,14 @@ export class Sim3D {
     const prim = [];                        // the placeholder boxes, hidden once the LEGO parts arrive
     const add = (parent, mesh, pos) => { if (pos) mesh.position.set(...pos); parent.add(mesh); prim.push(mesh); return mesh; };
     const dy = -(a.drop || 0);
-    if (a.module === 'arm' || a.module === 'sweeper') {
+    if (a.module === 'arm') {
+      for (const z of [-1.6, 1.6]) {
+        const s = new THREE.Mesh(new THREE.BoxGeometry(3.4, 0.8, 0.8), armMat); s.rotation.z = 40 * DEG; add(this.armMoving, s, [1.23, 1.03, z]);
+        const l = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.8, 0.8), armMat); l.rotation.z = -50 * DEG; add(this.armMoving, l, [4.5, -0.4, z]);
+      }
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 8.6), armMat), [6.56, -2.85, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
+    } else if (a.module === 'sweeper') {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat), [6, dy, 0]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, dy, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
@@ -587,7 +595,8 @@ export class Sim3D {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red), [0, 0.8, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat), [-10, 0, 0]);
     }
-    if (a.module !== 'none') this.legoAttachment(a.module, prim);
+    if (a.module === 'arm') this.legoArm(body, prim);
+    else if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), a.height - geom.lift, a.lat);   // body already rides at geom.lift
     this.armPivot.rotation.y = -a.angle * DEG;
@@ -638,7 +647,27 @@ export class Sim3D {
   }
 
   /**
-   * Real LEGO parts for the attachment modules: a medium motor at the mount and Technic liftarms, laid out like
+   * The Driving Base 2 arm from the FIRST robot guide (models/attach/arm-*.mpd, reconstructed by fll-sim): the
+   * bracket pins to the hub's front and stays with the body; the moving part's file has its origin on the arm axle,
+   * so it goes straight into the pivot's moving frame. Both use the robot model's LDraw-to-sim matrix.
+   */
+  legoArm(body, primitives) {
+    const gen = this.robotBuildGen;
+    if (this.robotLego) this.robotPending++;
+    const M = () => new THREE.Matrix4().set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+    Promise.all([loadLDrawModel('models/attach/arm-fixed.mpd'), loadLDrawModel('models/attach/arm-moving.mpd')]).then(([fixed, moving]) => {
+      const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
+      if (gen !== this.robotBuildGen || !fixed || !moving || !this.armPivot.parent) { done(); return; }
+      fixed.matrixAutoUpdate = false; fixed.matrix.copy(M()); body.add(fixed);
+      moving.matrixAutoUpdate = false; moving.matrix.copy(M()); this.armMoving.add(moving);
+      if (this.robotLDrawParts) this.robotLDrawParts = this.robotLDrawParts.filter((n) => n !== fixed);
+      primitives.forEach((m) => { m.visible = false; });
+      done();
+    });
+  }
+
+  /**
+   * Real LEGO parts for the other attachment modules: a medium motor at the mount and Technic liftarms, laid out like
    * the Training Camp builds. Beams run along z in their own frame with the holes along y; `along x` turns them
    * to run forward and `upright` stands them on end.
    */

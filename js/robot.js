@@ -9,6 +9,8 @@ export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
 // The forklift: a 12-tooth gear on the motor driving a gear rack. 12 teeth at LEGO's 3.14 mm pitch is 3.8 cm per
 // rotation, and the rack gives 9 cm of travel: the fork rides from 1.5 cm to 10.5 cm above the mat.
 export const LIFT = { low: 1.5, high: 10.5, cmPerRotation: 3.77 };
+/** The arm's travel in motor degrees: a little below its rest pose (the mat stops it) up to where its elbows meet the hub. */
+export const ARM_STOPS = { low: -15, high: 100 };
 const ACCEL = 3600;                       // deg/s^2 ramp
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -242,6 +244,7 @@ export class Robot {
     const module = this.geom.attachment.module;
     if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
     if (module === 'sweeper') return angle < -90 ? -90 : angle > 90 ? 90 : null;
+    if (module === 'arm') return angle < ARM_STOPS.low ? ARM_STOPS.low : angle > ARM_STOPS.high ? ARM_STOPS.high : null;
     return null;
   }
 
@@ -271,8 +274,9 @@ export class Robot {
         return { ...base, tx: px + Math.cos(out) * Math.cos(a) * 9, ty: py + Math.sin(out) * Math.cos(a) * 9, tipHeight: a0.height - Math.sin(a) * 9, down: false, tilt: angle };
       }
       default: {
-        const a = angle * DEG;
-        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight: a0.height - (a0.drop || 0) * Math.cos(a) + Math.sin(a) * L, down: Math.sin(a) * L < 2 };
+        const a = (angle + (a0.tipAngle || 0)) * DEG;
+        const tipHeight = a0.height - (a0.drop || 0) * Math.cos(angle * DEG) + Math.sin(a) * L;
+        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * L, ty: py + Math.sin(out) * Math.cos(a) * L, tipHeight, down: tipHeight < 4 };
       }
     }
   }
