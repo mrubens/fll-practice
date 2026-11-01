@@ -44,7 +44,9 @@ export const MECHANISMS = {
   'Training cube 2': { pieces: { cube: { kind: 'loose', anchor: [0, 2.8, 0], whole: true, mass: 0.02, friction: 0.9, shape: [{ box: [0.8, 0.8, 4], at: [-1.6, -2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, -2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, -2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, -2.4, 1.6] }, { box: [0.8, 0.8, 4], at: [-1.6, 2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, 2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, 2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, 2.4, 1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, 1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, 1.6] }], parts: () => true } } },
   // ---- M01: the drone rig (lying along the south wall) + the pilot stand with the LiDAR map ----
   'M01 Drone Survey': {
-    base: [{ box: [56, 0.8, 6], at: [0, -0.2, 8.5] }],   // the strings lie flat; the robot drives over them
+    // the strings lie flat (the robot drives over them); the winch tower at the right end and the pulley at the
+    // left end stand up and stop the robot
+    base: [{ box: [56, 0.8, 6], at: [0, -0.2, 8.5] }, { box: [4.4, 6.2, 6.4], at: [26.5, 3.1, 8.8] }, { box: [2.4, 2.9, 3.2], at: [-25.5, 1.45, 8.8] }],
     pieces: {
       drone: { kind: 'lift', anchor: [-0.4, 0, 8.8], drivenBy: { model: 'M01 Drone stand', piece: 'lever', ratio: 10 / 55 },
         shape: [{ box: [4, 3, 4], at: [0, 1.6, 0] }], parts: (p) => Math.abs(p.c[0]) < 2.6 && p.c[2] > 5 },
@@ -125,7 +127,8 @@ export const MECHANISMS = {
   },
   // ---- M08/M09: the vine drops when touched, the platform lifts, the camera trap flips out, the seed falls ----
   'M08-09 Tangled / Research Platform': {
-    base: [{ box: [12, 28, 7], at: [0, 14, 0] }],
+    // the trunk, plus the leafy canopy that spreads 10 cm each side of it from 18 cm up: a raised arm snags on it
+    base: [{ box: [12, 28, 7], at: [0, 14, 0] }, { box: [26, 10, 14.5], at: [2, 23, -0.1] }],
     pieces: {
       // the vine: the winding column on the tree's right side, hanging just above the mat; touch it and it drops
       vine: { kind: 'loose', anchor: [8.6, 2.9, 1.3], mass: 0.04, locked: true, releaseWhen: (s) => s.vine.touched, friction: 0.6,
@@ -142,11 +145,12 @@ export const MECHANISMS = {
     },
   },
   // ---- M10: the two habitats must not move; they are free-standing ----
+  // ---- M10: the habitats stand free on the mat, tall and narrow: a low push slides them, a high one tips them over ----
   'M10 Fragile Microhabitat A': {
-    pieces: { habitat: { kind: 'loose', anchor: [6.4, 0, 0], planar: true, mass: 0.08, friction: 0.9, whole: true, shape: [{ box: [10, 8.5, 4], at: [0, 4.3, 0] }], parts: () => true } },
+    pieces: { habitat: { kind: 'loose', anchor: [6.4, 0, 0], mass: 0.08, friction: 0.45, whole: true, shape: [{ box: [10, 8.5, 4], at: [0, 4.3, 0] }], parts: () => true } },
   },
   'M10 Fragile Microhabitat B': {
-    pieces: { habitat: { kind: 'loose', anchor: [-6.2, 0, 0], planar: true, mass: 0.08, friction: 0.9, whole: true, shape: [{ box: [10.3, 8.4, 4], at: [0, 4.2, 0] }], parts: () => true } },
+    pieces: { habitat: { kind: 'loose', anchor: [-6.2, 0, 0], mass: 0.08, friction: 0.45, whole: true, shape: [{ box: [10.3, 8.4, 4], at: [0, 4.2, 0] }], parts: () => true } },
   },
   // ---- M11: pull the root cover forward onto the mat; a seed for M14 hangs on the left and drops when knocked ----
   // Model frame: +x is the front (the window and its cover), +z is the seed side. The brown root cover

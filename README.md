@@ -69,6 +69,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Drive by hand.** With no program running, W A S D drive the robot (W with A or D arcs, A or D alone pivots)
   and Q and E raise and lower the attachment. Physics, pushing and scoring work as in a free run; during a launched
   match the keys are ignored, since only the robot may act.
+- **Models that push back.** M10's habitats stand free: a shove on the long side slides them, on the narrow side
+  tips them over. M01's winch tower and M08-09's leafy canopy are solid, so the robot stops at the tower and a
+  raised arm snags in the canopy.
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
