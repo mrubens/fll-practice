@@ -760,7 +760,8 @@ async function frame(now) {
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     sim.addTrailPoint(robot.x, robot.y);
     drive.idle = 0;
-    if (!sim.dragging) sim.startChase();               // the view drops in behind the robot while it is being driven
+    const steering = drive.stick || ['w', 'a', 's', 'd'].some((k) => drive.keys.has(k));
+    if (steering && !sim.dragging) sim.startChase();   // the view drops in behind the robot while it is being driven (not for the arm alone)
   } else {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
