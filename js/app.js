@@ -163,15 +163,24 @@ function stopRun() {
   }
 }
 
-const btnRun = $('#btnRun'), btnStop = $('#btnStop');
+const btnRun = $('#btnRun'), btnStop = $('#btnStop'), btnStep = $('#btnStep');
 function updateRunState() {
   document.body.classList.toggle('running', runtime.running);
+  document.body.classList.toggle('stepping', runtime.running && runtime.stepMode);
   sim.locked = runtime.running;
-  btnRun.disabled = runtime.running;
+  btnRun.disabled = runtime.running && !runtime.paused;
   btnStop.disabled = !runtime.running;
+  btnStep.classList.toggle('active', runtime.running && runtime.stepMode);
 }
-btnRun.addEventListener('click', () => startRun());
-btnStop.addEventListener('click', () => stopRun());
+// Run while paused at a step continues at full speed; otherwise it starts the program.
+btnRun.addEventListener('click', () => { if (runtime.running && runtime.paused) runtime.setStepMode(false); else startRun(); });
+btnStop.addEventListener('click', () => { stopRun(); runtime.setStepMode(false); });
+// Step: start the program paused before its first block, or run the next block of a paused program.
+btnStep.addEventListener('click', () => {
+  if (!runtime.running) { runtime.setStepMode(true); startRun(); return; }
+  if (runtime.paused) runtime.step();
+  else runtime.setStepMode(true);                       // a running program pauses before its next block
+});
 updateRunState();
 
 // ---------- projects ----------
@@ -615,7 +624,9 @@ function driveFromKeys() {
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (runtime.running) {
+  if (runtime.running && runtime.paused) {
+    acc = 0;                                            // paused at a step: the clock stands still
+  } else if (runtime.running) {
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     runtime.tick();
@@ -629,7 +640,7 @@ function frame(now) {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
   }
-  if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended) {
+  if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended && !runtime.paused) {
     hub.matchLeft -= dt;
     if (hub.matchLeft <= 0) { hub.matchLeft = 0; runtime.stop(); scoring.endMatch(); }
   }

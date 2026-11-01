@@ -73,6 +73,10 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .round.stop { background: #fff; }
 .round.stop span { width: 20px; height: 20px; background: #1E2430; border-radius: 3px; }
 body.running .round.stop span { background: var(--stop); }
+.round.step { background: #fff; }
+.round.step span { width: 22px; height: 22px; background: no-repeat center / contain url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 4l10 8-10 8z' fill='%231E2430'/><rect x='17' y='4' width='3' height='16' rx='1' fill='%231E2430'/></svg>"); }
+.round.step.active { background: var(--accent); box-shadow: 0 6px 16px rgba(11,95,196,.3); }
+.round.step.active span { background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M5 4l10 8-10 8z' fill='white'/><rect x='17' y='4' width='3' height='16' rx='1' fill='white'/></svg>"); }
 
 .splitter { flex: 0 0 8px; cursor: col-resize; background: var(--line); position: relative; touch-action: none; user-select: none; }
 .splitter::after { content: ""; position: absolute; left: 2px; top: 50%; width: 4px; height: 36px; margin-top: -18px; border-radius: 2px; background: #AEB5C2; }
@@ -332,6 +336,7 @@ body.building #hubPanel { display: none; }
       </div>
       <div class="run-controls">
         <button type="button" id="btnStop" class="round stop" aria-label="Stop program"><span></span></button>
+        <button type="button" id="btnStep" class="round step" aria-label="Step: run the next block" title="Step: run one block at a time"><span></span></button>
         <button type="button" id="btnRun" class="round run" aria-label="Run program"><span></span></button>
       </div>
     </div>

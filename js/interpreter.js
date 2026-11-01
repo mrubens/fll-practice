@@ -18,6 +18,28 @@ export class Runtime {
     this.hats = [];
     this.edge = new Map();
     this.vars = new Map();
+    this.stepMode = false;   // pause before every block; Step runs the next one
+    this.paused = false;     // true while threads wait at the step gate (the simulation clock stands still)
+    this.gateWaiters = [];
+  }
+
+  /** Step mode: each thread stops before its next block until step() is called. */
+  setStepMode(on) {
+    this.stepMode = !!on;
+    if (!on) this.release();
+    this.onChange();
+  }
+  /** Run one block on every waiting thread. */
+  step() { this.release(); }
+  release() {
+    const w = this.gateWaiters; this.gateWaiters = []; this.paused = false;
+    for (const fn of w) fn();
+    this.onChange();
+  }
+  gate(ctx) {
+    this.paused = true;
+    this.onChange();
+    return new Promise((resolve) => this.gateWaiters.push(resolve)).then(() => { if (ctx.stopped || !this.running) throw new StopSignal(); });
   }
 
   log(msg) { this.onLog(msg); }
@@ -33,6 +55,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
+    this.paused = false; this.gateWaiters = [];
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();
@@ -46,6 +69,8 @@ export class Runtime {
     const waiters = this.tickWaiters;
     this.tickWaiters = [];
     for (const w of waiters) w();
+    const gated = this.gateWaiters; this.gateWaiters = []; this.paused = false;
+    for (const g of gated) g();
     this.robot.stopAllMotors();
     this.robot.stopSound();
     this.robot.matrixOff();
@@ -152,6 +177,7 @@ export class Runtime {
   async exec(block, ctx) {
     this.ctx = ctx;
     this.mark(ctx, block);
+    if (this.stepMode) await this.gate(ctx);
     const h = HANDLERS[block.type];
     if (!h) { this.log(`"${block.type}" is not supported in the simulator yet.`); return; }
     await h.call(this, block, ctx);
