@@ -199,19 +199,32 @@ export const MECHANISMS = {
     pieces: {},
     stationZone: { x: [-5.2, 5.2], z: [-3.6, 3.6] },
   },
-  // ---- M15: the canopy flap lifts, the skylight slides in, the compost hatch drops ----
+  // ---- M15: the building (from the official build book 13 and the missions video) ----
+  // Model frame: +z is the front (the open wall with the crank), +x is the left as you face the front.
+  //  - nesting canopy: the black 4x10 plate with the blue bird, hinged along the back edge of the roof's left half,
+  //    with a red rod and ball sticking out to the left; raised by lifting its front edge (or the rod) up
+  //  - garden skylight: the black 6x6 tile with the red tile frame, on rails under the right half of the roof;
+  //    it starts pulled out behind the building and is pushed in by its red frame
+  //  - compost hatch: the black 3-beam panel low on the front, on the crank with the red ball; pushing the ball
+  //    down swings the panel out and down until it lies on the mat
   'Dock mine (M13-15)': {
-    base: [{ box: [15, 7.4, 10], at: [0, 3.7, 0] }],
+    // the body stops short of the front wall, which is an open frame: posts, a lintel and a sill around the hatch and crank
+    // the body, the front wall (the crank's ball stands clear in front of it, under open sky), the lime end frames,
+    // and the garden platform over the skylight's rails
+    base: [{ box: [13.2, 6.2, 8.3], at: [0, 3.1, -1.75] }, { box: [13.2, 6.2, 1.8], at: [0, 3.1, 3.3] },
+      { box: [0.8, 5.6, 8.8], at: [6.94, 3.6, -0.64] }, { box: [0.8, 5.6, 4], at: [7.74, 2.8, 0.96] }, { box: [1.6, 1.2, 2.4], at: [7.4, 6.9, -1.4] },   // the right end frame, the dock's upright and the lever on top
+      { box: [7, 2, 4.8], at: [3.3, 7.4, 1.8] }, { box: [6.4, 0.6, 1.6], at: [3.3, 6.6, 3.8] }, { box: [6.4, 0.6, 1.6], at: [3.3, 6.6, -0.2] }],
     pieces: {
-      // the garden half of the roof (the side facing the table) is the nesting canopy: lift its outer edge until it clicks
-      canopy: { kind: 'hinge', axis: [0, 0, 1], anchor: [1.0, 7.6, 0], range: [0, 58], latch: true, mass: 0.03, damp: 0.5,
-        shape: [{ box: [10, 1.2, 9], at: [5, 0.4, 0] }], parts: (p) => p.c[1] > 6.8 && p.c[0] > -0.5 && p.c[0] < 6.5 },
-      // the dark skylight plate on the other half of the roof slides in when pushed from the garden side
-      skylight: { kind: 'slider', axis: [-1, 0, 0], anchor: [-2.3, 8.4, -1.3], range: [0, 4], damp: 1.5, gravity: false, mass: 0.03,
-        shape: [{ box: [5, 1.6, 8], at: [0, 0, 0] }], parts: (p) => p.c[1] > 6.8 && p.c[0] <= -0.5 },
-      // the compost hatch: the lower middle of the front wall, hinged at the bottom, pressed open by its handle
-      hatch: { kind: 'hinge', axis: [0, 0, -1], anchor: [7.5, 2.4, 0], range: [0, 95], mass: 0.03, damp: 0.4, gravity: false,
-        shape: [{ box: [1.2, 3, 5], at: [0, 1.6, 0] }, { box: [1.8, 1.2, 3], at: [1.3, 2.6, 0] }], parts: (p) => p.c[0] > 6.3 && p.c[1] < 4.2 && Math.abs(p.c[2]) < 2.4 },
+      canopy: { kind: 'hinge', axis: [-1, 0, 0], anchor: [-2.26, 6.96, -5.44], range: [0, 32], latch: true, mass: 0.03, damp: 0.5,   // lifted past 30 degrees it stays up (the Driving Base arm reaches about that far)
+        shape: [{ box: [3.2, 0.9, 8], at: [0, 0.85, 3.96] }, { box: [5, 1, 1], at: [-4.5, 1.1, 8.35] }],
+        parts: (p) => (p.c[1] > 7.3 && p.c[0] < 0.6 && !/^(11477|68211|6908|32607)/.test(p.file)) || p.file.startsWith('43045') },
+      skylight: { kind: 'slider', axis: [0, 0, 1], anchor: [3.34, 6.24, 1.76], shift: [0, 0, -4.8], range: [-4.8, 0], damp: 1.5, gravity: false, mass: 0.03,
+        shape: [{ box: [4.8, 0.4, 4.8], at: [0, 0, 0] }, { box: [4, 0.4, 4.8], at: [0, 0, -4.8] }],
+        parts: (p) => /^(10202|2431|6636)/.test(p.file) && p.c[1] < 6.5 && p.c[0] > 0.5 },
+      hatch: { kind: 'hinge', axis: [1, 0, 0], anchor: [-1.0, 1.84, 3.76], range: [0, 150], mass: 0.03, damp: 0.4,   // past upright it falls on to the mat
+        // the crank handle's box comes first: its ball is what reaches the mat when the hatch is open
+        shape: [{ box: [4.2, 1, 1], at: [-2.9, 1.6, 1.6] }, { box: [3.2, 2.4, 0.8], at: [0.34, 1.6, -0.8] }],
+        parts: (p) => p.c[2] > 2.6 && p.c[1] > 1.5 && p.c[1] < 4.8 && p.c[0] > -5.5 && p.c[0] < 1.0 && !/^(32000|65249)/.test(p.file) },
     },
   },
 };

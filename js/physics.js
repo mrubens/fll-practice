@@ -186,6 +186,7 @@ export class Physics {
     o.angle = 0;
     for (const [name, pd] of Object.entries(def.pieces || {})) {
       const anchorW = toWorld(pd.anchor);
+      const startW = pd.shift ? toWorld(pd.anchor.map((v, i) => v + pd.shift[i])) : anchorW.clone();   // a piece may start away from its anchor (a drawer pulled out)
       const locked = !!pd.locked;
       let desc;
       if (pd.kind === 'lift') desc = R.RigidBodyDesc.kinematicPositionBased();
@@ -194,14 +195,14 @@ export class Physics {
       // jointed later), released by switching them back on.
       if (locked) desc.enabledTranslations(false, false, false).enabledRotations(false, false, false);
       else if (pd.planar && pd.kind === 'loose') desc.enabledTranslations(true, false, true).enabledRotations(false, true, false);
-      desc.setTranslation(anchorW.x * S, anchorW.y * S, anchorW.z * S).setRotation(rq).setCcdEnabled(true).setCanSleep(false);
+      desc.setTranslation(startW.x * S, startW.y * S, startW.z * S).setRotation(rq).setCcdEnabled(true).setCanSleep(false);
       const body = this.world.createRigidBody(desc);
       const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
       const cols = shapes.map((sh, i) => this.world.createCollider(
         R.ColliderDesc.cuboid((sh.box[0] / 2) * S, (sh.box[1] / 2) * S, (sh.box[2] / 2) * S).setTranslation(sh.at[0] * S, sh.at[1] * S, sh.at[2] * S)
           .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pd.whole || pd.kind === 'loose' ? SHARED : groups), body));
       const pc = { o, name, def: pd, body, colliders: cols, collider: cols[0], anchor: anchorW, q0: frame.q.clone(), axisW: pd.axis ? new THREE.Vector3(...pd.axis).applyQuaternion(frame.q).normalize() : null,
-        locked, released: !locked, latched: false, touched: -1, angle: 0, ext: 0, height: 0, start: anchorW.clone() };
+        locked, released: !locked, latched: false, touched: -1, angle: 0, ext: 0, height: 0, start: startW.clone() };
       if (pd.kind === 'hinge' && !pd.parent) this._hingeJoint(pc, base, locked);
       if (pd.kind === 'slider') this._sliderJoint(pc, base, locked);
       this.pieces.push(pc);

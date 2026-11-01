@@ -131,12 +131,12 @@ export const MISSIONS = [
     text: 'Modify the building to create homes for wildlife, restore soil health and bring in natural light.',
     tasks: [
       { id: 'canopy', label: 'The nesting canopy is raised', points: 10,
-        met: (c) => c.p('Dock mine (M13-15)').canopy.angle > 50 },
+        met: (c) => { const p = c.p('Dock mine (M13-15)').canopy; return !!p && p.angle > 30; } },
       { id: 'skylight', label: 'The garden skylight is completely in', points: 10,
-        met: (c) => c.p('Dock mine (M13-15)').skylight.ext > 3.5 },
+        met: (c) => { const p = c.p('Dock mine (M13-15)').skylight; return !!p && p.ext > -0.4; } },
       { id: 'hatch', label: 'The compost hatch is completely opened, touching the mat', points: 10,
-        met: (c) => c.p('Dock mine (M13-15)').hatch.angle > 85 },
-      { id: 'env', label: 'Environmental bonus: the building is on the mine dock, so the nesting canopy counts', points: 10, bonusOf: 'canopy', met: (c) => c.p('Dock mine (M13-15)').canopy.angle > 50 },
+        met: (c) => { const p = c.p('Dock mine (M13-15)').hatch; return !!p && p.angle > 60 && p.bottom < 0.8; } },
+      { id: 'env', label: 'Environmental bonus: the building is on the mine dock, so the nesting canopy counts', points: 10, bonusOf: 'canopy', met: (c) => { const p = c.p('Dock mine (M13-15)').canopy; return !!p && p.angle > 30; } },
     ] },
 ];
 
