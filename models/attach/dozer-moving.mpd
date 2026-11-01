@@ -5,21 +5,24 @@
 1 14 0 0 0 1 0 0 0 1 0 0 0 1 44294.dat
 1 0 60 0 0 0 0 1 1 0 0 0 1 0 32270.dat
 1 71 -60 0 0 0 0 -1 0 1 0 1 0 0 3713.dat
-0 // cross blocks hanging from the arm axle (their top axle holes are on the axle)
-1 72 -40 20 0 1 0 0 0 1 0 0 0 1 32184.dat
-1 72 40 20 0 1 0 0 0 1 0 0 0 1 32184.dat
+0 // two cross blocks lie forward from the arm axle to a second 7-long axle, clear of motor E below
+1 72 -40 0 -20 1 0 0 0 0 1 0 -1 0 32184.dat
+1 72 40 0 -20 1 0 0 0 0 1 0 -1 0 32184.dat
+1 14 0 0 -40 1 0 0 0 1 0 0 0 1 44294.dat
+1 72 -60 20 -40.0 1 0 0 0 1 0 0 0 1 32184.dat
+1 72 60 20 -40.0 1 0 0 0 1 0 0 0 1 32184.dat
 0 // 15-long beam across the front, pinned to the cross blocks
-1 0 0 20 -20 0 0 1 1 0 0 0 1 0 32278.dat
-1 0 -40 20 -10 0 0 -1 0 1 0 1 0 0 2780.dat
-1 0 40 20 -10 0 0 -1 0 1 0 1 0 0 2780.dat
+1 0 0 20 -60.0 0 0 1 1 0 0 0 1 0 32278.dat
+1 0 -60 20 -50.0 0 0 -1 0 1 0 1 0 0 2780.dat
+1 0 60 20 -50.0 0 0 -1 0 1 0 1 0 0 2780.dat
 0 // 11-long beam below it, on axle pins from the cross blocks lower axle holes
-1 26 0 40 -20 0 0 1 1 0 0 0 1 0 32525.dat
-1 1 -40 40 -10 0 0 -1 0 1 0 1 0 0 43093.dat
-1 1 40 40 -10 0 0 -1 0 1 0 1 0 0 43093.dat
+1 26 0 40 -60.0 0 0 1 1 0 0 0 1 0 32525.dat
+1 1 -60 40 -50.0 0 0 -1 0 1 0 1 0 0 43093.dat
+1 1 60 40 -50.0 0 0 -1 0 1 0 1 0 0 43093.dat
 0 // the curved smooth panel is the blade face, pinned to the 15-long beam
-1 322 0 60 -40 0 0 -1 0 1 0 1 0 0 11954.dat
-1 0 -80 20 -30 0 0 -1 0 1 0 1 0 0 2780.dat
-1 0 80 20 -30 0 0 -1 0 1 0 1 0 0 2780.dat
+1 322 0 60 -80.0 0 0 -1 0 1 0 1 0 0 11954.dat
+1 0 -80 20 -70.0 0 0 -1 0 1 0 1 0 0 2780.dat
+1 0 80 20 -70.0 0 0 -1 0 1 0 1 0 0 2780.dat
 0 FILE 44294.dat
 0 Technic Axle  7
 0 Name: 44294.dat

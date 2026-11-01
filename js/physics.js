@@ -469,17 +469,19 @@ export class Physics {
       part(moving, [12, 0.8, 0.8], [6.4, 0, 0]);        // the 15-long beam on edge, running forward from the axle
       part(moving, [0.8, 2.4, 0.8], [0.8, 0, 0]);       // the cross block on the axle
     } else if (a.module === 'basket') {
-      for (const z of [-1.6, 1.6]) part(moving, [0.8, 2.4, 0.8], [0, -0.8, z]);   // cross blocks hanging from the axle
-      part(moving, [4, 0.8, 5.6], [2.4, -3.2, 0]);      // the 7x5 frame floor
-      part(moving, [0.8, 0.8, 5.6], [0.8, -2.4, 0]);    // rails: back, front, sides
-      part(moving, [0.8, 0.8, 5.6], [4, -2.4, 0]);
-      for (const z of [-2.4, 2.4]) part(moving, [2.4, 0.8, 0.8], [2.4, -2.4, z]);
+      for (const z of [-1.6, 1.6]) part(moving, [2.4, 0.8, 0.8], [0.8, 0, z]);    // cross blocks forward to the second axle
+      for (const z of [-2.4, 2.4]) part(moving, [0.8, 2.4, 0.8], [1.6, -0.8, z]); // cross blocks hanging from it
+      part(moving, [4, 0.8, 5.6], [4, -3.2, 0]);        // the 7x5 frame floor
+      part(moving, [0.8, 0.8, 5.6], [2.4, -2.4, 0]);    // rails: back, front, sides
+      part(moving, [0.8, 0.8, 5.6], [5.6, -2.4, 0]);
+      for (const z of [-2.4, 2.4]) part(moving, [2.4, 0.8, 0.8], [4, -2.4, z]);
       part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);    // the bracket on the hub
     } else if (a.module === 'plow') {
-      for (const z of [-1.6, 1.6]) part(moving, [0.8, 2.4, 0.8], [0, -0.8, z]);   // cross blocks hanging from the axle
-      part(moving, [0.8, 0.8, 12], [0.8, -0.8, 0]);     // 15-long beam across
-      part(moving, [0.8, 0.8, 8.8], [0.8, -1.6, 0]);    // 11-long beam below it
-      part(moving, [1.6, 2.4, 8.8], [2, -1.6, 0]);      // the blade panel
+      for (const z of [-1.6, 1.6]) part(moving, [2.4, 0.8, 0.8], [0.8, 0, z]);    // cross blocks forward to the second axle
+      for (const z of [-2.4, 2.4]) part(moving, [0.8, 2.4, 0.8], [1.6, -0.8, z]); // cross blocks hanging from it
+      part(moving, [0.8, 0.8, 12], [2.4, -0.8, 0]);     // 15-long beam across
+      part(moving, [0.8, 0.8, 8.8], [2.4, -1.6, 0]);    // 11-long beam below it
+      part(moving, [1.6, 2.4, 8.8], [3.6, -1.6, 0]);    // the blade panel
       part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);    // the bracket on the hub
     } else if (a.module === 'lift') {
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor

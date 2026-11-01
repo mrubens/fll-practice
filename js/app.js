@@ -149,7 +149,7 @@ function placeEquipment() {
   const a = robot.geom.attachment;
   const items = EQUIPMENT_PIECES.map((e, i) => {
     if (a.module === 'basket') {   // the technicians load the basket by hand before the launch
-      const [x, y] = robot._point(a.fwd + 2.4 + (i % 2) * 1.6, -1.6 + Math.floor(i / 2) * 3.2);
+      const [x, y] = robot._point(a.fwd + 4 + (i % 2) * 1.6, -1.6 + Math.floor(i / 2) * 3.2);
       return { ...e, x, y, h: a.height - 2 + e.box[1] / 2 + 0.3 };
     }
     return { ...e, x: -97 + (i % 3) * 5, y: 46 + Math.floor(i / 3) * 6 };

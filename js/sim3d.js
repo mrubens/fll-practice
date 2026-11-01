@@ -580,16 +580,16 @@ export class Sim3D {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 0.8, 0.8), armMat), [6.4, 0, 0]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0.8, 0, 0]);
     } else if (a.module === 'plow') {
-      for (const z of [-1.6, 1.6]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0, -0.8, z]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 8.8), armMat), [2, -1.6, 0]);
+      for (const z of [-2.4, 2.4]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [1.6, -0.8, z]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 8.8), armMat), [3.6, -1.6, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     } else if (a.module === 'lift') {
       for (const z of [-1.8, 1.8]) add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(0.8, 12, 0.8), armMat), [2.4, 3, z]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(6, 0.7, 6.4), red), [4.8, 0, 0]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 9.6, 0.8), armMat), [0.9, 4.8, 0]);
     } else if (a.module === 'basket') {
-      for (const z of [-1.6, 1.6]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0, -0.8, z]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 5.6), armMat), [2.4, -3.2, 0]);
+      for (const z of [-2.4, 2.4]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [1.6, -0.8, z]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 5.6), armMat), [4, -3.2, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
     if (['arm', 'plow', 'basket', 'sweeper'].includes(a.module)) this.legoTool(a.module, body, prim);
