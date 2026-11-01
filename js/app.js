@@ -620,20 +620,33 @@ function frame(now) {
 if (store.current && store.projects[store.current]) loadProject(store.current);
 else createProject(SAMPLE_NAME, SAMPLE_STATE);
 // First visit: start from FIRST's official Guided Mission program (Mission 11) with the robot it was written for.
-if (!store.guidedLoaded) {
-  const GUIDED = 'samples/guided-mission-bioglow-11.llsp3';
-  // Hosts that cannot serve a .llsp3 archive (the artifact copy) get the same file base64-encoded as text.
-  const fromText = (res) => res.text().then((t) => Uint8Array.from(atob(t.replace(/\s+/g, '')), (ch) => ch.charCodeAt(0)).buffer);
-  fetch(GUIDED, { cache: 'no-cache' })
-    .then((res) => (res.ok ? res.arrayBuffer() : fetch(GUIDED.replace('.llsp3', '.b64.txt'), { cache: 'no-cache' }).then((r1) => (r1.ok ? fromText(r1) : fetch('https://mrubens.github.io/fll-practice/' + GUIDED).then((r2) => (r2.ok ? r2.arrayBuffer() : null))))))
-    .then(async (buf) => {
-    if (!buf) return;
-    const { state } = await importLlsp3(buf);
-    store.guidedLoaded = true;
-    createProject('Guided Mission (M11)', state, normalizeBuild({ ...PRESETS['guided-mission'], preset: 'guided-mission' }));
-    toast('Loaded the official FIRST Guided Mission for Mission 11. Press Launch to watch it run.');
-  }).catch(() => {});
-}
+// Sample programs on the first visit: the SPIKE app's own "The Guided Mission 2026-27" (a bare Driving Base with
+// the color sensor on B) and FIRST's published Guided Mission for Mission 11 (the arm robot), which opens.
+// Hosts that cannot serve a .llsp3 archive (the artifact copy) get the same files base64-encoded as text.
+const fromText = (res) => res.text().then((t) => Uint8Array.from(atob(t.replace(/\s+/g, '')), (ch) => ch.charCodeAt(0)).buffer);
+const fetchSample = (path) => fetch(path, { cache: 'no-cache' })
+  .then((res) => (res.ok ? res.arrayBuffer() : fetch(path.replace('.llsp3', '.b64.txt'), { cache: 'no-cache' }).then((r1) => (r1.ok ? fromText(r1) : fetch('https://mrubens.github.io/fll-practice/' + path).then((r2) => (r2.ok ? r2.arrayBuffer() : null))))))
+  .catch(() => null);
+(async () => {
+  if (!store.spikeGuidedLoaded) {
+    const buf = await fetchSample('samples/guided-mission-spike-2026-27.llsp3');
+    if (buf) {
+      const { state } = await importLlsp3(buf);
+      store.spikeGuidedLoaded = true;
+      const base = PRESETS['training-camp'];
+      createProject('Guided Mission (SPIKE app)', state, normalizeBuild({ ...base, preset: 'training-camp', ports: { ...base.ports, color: 'B' } }));
+    }
+  }
+  if (!store.guidedLoaded) {
+    const buf = await fetchSample('samples/guided-mission-bioglow-11.llsp3');
+    if (buf) {
+      const { state } = await importLlsp3(buf);
+      store.guidedLoaded = true;
+      createProject('Guided Mission (M11)', state, normalizeBuild({ ...PRESETS['guided-mission'], preset: 'guided-mission' }));
+      toast('Loaded the official FIRST Guided Mission for Mission 11. Press Launch to watch it run.');
+    }
+  }
+})();
 requestAnimationFrame(frame);
 window.addEventListener('resize', () => B.svgResize(workspace));
 
