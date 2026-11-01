@@ -37,10 +37,19 @@ def pair():
     return motor_pair.PAIR_1
 
 def set_pair(code):
+    # the hub refuses to pair a port that is already in a pair, so a repeat is skipped and a change unpairs first
     code = str(code).upper()
     if len(code) >= 2 and code[0] in PORTS and code[1] in PORTS:
+        if state.get('paired') and state['pair'] == (code[0], code[1]):
+            return
+        if state.get('paired'):
+            try:
+                motor_pair.unpair(motor_pair.PAIR_1)
+            except Exception:
+                pass
         state['pair'] = (code[0], code[1])
         motor_pair.pair(motor_pair.PAIR_1, PORTS[code[0]], PORTS[code[1]])
+        state['paired'] = True
 
 def velocity(pct):
     pct = max(-100, min(100, num(pct)))
@@ -206,10 +215,9 @@ export function compileToPython(workspace, robotConfig) {
 
   const cfg = robotConfig || { left: 'A', right: 'B' };
   const header = HELPERS +
-    `\nstate['pair'] = (${pyStr(cfg.left)}, ${pyStr(cfg.right)})\n` +
-    `state['cm_per_rot'] = ${Number(cfg.calibration) || 17.5}\n` +
+    `\nstate['cm_per_rot'] = ${Number(cfg.calibration) || 17.5}\n` +
     (cfg.hub === 'upright' ? `# Hub mounted upright: pick the face pointing up, e.g. motion_sensor.set_yaw_face(motion_sensor.FRONT)\n` : '') +
-    `motor_pair.pair(motor_pair.PAIR_1, PORTS[${pyStr(cfg.left)}], PORTS[${pyStr(cfg.right)}])\n`;
+    `set_pair(${pyStr(cfg.left + cfg.right)})\n`;
   const footer = tasks.length ? `\nrunloop.run(${tasks.map((t) => t + '()').join(', ')})\n` : '\n# No "when ..." hat blocks found.\n';
   return { code: header + '\n' + myBlockDefs.concat(out).join('\n\n') + '\n' + footer, warnings: [...warnings] };
 }

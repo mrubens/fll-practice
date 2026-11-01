@@ -164,7 +164,15 @@ export class SpikeHub {
     const id = msg[0];
     const p = this.pending.get(id);
     if (p) { this.pending.delete(id); clearTimeout(p.timer); p.resolve(msg); }
-    if (id === MSG.ConsoleNotification) this.emit('console', new TextDecoder().decode(msg.slice(1)).replace(/\0+$/, ''));
+    if (id === MSG.ConsoleNotification) {
+      // the hub streams its console in fragments (a traceback arrives as a dozen pieces): hand out whole lines
+      this.console = (this.console || '') + new TextDecoder().decode(msg.slice(1)).replace(/\0+$/, '');
+      const lines = this.console.split('\n');
+      this.console = lines.pop();
+      for (const line of lines) if (line.trim()) this.emit('console', line);
+      clearTimeout(this.consoleTimer);
+      this.consoleTimer = setTimeout(() => { if (this.console && this.console.trim()) this.emit('console', this.console); this.console = ''; }, 400);
+    }
     if (id === MSG.ProgramFlowNotification) this.emit('programFlow', msg[1] === 0);
   }
 

@@ -77,6 +77,18 @@
       <div class="model-card" id="modelCard" hidden></div>
       <div id="hubPanel"></div>
       <div class="mat-readout" id="matReadout" hidden></div>
+      <div class="touch-pad" id="touchPad" aria-label="Drive the robot">
+        <div class="pad-drive">
+          <button type="button" data-key="w" aria-label="Forward">▲</button>
+          <button type="button" data-key="a" aria-label="Turn left">◀</button>
+          <button type="button" data-key="s" aria-label="Back">▼</button>
+          <button type="button" data-key="d" aria-label="Turn right">▶</button>
+        </div>
+        <div class="pad-arm">
+          <button type="button" data-key="q" aria-label="Arm up">Arm ▲</button>
+          <button type="button" data-key="e" aria-label="Arm down">Arm ▼</button>
+        </div>
+      </div>
       <p class="view-hint">Drag the robot to move it, or drive it with W A S D (Q and E move the arm). Click a mission model to see what it scores. Shift-drag on the mat to measure. Arrow keys press the hub buttons.</p>
     </div>
     <section id="builder" class="builder" hidden aria-label="Robot builder">

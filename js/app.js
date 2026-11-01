@@ -580,7 +580,7 @@ if (!bleSupported()) {
     if (hubLink && hubLink.connected) { hubLink.disconnect(); return; }
     hubLink = new SpikeHub();
     hubLink.on('status', (s) => toast(s));
-    hubLink.on('console', (t) => toast('Hub: ' + t));
+    hubLink.on('console', (t) => toast('Hub: ' + t, /Error|Traceback|Exception/.test(t) ? 'error' : 'info'));
     hubLink.on('disconnect', () => { toast('Hub disconnected.', 'warn'); hubUi(); });
     try { await hubLink.connect(); } catch (err) {
       if (err && err.name === 'NotFoundError') toast('No hub chosen. Turn the hub on and make sure Bluetooth is enabled, then try again.', 'warn');
@@ -665,18 +665,31 @@ let last = performance.now();
 let acc = 0;
 const STEP = 1 / 200;
 
-// ---------- keyboard driving (WASD, Q/E for the attachment) when no program is running ----------
-const drive = { keys: new Set(), warned: false };
+// ---------- hand driving (WASD and Q/E, or the touch pad) when no program is running ----------
+const drive = { keys: new Set(), warned: false, idle: 0 };
 const typing = () => { const a = document.activeElement; return !!(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)); };
+/** A drive input (a key or a pad button) went down; false when hand driving is not allowed right now. */
+function driveDown(k) {
+  if (runtime.running || replay.active) return false;
+  if (scoring.match.launched && !scoring.match.ended) { if (!drive.warned) { drive.warned = true; toast('Hands off during a match: the robot drives itself. Press Run for free driving.', 'warn'); } return false; }
+  drive.keys.add(k);
+  return true;
+}
 document.addEventListener('keydown', (e) => {
   const k = e.key.toLowerCase();
   if (!'wasdqe'.includes(k) || k.length !== 1 || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
-  if (runtime.running) return;
-  if (scoring.match.launched && !scoring.match.ended) { if (!drive.warned) { drive.warned = true; toast('Hands off during a match: the robot drives itself. Press Run for free driving.', 'warn'); } return; }
-  drive.keys.add(k); e.preventDefault();
+  if (driveDown(k)) e.preventDefault();
 });
 document.addEventListener('keyup', (e) => drive.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => drive.keys.clear());
+// Touch pad (shown by the stylesheet on touch screens only): hold a button to drive, like holding a key.
+for (const btn of document.querySelectorAll('#touchPad button')) {
+  const k = btn.dataset.key;
+  const up = () => { drive.keys.delete(k); btn.classList.remove('held'); };
+  btn.addEventListener('pointerdown', (e) => { e.preventDefault(); btn.setPointerCapture(e.pointerId); if (driveDown(k)) btn.classList.add('held'); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) btn.addEventListener(ev, up);
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
+}
 scoring.on((ev) => { if (ev.type === 'reset' || ev.type === 'end') drive.warned = false; });
 /** Set wheel and arm targets from the held keys; returns true while anything should keep moving. */
 function driveFromKeys() {
@@ -723,9 +736,12 @@ async function frame(now) {
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     sim.addTrailPoint(robot.x, robot.y);
+    drive.idle = 0;
+    if (!sim.dragging) sim.startChase();               // the view drops in behind the robot while it is being driven
   } else {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
+    if (sim.chase && (drive.idle += dt) > 1.2) sim.endChase();   // and flies back once the robot has sat still a moment
   }
   hub.update(now);
   if (!replay.active) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be

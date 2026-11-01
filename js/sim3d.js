@@ -969,7 +969,38 @@ export class Sim3D {
     if (f.t >= 1) this.fly = null;
   }
 
-  update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.watchPerformance(dt); }
+  /**
+   * Chase camera for hand driving: sits above and behind the robot and looks past it, so driving with the keys or
+   * the touch pad feels like driving. Remembers the view it took over from and flies back to it afterwards.
+   */
+  startChase() {
+    if (this.chase) return;
+    this.chase = { back: { pos: this.camera.position.clone(), target: this.controls.target.clone(), follow: this.follow }, t: 0 };
+    this.fly = null; this.follow = false;
+    this.controls.enabled = false;
+  }
+  updateChase(dt) {
+    const c = this.chase;
+    if (!c) return;
+    const r = this.robot, h = r.heading * DEG;
+    const fwd = new THREE.Vector3(Math.cos(h), 0, Math.sin(h));
+    const pos = new THREE.Vector3(r.x, 0, r.y).addScaledVector(fwd, -34).add(new THREE.Vector3(0, 22, 0));
+    const target = new THREE.Vector3(r.x, 3, r.y).addScaledVector(fwd, 12);
+    c.t = Math.min(1, c.t + dt / 0.6);
+    const k = c.t < 1 ? 1 - Math.pow(1 - c.t, 3) : 1 - Math.exp(-dt * 6);   // ease in, then trail smoothly
+    this.camera.position.lerp(pos, k);
+    this.controls.target.lerp(target, k);
+  }
+  endChase() {
+    const c = this.chase;
+    if (!c) return;
+    this.chase = null;
+    this.controls.enabled = true;
+    this.fly = { t: 0, fromPos: this.camera.position.clone(), fromTarget: this.controls.target.clone(), toPos: c.back.pos, toTarget: c.back.target };
+    this.follow = c.back.follow;
+  }
+
+  update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.updateChase(dt); this.watchPerformance(dt); }
 
   /** Blueprints draw themselves in over a second, then hold with a slow breath in the line brightness. */
   updateShimmer(dt) {
