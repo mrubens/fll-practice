@@ -30,19 +30,23 @@ function swatch(hex) {
 }
 export const COLOR_OPTIONS = COLORS.map((c) => [{ src: swatch(c.hex), width: 22, height: 22, alt: c.name }, c.code]);
 
-// Category icons shown at the left of each block (white badge, dark glyph) like the SPIKE app.
-function icon(glyph) {
-  return 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><rect width="24" height="24" rx="6" fill="#fff"/>${glyph}</svg>`);
-}
-export const ICONS = {
-  movement: icon('<circle cx="7" cy="12" r="4.2" fill="#444"/><circle cx="17" cy="12" r="4.2" fill="#444"/><rect x="7" y="11" width="10" height="2" fill="#444"/><circle cx="7" cy="12" r="1.4" fill="#fff"/><circle cx="17" cy="12" r="1.4" fill="#fff"/>'),
-  motor: icon('<circle cx="12" cy="12" r="7" fill="#444"/><circle cx="12" cy="12" r="3" fill="#fff"/><rect x="11" y="3" width="2" height="4" fill="#444"/><rect x="11" y="17" width="2" height="4" fill="#444"/><rect x="3" y="11" width="4" height="2" fill="#444"/><rect x="17" y="11" width="4" height="2" fill="#444"/>'),
-  light: icon('<g fill="#444"><rect x="5" y="5" width="4" height="4" rx="1"/><rect x="10" y="5" width="4" height="4" rx="1"/><rect x="15" y="5" width="4" height="4" rx="1"/><rect x="5" y="10" width="4" height="4" rx="1"/><rect x="10" y="10" width="4" height="4" rx="1"/><rect x="15" y="10" width="4" height="4" rx="1"/><rect x="5" y="15" width="4" height="4" rx="1"/><rect x="10" y="15" width="4" height="4" rx="1"/><rect x="15" y="15" width="4" height="4" rx="1"/></g>'),
-  sound: icon('<path d="M5 9h4l5-4v14l-5-4H5z" fill="#444"/><path d="M16 9a4 4 0 0 1 0 6" stroke="#444" stroke-width="2" fill="none"/><path d="M18.5 6.5a7.5 7.5 0 0 1 0 11" stroke="#444" stroke-width="2" fill="none"/>'),
-  hub: icon('<rect x="6" y="3" width="12" height="18" rx="2.5" fill="#444"/><g fill="#fff"><rect x="8.5" y="6" width="2" height="2"/><rect x="11" y="6" width="2" height="2"/><rect x="13.5" y="6" width="2" height="2"/><rect x="8.5" y="8.5" width="2" height="2"/><rect x="11" y="8.5" width="2" height="2"/><rect x="13.5" y="8.5" width="2" height="2"/><rect x="8.5" y="11" width="2" height="2"/><rect x="11" y="11" width="2" height="2"/><rect x="13.5" y="11" width="2" height="2"/></g><circle cx="12" cy="17" r="1.6" fill="#fff"/>'),
-  sensor: icon('<rect x="3" y="7" width="18" height="10" rx="2" fill="#444"/><circle cx="8.5" cy="12" r="2.6" fill="#fff"/><circle cx="15.5" cy="12" r="2.6" fill="#fff"/><circle cx="8.5" cy="12" r="1.2" fill="#444"/><circle cx="15.5" cy="12" r="1.2" fill="#444"/>'),
+// Category badges at the left of each block, like the SPIKE app: a circle in the category's dark shade with a
+// white glyph (motor face, hub, lens, speaker, play).
+const GLYPHS = {
+  movement: '<circle cx="12" cy="12" r="8.2" fill="#fff"/><circle cx="12" cy="12" r="2" fill="BADGE"/>' + [0, 60, 120, 180, 240, 300].map((a) => `<circle cx="${(12 + 5.2 * Math.sin(a * Math.PI / 180)).toFixed(2)}" cy="${(12 - 5.2 * Math.cos(a * Math.PI / 180)).toFixed(2)}" r="1.5" fill="BADGE"/>`).join(''),
+  light: '<rect x="6.5" y="4.5" width="11" height="15" rx="2.2" fill="#fff"/><g fill="BADGE"><rect x="8.5" y="6.5" width="2" height="2"/><rect x="11" y="6.5" width="2" height="2"/><rect x="13.5" y="6.5" width="2" height="2"/><rect x="8.5" y="9" width="2" height="2"/><rect x="11" y="9" width="2" height="2"/><rect x="13.5" y="9" width="2" height="2"/><rect x="8.5" y="11.5" width="2" height="2"/><rect x="11" y="11.5" width="2" height="2"/><rect x="13.5" y="11.5" width="2" height="2"/><circle cx="12" cy="16.6" r="1.3"/></g>',
+  sound: '<path d="M6 9.5h3.5L14 6v12l-4.5-3.5H6z" fill="#fff"/><path d="M16 9.5a3.5 3.5 0 0 1 0 5" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M18.3 7.2a6.5 6.5 0 0 1 0 9.6" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/>',
+  sensor: '<circle cx="12" cy="12" r="7.2" fill="none" stroke="#fff" stroke-width="2.2"/><circle cx="12" cy="12" r="3" fill="#fff"/>',
+  play: '<path d="M9 7l8 5-8 5z" fill="#fff"/>',
 };
+GLYPHS.motor = GLYPHS.movement;
+GLYPHS.hub = GLYPHS.light;
+export function iconFor(name, colour) {
+  const glyph = (GLYPHS[name] || '').replace(/BADGE/g, colour);
+  return 'data:image/svg+xml;utf8,' + encodeURIComponent(
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="${colour}"/>${glyph}</svg>`);
+}
+export const ICONS = Object.fromEntries(Object.keys(GLYPHS).map((k) => [k, iconFor(k, '#444')]));   // legacy lookup
 
 export const CATEGORIES = {
   movement: { name: 'Movement', colour: '#FF4FA8', secondary: '#E93A95', tertiary: '#C72A7E', icon: 'movement' },
@@ -137,7 +141,7 @@ export const BLOCKS = [
   { op: 'flippersound_stopSound', cat: 'sound', kind: 'stack', msg: 'stop all sounds', args: [] },
 
   // ---- Events ----
-  { op: 'flipperevents_whenProgramStarts', cat: 'events', kind: 'hat', msg: 'when program starts', args: [] },
+  { op: 'flipperevents_whenProgramStarts', cat: 'events', kind: 'hat', icon: 'play', msg: 'when program starts', args: [] },
   { op: 'flipperevents_whenButton', cat: 'events', kind: 'hat', msg: 'when %BUTTON button %EVENT',
     args: [field('BUTTON', [['left', 'left'], ['right', 'right']], 'left'), field('EVENT', [['pressed', 'pressed'], ['released', 'released']], 'pressed')] },
   { op: 'flipperevents_whenColor', cat: 'events', kind: 'hat', msg: '%PORT when color is %OPTION',

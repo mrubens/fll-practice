@@ -1,5 +1,5 @@
 // Blockly setup: SPIKE-style blocks (Zelos renderer), custom fields, theme, toolbox and dialogs.
-import { BLOCKS, SELECTORS, CATEGORIES, ICONS, KIND_SHADOW } from './spec.js';
+import { BLOCKS, SELECTORS, CATEGORIES, iconFor, KIND_SHADOW } from './spec.js';
 import { defineMyBlocks, registerMyBlocksCategory, makeBlockDialog } from './myblocks.js';
 
 const B = window.Blockly;
@@ -240,8 +240,9 @@ function blockDef(spec) {
   const messages = [];
   let msg = [], args = [];
   const flush = () => { if (msg.length || args.length) messages.push({ msg: msg.join(' '), args }); msg = []; args = []; };
-  if (cat.icon && spec.kind !== 'reporter' && spec.kind !== 'boolean') {
-    args.push({ type: 'field_image', src: ICONS[cat.icon], width: 24, height: 24, alt: '' });
+  const badge = spec.icon || cat.icon;
+  if (badge && spec.kind !== 'reporter' && spec.kind !== 'boolean') {
+    args.push({ type: 'field_image', src: iconFor(badge, cat.tertiary), width: 24, height: 24, alt: '' });
     msg.push('%1');
   }
   for (const token of spec.msg.split(' ')) {
