@@ -30,7 +30,7 @@ export class Runtime {
     this.onChange();
   }
   /** Run one block on every waiting thread. */
-  step() { this.release(); }
+  step() { if (this.paused) this.stepsTaken++; this.release(); }
   release() {
     const w = this.gateWaiters; this.gateWaiters = []; this.paused = false;
     for (const fn of w) fn();
@@ -55,7 +55,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
-    this.paused = false; this.gateWaiters = [];
+    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0;
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();

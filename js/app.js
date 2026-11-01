@@ -64,7 +64,9 @@ robot.on('hint', (m) => toast(m, 'warn'));
 
 // ---------- missions: scripted interactions, scoresheet, mission cards ----------
 const scoring = new Scoring(robot, world);
+const replay = { active: false, start: null };          // how the current stepped run was started, for stepping back
 scoring.on((ev) => {
+  if (replay.active) return;
   if (ev.type === 'done') { sim.celebrate(ev.obstacle); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.task.label}`); }
   if (ev.type === 'token') toast(`Robot interrupted outside home: one precision token lost (${ev.tokens} left).`, 'warn');
   if (ev.type === 'end') toast(`Match over. Final score: ${ev.score} pts.`);
@@ -110,6 +112,7 @@ function startRun() {
   sim.resetEffects();
   sim.clearTrail();
   hub.ensureAudio();
+  replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading } };
   runtime.start();
 }
 
@@ -148,6 +151,7 @@ function startMatch() {
   robot.resetPose();
   placeEquipment();
   hub.matchLeft = MATCH_SECONDS;
+  replay.start = { kind: 'match' };
   const res = relaunch();
   if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : 'Match started. Inspection failed (robot not in one launch area): no bonus.', res.inspection ? undefined : 'warn');
   else hub.matchLeft = null;
@@ -163,15 +167,46 @@ function stopRun() {
   }
 }
 
-const btnRun = $('#btnRun'), btnStop = $('#btnStop'), btnStep = $('#btnStep');
+const btnRun = $('#btnRun'), btnStop = $('#btnStop'), btnStep = $('#btnStep'), btnBack = $('#btnBack');
 function updateRunState() {
   document.body.classList.toggle('running', runtime.running);
   document.body.classList.toggle('stepping', runtime.running && runtime.stepMode);
-  sim.locked = runtime.running;
-  btnRun.disabled = runtime.running && !runtime.paused;
-  btnStop.disabled = !runtime.running;
+  sim.locked = runtime.running || replay.active;
+  btnRun.disabled = (runtime.running && !runtime.paused) || replay.active;
+  btnStop.disabled = !runtime.running || replay.active;
+  btnStep.disabled = replay.active;
   btnStep.classList.toggle('active', runtime.running && runtime.stepMode);
+  btnBack.disabled = replay.active || !replay.start || !runtime.stepMode || !(runtime.stepsTaken > 0) || !(runtime.paused || !runtime.running);
 }
+/**
+ * Step back: the simulation is deterministic, so going back a step is a restart plus a replay of the steps
+ * before it, run flat out with no drawing. Shift-click goes back to the start.
+ */
+async function stepBack(toStart) {
+  if (replay.active || !replay.start) return;
+  const target = toStart ? 0 : Math.max(0, runtime.stepsTaken - 1);
+  const start = replay.start;
+  replay.active = true;
+  updateRunState();
+  runtime.stop();
+  world.resetObstacles(); scoring.reset(); sim.resetEffects(); sim.clearTrail();
+  if (start.kind === 'match') { robot.resetPose(); placeEquipment(); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
+  else { hub.matchLeft = null; robot.resetPose(start.pose); }
+  runtime.setStepMode(true);
+  runtime.start();
+  await drain();
+  const limit = 200 * 600;                              // at most ten simulated minutes, whatever the program does
+  let steps = 0;
+  if (target > 0) toast(toStart ? 'Back to the start.' : 'Rewinding one step…');
+  for (let n = 0; n < target && runtime.running; n++) {
+    runtime.step();
+    await drain();
+    while (runtime.running && !runtime.paused && steps < limit) { simStep(); steps++; if (steps % 8 === 0) sim.addTrailPoint(robot.x, robot.y); await drain(); }
+  }
+  replay.active = false;
+  updateRunState();
+}
+btnBack.addEventListener('click', (e) => stepBack(e.shiftKey));
 // Run while paused at a step continues at full speed; otherwise it starts the program.
 btnRun.addEventListener('click', () => { if (runtime.running && runtime.paused) runtime.setStepMode(false); else startRun(); });
 btnStop.addEventListener('click', () => { stopRun(); runtime.setStepMode(false); });
@@ -621,15 +656,30 @@ function driveFromKeys() {
   const moving = [robot.motors[cfg.left], robot.motors[cfg.right], arm].some((m) => m && (m.target !== 0 || Math.abs(m.velocity) > 1));
   return moving;
 }
-function frame(now) {
+// One simulated step (1/200 s): the robot, the referee, the program's tick, and the match clock. The live loop and
+// the step-back replay both use it, with the same microtask drain after each step, so a replay reproduces a run.
+function simStep() {
+  robot.update(STEP); scoring.update(STEP); runtime.tick();
+  if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended) {
+    hub.matchLeft -= STEP;
+    if (hub.matchLeft <= 0) { hub.matchLeft = 0; runtime.stop(); scoring.endMatch(); }
+  }
+}
+// A full task boundary after every step (a MessageChannel hop: no timer clamping), so the program settles at its
+// next yield before the next tick whatever the frame batching. That is what makes a replay match the live run.
+const hop = new MessageChannel();
+const drain = () => new Promise((resolve) => { hop.port1.onmessage = () => resolve(); hop.port2.postMessage(0); });
+let frameBusy = false;
+async function frame(now) {
+  if (frameBusy) { requestAnimationFrame(frame); return; }
+  frameBusy = true;
   const dt = Math.min(0.05, (now - last) / 1000);
   last = now;
-  if (runtime.running && runtime.paused) {
-    acc = 0;                                            // paused at a step: the clock stands still
+  if (replay.active || (runtime.running && runtime.paused)) {
+    acc = 0;                                            // paused at a step (or replaying): the clock stands still
   } else if (runtime.running) {
     acc += dt;
-    while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
-    runtime.tick();
+    while (acc >= STEP && runtime.running && !runtime.paused) { simStep(); acc -= STEP; await drain(); }
     sim.addTrailPoint(robot.x, robot.y);
   } else if (drive.keys.size || driveFromKeys()) {
     driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
@@ -640,13 +690,10 @@ function frame(now) {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
   }
-  if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended && !runtime.paused) {
-    hub.matchLeft -= dt;
-    if (hub.matchLeft <= 0) { hub.matchLeft = 0; runtime.stop(); scoring.endMatch(); }
-  }
   hub.update(now);
   sim.update(dt);
   sim.render();
+  frameBusy = false;
   requestAnimationFrame(frame);
 }
 

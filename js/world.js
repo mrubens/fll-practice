@@ -213,7 +213,7 @@ export class World {
 
   resetObstacles() {
     for (const o of this.obstacles) { o.x = o.x0; o.y = o.y0; o.angle = 0; }
-    if (this.physics) this.physics.resetObstacles();
+    if (this.physics) this.physics.rebuildWorld();
     this.listeners.forEach((fn) => fn('obstacles'));
   }
 

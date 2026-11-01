@@ -349,8 +349,7 @@ export class Sim3D {
     else { r.setPixelRatio(1); r.shadowMap.enabled = false; }
     if (this.sun.shadow.map) { this.sun.shadow.map.dispose(); this.sun.shadow.map = null; }
     this.scene.traverse((o) => { if (o.isMesh && o.material) { const ms = Array.isArray(o.material) ? o.material : [o.material]; ms.forEach((m) => { m.needsUpdate = true; }); } });
-    this.world.physicsSubsteps = q === 'low' ? 2 : 3;
-    if (this.world.physics) this.world.physics.substeps = this.world.physicsSubsteps;
+    // physics substeps stay at 3 on every tier: a run must replay identically whatever the frame rate does
     this.hiResUrl = null;
     this.loadMatTexture();
     this.qualityChangedAt = performance.now();

@@ -38,6 +38,16 @@ export class Physics {
   constructor(R, world) {
     this.R = R;
     this.sim = world;
+    this.pieces = [];
+    this.obstacleBodies = [];
+    this.robotParts = [];
+    this.newWorld();
+  }
+
+  /** A brand-new Rapier world with the walls and the mat; everything else is added back by the callers. */
+  newWorld() {
+    const { R } = this;
+    if (this.world) this.world.free();
     this.world = new R.World({ x: 0, y: -9.81, z: 0 });
     // Jointed mission pieces are pushed by kinematic (infinitely heavy) robot parts: give the solver more passes
     // so the joint and the contact agree instead of the robot plowing straight through the piece.
@@ -45,7 +55,8 @@ export class Physics {
     this.obstacleBodies = [];
     this.pieces = [];              // moving mission-model pieces (see mechanisms.js) and equipment
     this.colliderToPiece = new Map();
-    this.robotBody = null;
+    this.colliderToObstacle = new Map();
+    this.robotBody = null; this.armBody = null;
     this.robotParts = [];        // { collider, node } attachment pieces that follow the attachment motor
     this.bodyCollider = null;
     this.cc = this.world.createCharacterController(SKIN * S);
@@ -53,6 +64,21 @@ export class Physics {
     this.cc.setApplyImpulsesToDynamicBodies(true);
     this.cc.setCharacterMass(1.5);
     this.buildWalls();
+  }
+
+  /**
+   * Start a run from an identical physics state every time: rebuild the whole world (models at their start
+   * poses, equipment where it stands, the robot where it is). Rapier is deterministic from a fresh world with the
+   * same sequence of operations, which is what lets a stepped run be replayed exactly.
+   */
+  rebuildWorld() {
+    const equipment = this.pieces.filter((pc) => pc.equipment).map((pc) => { const t = pc.body.translation(); return { ...pc.equipment, x: t.x / S, y: t.z / S, h: t.y / S }; });
+    const robot = this.robot;
+    this.newWorld();
+    this.rebuildObstacles();
+    if (equipment.length) this.spawnEquipment(equipment);
+    if (robot) { this.rebuildRobot(robot); this.setRobotPose(robot.x, robot.y, robot.heading); }
+    this.readPieces(0);
   }
 
   buildWalls() {
