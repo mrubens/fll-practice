@@ -171,6 +171,7 @@ function loadProject(id) {
   } finally { B.Events.enable(); }
   workspace.scroll(24, 16);
   robot.applyBuild(p.build || store.lastBuild || defaultBuild());
+  world.setLaunchOverride(p.launch || null);        // a sample written for a particular start keeps it
   if (hub.updatePortTypes) hub.updatePortTypes();
   if (!runtime.running) robot.resetPose();
   nameInput.value = p.name;
@@ -178,9 +179,9 @@ function loadProject(id) {
   document.title = `${p.name} · FLL Practice`;
 }
 
-function createProject(name, state, build) {
+function createProject(name, state, build, launch) {
   const id = uid();
-  store.projects[id] = { id, name, state, updated: Date.now(), build: normalizeBuild(build || store.lastBuild || defaultBuild()) };
+  store.projects[id] = { id, name, state, updated: Date.now(), build: normalizeBuild(build || store.lastBuild || defaultBuild()), launch: launch || null };
   loadProject(id);
   return id;
 }
@@ -634,7 +635,8 @@ const fetchSample = (path) => fetch(path, { cache: 'no-cache' })
       const { state } = await importLlsp3(buf);
       store.spikeGuidedLoaded = true;
       const base = PRESETS['training-camp'];
-      createProject('Guided Mission (SPIKE app)', state, normalizeBuild({ ...base, preset: 'training-camp', ports: { ...base.ports, color: 'B' } }));
+      // the lesson's picture starts the base in the north-west corner of the left launch area, facing east
+      createProject('Guided Mission (SPIKE app)', state, normalizeBuild({ ...base, preset: 'training-camp', ports: { ...base.ports, color: 'B' } }), { x: -96, y: 19, heading: 0 });
     }
   }
   if (!store.guidedLoaded) {

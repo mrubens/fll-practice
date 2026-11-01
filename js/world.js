@@ -140,6 +140,12 @@ export class World {
     this.listeners.forEach((fn) => fn('season'));
   }
 
+  /** A project's own launch pose (where its program expects to start), or the table's. */
+  setLaunchOverride(pose) {
+    this.launchOverride = pose ? { x: +pose.x, y: +pose.y, heading: +pose.heading || 0 } : null;
+    this.startPose = this.launchOverride || this.tableStart || this.startPose;
+  }
+
   /** Switch tables: the season setup from its file, or a drawn board (see boards.js). */
   async loadBoard(board) {
     this.board = board;
@@ -148,6 +154,8 @@ export class World {
     this.matReady = true;
     this.obstacles = (board.obstacles || []).map((o, i) => ({ id: o.id || `object${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
     this.startPose = { ...board.start };
+    this.tableStart = { ...board.start };
+    if (this.launchOverride) this.startPose = { ...this.launchOverride };
     this.season = null;
     if (this.physics) this.physics.rebuildObstacles();
     this.listeners.forEach((fn) => fn('mat'));
@@ -164,6 +172,8 @@ export class World {
     } catch { this.usePracticeField(); return false; }
     if (cfg.mat) await this.loadMatImage(cfg.mat);
     if (cfg.launch) this.startPose = { x: Number(cfg.launch.x) || 0, y: Number(cfg.launch.y) || 0, heading: Number(cfg.launch.heading) || 0 };
+    this.tableStart = { ...this.startPose };
+    if (this.launchOverride) this.startPose = { ...this.launchOverride };
     if (Array.isArray(cfg.obstacles)) {
       this.obstacles = cfg.obstacles.map((o, i) => ({ id: o.id || `model${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
     }

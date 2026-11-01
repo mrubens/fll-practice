@@ -80,8 +80,10 @@ class FieldSteering extends B.FieldNumber {
       wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - R} A${R} ${R} 0 ${Math.abs(v) * SWEEP > 180 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
       label.textContent = this.getText();
     };
+    const start = this.getValue();
+    const silent = (v) => { B.Events.disable(); try { this.setValue(v); } finally { B.Events.enable(); } };
     const set = (v) => {
-      this.setValue(Math.max(-100, Math.min(100, Math.round(v))));
+      silent(Math.max(-100, Math.min(100, Math.round(v))));
       paint();
     };
     // Like the SPIKE dial: left of the top is left, right is right, and the wheel stops at the bottom (±100).
@@ -111,7 +113,10 @@ class FieldSteering extends B.FieldNumber {
     div.appendChild(wrap);
     paint();
     B.DropDownDiv.setColour('#A6257C', '#A6257C');   // the SPIKE dial's deep magenta panel
-    B.DropDownDiv.showPositionedByField(this);
+    B.DropDownDiv.showPositionedByField(this, () => {   // closing commits the whole drag as a single undo step
+      const final = this.getValue();
+      if (final !== start) { silent(start); this.setValue(final); }
+    });
   }
 }
 B.fieldRegistry.register('field_steering', FieldSteering);
@@ -179,6 +184,8 @@ class FieldMatrix extends B.Field {
     const grid = document.createElement('div');
     grid.className = 'grid';
     const v = (this.getValue() || '0'.repeat(25)).split('');
+    const start = this.getValue();
+    const silent = (val) => { B.Events.disable(); try { this.setValue(val); } finally { B.Events.enable(); } };
     const cells = [];
     const paint = () => cells.forEach((cell, i) => cell.classList.toggle('on', v[i] !== '0'));
     for (let i = 0; i < 25; i++) {
@@ -190,7 +197,7 @@ class FieldMatrix extends B.Field {
         e.preventDefault();
         v[i] = v[i] !== '0' ? '0' : '9';
         paint();
-        this.setValue(v.join(''));
+        silent(v.join(''));
       });
       cells.push(cell);
       grid.appendChild(cell);
@@ -202,7 +209,7 @@ class FieldMatrix extends B.Field {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = label;
-      b.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); paint(); this.setValue(v.join('')); });
+      b.addEventListener('pointerdown', (e) => { e.preventDefault(); fn(); paint(); silent(v.join('')); });
       tools.appendChild(b);
     };
     mk('Clear', () => v.fill('0'));
@@ -214,7 +221,10 @@ class FieldMatrix extends B.Field {
     div.appendChild(wrap);
     const block = this.getSourceBlock();
     B.DropDownDiv.setColour(block.getColour(), block.getColourTertiary ? block.getColourTertiary() : block.getColour());
-    B.DropDownDiv.showPositionedByField(this);
+    B.DropDownDiv.showPositionedByField(this, () => {   // one undo step per editing session
+      const final = this.getValue();
+      if (final !== start) { silent(start); this.setValue(final); }
+    });
   }
 }
 B.fieldRegistry.register('field_matrix', FieldMatrix);
