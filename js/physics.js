@@ -214,7 +214,7 @@ export class Physics {
       if (pc.carried) {
         if (pc.carryJoint) this.world.removeImpulseJoint(pc.carryJoint, true);
         pc.carryJoint = null; pc.carried = false;
-        pc.body.setGravityScale(pc.def.gravity === false ? 0 : 1, true);
+        pc.body.setAngularDamping(1.5);
         for (const c of pc.colliders) c.setCollisionGroups(SHARED);
       }
       if (pc.def.locked) {
@@ -565,15 +565,17 @@ export class Physics {
   _carry(pc) {
     if (!this.armBody) return;
     const { R } = this;
+    // The piece hangs from the arm by its connector: a ball joint 1.6 cm above the piece's centre, so it dangles
+    // under gravity and swings as the robot moves instead of sticking out at whatever angle it was caught.
     const at = this.armBody.translation(), ar = this.armBody.rotation();
     const pt = pc.body.translation(), pr = pc.body.rotation();
     const qa = new THREE.Quaternion(ar.x, ar.y, ar.z, ar.w), qp = new THREE.Quaternion(pr.x, pr.y, pr.z, pr.w);
-    const local = new THREE.Vector3(pt.x - at.x, pt.y - at.y, pt.z - at.z).applyQuaternion(qa.clone().invert());
-    const rel = qa.clone().invert().multiply(qp);
-    const data = R.JointData.fixed({ x: local.x, y: local.y, z: local.z }, { x: rel.x, y: rel.y, z: rel.z, w: rel.w }, { x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: 0, w: 1 });
+    const hook = new THREE.Vector3(pt.x, pt.y + 1.6 * S, pt.z);
+    const onArm = hook.clone().sub(new THREE.Vector3(at.x, at.y, at.z)).applyQuaternion(qa.clone().invert());
+    const onPiece = new THREE.Vector3(0, 1.6 * S, 0).applyQuaternion(qp.clone().invert());
+    const data = R.JointData.spherical({ x: onArm.x, y: onArm.y, z: onArm.z }, { x: onPiece.x, y: onPiece.y, z: onPiece.z });
     pc.carryJoint = this.world.createImpulseJoint(data, this.armBody, pc.body, true);
-    pc.carryInfo = { arm: [at.x / S, at.y / S, at.z / S], seed: [pt.x / S, pt.y / S, pt.z / S], local: [local.x / S, local.y / S, local.z / S], angle: this.lastArmAngle, time: this.robot && this.robot.time };
-    pc.body.setGravityScale(0, true);
+    pc.body.setAngularDamping(6);
     for (const c of pc.colliders) c.setCollisionGroups(0);
     pc.carried = true;
   }
