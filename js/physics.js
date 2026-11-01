@@ -66,6 +66,46 @@ export class Physics {
     this.buildWalls();
   }
 
+  /** Everything about the physics world at this instant: the Rapier world's bytes plus the pieces' bookkeeping. */
+  snapshot() {
+    return {
+      bytes: this.world.takeSnapshot(),
+      lastArmAngle: this.lastArmAngle,
+      pieces: this.pieces.map((pc) => ({ locked: pc.locked, released: pc.released, latched: pc.latched, touched: pc.touched, carried: !!pc.carried, angle: pc.angle, ext: pc.ext, height: pc.height,
+        joint: pc.joint ? pc.joint.handle : null, carryJoint: pc.carryJoint ? pc.carryJoint.handle : null })),
+      obstacles: this.obstacleBodies.map((ob) => ({ touched: ob.o.touched, impact: ob.o.impact, x: ob.o.x, y: ob.o.y, angle: ob.o.angle })),
+    };
+  }
+
+  /** Put the world back exactly as a snapshot had it; the body, collider and joint handles survive the round trip. */
+  restore(snap) {
+    const { R } = this;
+    const fresh = R.World.restoreSnapshot(snap.bytes);
+    this.world.free();
+    this.world = fresh;
+    if (this.world.integrationParameters) this.world.integrationParameters.numSolverIterations = 24;
+    const body = (b) => (b ? this.world.getRigidBody(b.handle) : null);
+    const col = (c) => (c ? this.world.getCollider(c.handle) : null);
+    this.cc = this.world.createCharacterController(SKIN * S);
+    this.cc.setSlideEnabled(true); this.cc.setApplyImpulsesToDynamicBodies(true); this.cc.setCharacterMass(1.5);
+    this.wallsBody = body(this.wallsBody);
+    this.robotBody = body(this.robotBody); this.armBody = body(this.armBody);
+    this.bodyCollider = col(this.bodyCollider);
+    for (const p of this.robotParts) p.collider = col(p.collider);
+    for (const ob of this.obstacleBodies) { ob.body = body(ob.body); ob.collider = col(ob.collider); if (ob.colliders) ob.colliders = ob.colliders.map(col); }
+    this.pieces.forEach((pc, i) => {
+      const s = snap.pieces[i];
+      pc.body = body(pc.body);
+      pc.colliders = pc.colliders.map(col); pc.collider = pc.colliders[0];
+      pc.joint = s.joint !== null ? this.world.getImpulseJoint(s.joint) : null;
+      pc.carryJoint = s.carryJoint !== null ? this.world.getImpulseJoint(s.carryJoint) : null;
+      Object.assign(pc, { locked: s.locked, released: s.released, latched: s.latched, touched: s.touched, carried: s.carried, angle: s.angle, ext: s.ext, height: s.height });
+    });
+    this.obstacleBodies.forEach((ob, i) => { const s = snap.obstacles[i]; ob.o.touched = s.touched; ob.o.impact = s.impact; ob.o.x = s.x; ob.o.y = s.y; ob.o.angle = s.angle; });
+    this.lastArmAngle = snap.lastArmAngle;
+    this.readPieces(0);
+  }
+
   /**
    * Start a run from an identical physics state every time: rebuild the whole world (models at their start
    * poses, equipment where it stands, the robot where it is). Rapier is deterministic from a fresh world with the

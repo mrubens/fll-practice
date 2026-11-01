@@ -19,7 +19,8 @@ export class Runtime {
     this.edge = new Map();
     this.vars = new Map();
     this.stepMode = false;   // pause before every block; Step runs the next one
-    this.stepSince = null;   // robot time when the current step began (null when no step is in progress)
+    this.onPause = null;     // called when every thread is waiting at the step gate
+    this.ff = null;          // fast-forward: { paths: Map(hatId -> [blockIds]) } while rebuilding threads from a snapshot
     this.paused = false;     // true while threads wait at the step gate (the simulation clock stands still)
     this.gateWaiters = [];
   }
@@ -30,23 +31,48 @@ export class Runtime {
     if (!on) this.release();
     this.onChange();
   }
-  /**
-   * One step: run blocks until one of them has taken simulated time (a move, a wait, a run-for), then pause
-   * before the next block. Instant blocks like "set movement speed" are run through, not stepped one by one.
-   */
-  step() { if (this.paused) this.stepsTaken++; this.stepSince = this.robot.time; this.release(); }
+  /** Run one block on every waiting thread. */
+  step() { if (this.paused) this.stepsTaken++; this.release(); }
   release() {
     const w = this.gateWaiters; this.gateWaiters = []; this.paused = false;
     for (const fn of w) fn();
     this.onChange();
   }
   gate(ctx) {
-    if (this.stepSince !== null && this.robot.time === this.stepSince) return Promise.resolve();   // nothing has happened yet: keep going
-    this.stepSince = null;
+    ctx.path.push(ctx.block.id);
     this.paused = true;
     this.onChange();
+    if (this.onPause && !this.ff) this.onPause();
     return new Promise((resolve) => this.gateWaiters.push(resolve)).then(() => { if (ctx.stopped || !this.running) throw new StopSignal(); });
   }
+
+  /** The threads' recorded paths (which blocks each has executed), for snapshots. */
+  threadPaths() {
+    const out = {};
+    for (const [id, t] of this.threads) out[id] = { path: t.path.slice(), frames: (t.frames || []).map((f) => ({ ...f })) };
+    return out;
+  }
+
+  /**
+   * Rebuild the program's position from recorded paths without running anything: each thread walks its path,
+   * taking the branches and loop iterations the path shows, and ends up waiting at the same block it was on.
+   * The world around it is restored separately from a snapshot.
+   */
+  restoreThreads(paths, vars, edge) {
+    if (this.running) this.stop();
+    this.running = true;
+    this.paused = false; this.gateWaiters = [];
+    this.vars = new Map(Object.entries(vars || {}));
+    this.edge = new Map(Object.entries(edge || {}));
+    this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
+    this.ff = { paths };
+    for (const hat of this.hats) if (paths[hat.id]) this.launch(hat, paths[hat.id]);
+    this.ff = null;
+    this.onChange();
+  }
+  /** While fast-forwarding, the next block the path says this thread executed (or null at the end). */
+  ffNext(ctx) { return ctx.ffPath ? (ctx.ffPath[ctx.path.length] ?? null) : null; }
+  ffEnters(ctx, first) { return !!first && this.ffNext(ctx) === first.id; }
 
   log(msg) { this.onLog(msg); }
 
@@ -61,7 +87,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
-    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0; this.stepSince = null;
+    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0;
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();
@@ -102,10 +128,10 @@ export class Runtime {
     if (block) { try { const r = block.getSvgRoot(); if (r) r.classList.add('spike-active'); } catch { /* gone */ } }
   }
 
-  launch(hat) {
+  launch(hat, ffRecord) {
     const old = this.threads.get(hat.id);
     if (old) { old.stopped = true; this.glow(hat, false); }
-    const ctx = { hat, stopped: false };
+    const ctx = { hat, stopped: false, path: [], block: null, ffPath: ffRecord ? ffRecord.path : null, ffFrames: ffRecord ? ffRecord.frames : [], frames: [] };
     this.threads.set(hat.id, ctx);
     this.glow(hat, true);
     (async () => {
@@ -182,8 +208,20 @@ export class Runtime {
 
   async exec(block, ctx) {
     this.ctx = ctx;
-    this.mark(ctx, block);
-    if (this.stepMode) await this.gate(ctx);
+    ctx.block = block;
+    if (ctx.ffPath) {
+      // fast-forward: at the end of the path this is the block the thread was waiting on; otherwise walk on
+      if (ctx.path.length + 1 >= ctx.ffPath.length) { ctx.ffPath = null; this.mark(ctx, block); await this.gate(ctx); }
+      else {
+        ctx.path.push(block.id);
+        const f = FF[block.type];
+        if (f) await f.call(this, block, ctx);
+        return;
+      }
+    } else {
+      this.mark(ctx, block);
+      if (this.stepMode) await this.gate(ctx);
+    }
     const h = HANDLERS[block.type];
     if (!h) { this.log(`"${block.type}" is not supported in the simulator yet.`); return; }
     await h.call(this, block, ctx);
@@ -369,6 +407,25 @@ const HANDLERS = {
   // Variables
   async data_setvariableto(b) { this.setVar(b, this.value(b, 'VALUE') ?? ''); },
   async data_changevariableby(b) { this.setVar(b, num(this.getVar(b)) + this.num(b, 'VALUE')); },
+};
+
+// Fast-forward versions of the control blocks: follow the recorded path instead of evaluating anything.
+const FF = {
+  async control_repeat(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
+  async control_forever(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
+  async control_repeat_until(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
+  async control_if(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); if (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
+  async control_if_else(b, ctx) {
+    const a = b.getInputTargetBlock('SUBSTACK'), c = b.getInputTargetBlock('SUBSTACK2');
+    if (this.ffEnters(ctx, a)) await this.execStack(a, ctx); else if (this.ffEnters(ctx, c)) await this.execStack(c, ctx);
+  },
+  async procedures_call(b, ctx) {
+    const def = findDefinition(this.workspace, b.proc_.proccode);
+    const first = def && def.block.getNextBlock();
+    if (!this.ffEnters(ctx, first)) return;
+    ctx.frames.push(ctx.ffFrames[ctx.frames.length] || {});   // the frame's values as they were at the snapshot
+    try { await this.execStack(first, ctx); } finally { ctx.frames.pop(); }
+  },
 };
 
 // ---------- reporters ----------

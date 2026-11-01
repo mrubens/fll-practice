@@ -64,7 +64,34 @@ robot.on('hint', (m) => toast(m, 'warn'));
 
 // ---------- missions: scripted interactions, scoresheet, mission cards ----------
 const scoring = new Scoring(robot, world);
-const replay = { active: false, start: null };          // how the current stepped run was started, for stepping back
+const replay = { active: false, start: null, snaps: new Map() };   // stepping back: snapshots keyed by step count
+/** Everything that a step back has to put back: the physics world, the robot, the referee, the clock, the program. */
+function takeSnapshot() {
+  if (!world.physics) return null;
+  return {
+    physics: world.physics.snapshot(),
+    robot: structuredClone({ x: robot.x, y: robot.y, heading: robot.heading, time: robot.time, motors: robot.motors, movement: robot.movement, hub: robot.hub }),
+    scoring: structuredClone({ state: scoring.state, flags: scoring.flags, missionPoints: scoring.missionPoints, match: scoring.match, score: scoring.score, missions: scoring.missions, primed: scoring.primed }),
+    matchLeft: hub.matchLeft,
+    threads: runtime.threadPaths(),
+    vars: Object.fromEntries(runtime.vars), edge: Object.fromEntries(runtime.edge),
+    stepMode: runtime.stepMode, stepsTaken: runtime.stepsTaken,
+  };
+}
+function restoreSnapshot(s) {
+  runtime.stop();
+  world.physics.restore(s.physics);
+  const r = structuredClone(s.robot);
+  robot.x = r.x; robot.y = r.y; robot.heading = r.heading; robot.time = r.time; robot.motors = r.motors; robot.movement = r.movement; robot.hub = r.hub;
+  robot.emit('pose');
+  Object.assign(scoring, structuredClone(s.scoring));
+  hub.matchLeft = s.matchLeft;
+  runtime.stepMode = s.stepMode;
+  runtime.restoreThreads(s.threads, s.vars, s.edge);
+  runtime.stepsTaken = s.stepsTaken;
+  scoring.emit({ type: 'score', score: scoring.score });
+}
+runtime.onPause = () => { setTimeout(() => { if (runtime.running && runtime.paused && !replay.active) { const snap = takeSnapshot(); if (snap) replay.snaps.set(runtime.stepsTaken, snap); } }, 0); };
 scoring.on((ev) => {
   if (replay.active) return;
   if (ev.type === 'done') { sim.celebrate(ev.obstacle); toast(`${ev.mission.id} ${ev.mission.name}: ${ev.task.label}`); }
@@ -113,6 +140,7 @@ function startRun() {
   sim.clearTrail();
   hub.ensureAudio();
   replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading } };
+  replay.snaps.clear();
   runtime.start();
 }
 
@@ -152,6 +180,7 @@ function startMatch() {
   placeEquipment();
   hub.matchLeft = MATCH_SECONDS;
   replay.start = { kind: 'match' };
+  replay.snaps.clear();
   const res = relaunch();
   if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : 'Match started. Inspection failed (robot not in one launch area): no bonus.', res.inspection ? undefined : 'warn');
   else hub.matchLeft = null;
@@ -185,6 +214,16 @@ function updateRunState() {
 async function stepBack(toStart) {
   if (replay.active || !replay.start) return;
   const target = toStart ? 0 : Math.max(0, runtime.stepsTaken - 1);
+  const snap = replay.snaps.get(target);
+  if (snap) {                                           // the usual case: put the whole state back as it was
+    replay.active = true;
+    restoreSnapshot(snap);
+    for (const k of [...replay.snaps.keys()]) if (k > target) replay.snaps.delete(k);
+    replay.active = false;
+    sim.render();
+    updateRunState();
+    return;
+  }
   const start = replay.start;
   replay.active = true;
   updateRunState();

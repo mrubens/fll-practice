@@ -63,8 +63,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Step through a program.** The step button between Stop and Run starts the program paused before its first
   block and runs one block per press; the robot and the match clock stand still between steps, and the block
   about to run is outlined. Press Step while a program is running to pause it before its next block, and Run to
-  let it continue at full speed. The mirrored button steps back: the simulation is deterministic, so going back is a
-  restart and a flat-out replay of the steps before it (shift-click goes back to the start).
+  let it continue at full speed. The mirrored button steps back instantly: every pause keeps a snapshot of the
+  physics world, the robot, the referee and the program's position, and going back puts it all back (shift-click
+  goes back to the start).
 - **Drive by hand.** With no program running, W A S D drive the robot (W with A or D arcs, A or D alone pivots)
   and Q and E raise and lower the attachment. Physics, pushing and scoring work as in a free run; during a launched
   match the keys are ignored, since only the robot may act.
