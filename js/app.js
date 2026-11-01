@@ -204,6 +204,7 @@ async function stepBack(toStart) {
     while (runtime.running && !runtime.paused && steps < limit) { simStep(); steps++; if (steps % 8 === 0) sim.addTrailPoint(robot.x, robot.y); await drain(); }
   }
   replay.active = false;
+  sim.render();
   updateRunState();
 }
 btnBack.addEventListener('click', (e) => stepBack(e.shiftKey));
@@ -691,8 +692,7 @@ async function frame(now) {
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
   }
   hub.update(now);
-  sim.update(dt);
-  sim.render();
+  if (!replay.active) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be
   frameBusy = false;
   requestAnimationFrame(frame);
 }

@@ -19,6 +19,7 @@ export class Runtime {
     this.edge = new Map();
     this.vars = new Map();
     this.stepMode = false;   // pause before every block; Step runs the next one
+    this.stepSince = null;   // robot time when the current step began (null when no step is in progress)
     this.paused = false;     // true while threads wait at the step gate (the simulation clock stands still)
     this.gateWaiters = [];
   }
@@ -29,14 +30,19 @@ export class Runtime {
     if (!on) this.release();
     this.onChange();
   }
-  /** Run one block on every waiting thread. */
-  step() { if (this.paused) this.stepsTaken++; this.release(); }
+  /**
+   * One step: run blocks until one of them has taken simulated time (a move, a wait, a run-for), then pause
+   * before the next block. Instant blocks like "set movement speed" are run through, not stepped one by one.
+   */
+  step() { if (this.paused) this.stepsTaken++; this.stepSince = this.robot.time; this.release(); }
   release() {
     const w = this.gateWaiters; this.gateWaiters = []; this.paused = false;
     for (const fn of w) fn();
     this.onChange();
   }
   gate(ctx) {
+    if (this.stepSince !== null && this.robot.time === this.stepSince) return Promise.resolve();   // nothing has happened yet: keep going
+    this.stepSince = null;
     this.paused = true;
     this.onChange();
     return new Promise((resolve) => this.gateWaiters.push(resolve)).then(() => { if (ctx.stopped || !this.running) throw new StopSignal(); });
@@ -55,7 +61,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
-    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0;
+    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0; this.stepSince = null;
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();
