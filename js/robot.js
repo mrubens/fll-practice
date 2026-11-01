@@ -6,6 +6,9 @@ import { textColumns, charMatrix } from './matrixfont.js';
 import { defaultBuild, normalizeBuild, geometryFor, portsOf } from './build.js';
 
 export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
+// The forklift: a 12-tooth gear on the motor driving a gear rack. 12 teeth at LEGO's 3.14 mm pitch is 3.8 cm per
+// rotation, and the rack gives 9 cm of travel: the fork rides from 1.5 cm to 10.5 cm above the mat.
+export const LIFT = { low: 1.5, high: 10.5, cmPerRotation: 3.77 };
 const ACCEL = 3600;                       // deg/s^2 ramp
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -234,6 +237,14 @@ export class Robot {
    * Attachment state: pivot and tip (cm), motor angle, tip height and whether it is low enough to touch models.
    * Modules: arm (lifts about a horizontal axis), sweeper (swings about a vertical axis), lift (slides up), plow (fixed).
    */
+  /** Where the attachment motor's angle is clamped by the build itself, or null when it is free. */
+  _attachmentStop(angle) {
+    const module = this.geom.attachment.module;
+    if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
+    if (module === 'sweeper') return angle < -90 ? -90 : angle > 90 ? 90 : null;
+    return null;
+  }
+
   arm() {
     const a0 = this.geom.attachment;
     if (!a0 || a0.module === 'none') return null;
@@ -250,7 +261,7 @@ export class Robot {
         return { ...base, tx: px + Math.cos(dir) * L, ty: py + Math.sin(dir) * L, tipHeight: 3, down: true };
       }
       case 'lift': {
-        const height = Math.max(1.5, Math.min(16, 1.5 + (angle / 360) * 6));
+        const height = Math.max(LIFT.low, Math.min(LIFT.high, LIFT.low + (angle / 360) * LIFT.cmPerRotation));
         return { ...base, tx: px + Math.cos(out) * L * 0.6, ty: py + Math.sin(out) * L * 0.6, tipHeight: height, down: height < 12, liftHeight: height };
       }
       case 'plow':
@@ -362,8 +373,11 @@ export class Robot {
       m.velocity += Math.abs(dv) <= step ? dv : Math.sign(dv) * step;
       const prevAngle = m.angle;
       m.angle += m.velocity * dt;
+      // The attachment's own end stops: the forklift's rack runs out, the sweeper meets the robot's body.
+      const stop = p === this.config.attachment ? this._attachmentStop(m.angle) : null;
+      if (stop !== null) { m.angle = stop; if (Math.sign(m.velocity) === Math.sign(stop - prevAngle) || stop === prevAngle) { m.velocity = 0; m.stalled = true; m.stallTime = (m.stallTime || 0) + dt; if (m.goal && m.stallTime > 0.3) { m.goal.done = true; m.goal = null; m.target = 0; } } }
       // Attachment motor pressing into a wall or model: it stalls (and a "run for" goal gives up after a moment, like the hub).
-      if (ph && p === this.config.attachment && m.velocity !== 0 && ph.attachmentBlocked(m.angle)) {
+      else if (ph && p === this.config.attachment && m.velocity !== 0 && ph.attachmentBlocked(m.angle)) {
         m.angle = prevAngle; m.velocity = 0;
         m.stalled = true; m.stallTime = (m.stallTime || 0) + dt;
         if (m.goal && m.stallTime > 0.3) { m.goal.done = true; m.goal = null; m.target = 0; }

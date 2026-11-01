@@ -3,6 +3,7 @@
 // walls, mission models and the attachment, with the character controller doing collide-and-slide. Movable practice
 // boxes are dynamic bodies that get shoved. Frames: sim x east / y south / heading clockwise  <->  Rapier x east / z south / y up.
 import * as THREE from 'three';
+import { LIFT } from './robot.js';
 import { MECHANISMS } from './mechanisms.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
@@ -465,8 +466,11 @@ export class Physics {
       part(moving, [0.8, 1.6, 12], [0, 0.8, 0]);        // front lip
       part(pivot, [4, 4, 3.6], [-10, 0, 0]);            // motor block at the mount
     } else if (a.module === 'lift') {
-      part(pivot, [1.6, 16, 6], [1, 3, 0]);             // mast
-      part(moving, [8, 0.8, 7], [5, 0, 0]);             // fork
+      part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor
+      for (const z of [-1.8, 1.8]) part(pivot, [0.8, 12, 0.8], [2.4, 3, z]);   // the mast's two uprights
+      part(moving, [6, 0.7, 6.4], [4.8, 0, 0]);         // the fork's tines
+      part(moving, [0.8, 2.4, 4], [1.6, 1.2, 0]);       // the fork's back
+      part(moving, [0.8, 9.6, 0.8], [0.9, 4.8, 0]);     // the rack
     } else if (a.module === 'plow') {
       part(pivot, [1.2, 5, 14], [4, -2.5, 0]);          // blade
       part(pivot, [4, 1.6, 1.6], [2, 0, 0]);            // strut
@@ -487,7 +491,7 @@ export class Physics {
     if (this.module === 'arm') mv.rotation.set(0, 0, angle * DEG);
     else if (this.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, angle) * DEG);
     else if (this.module === 'sweeper') mv.rotation.set(0, angle * DEG, 0);
-    else if (this.module === 'lift') mv.position.y = Math.max(1.5, Math.min(16, 1.5 + (angle / 360) * 6)) - this.armPivot.position.y;
+    else if (this.module === 'lift') mv.position.y = Math.max(LIFT.low, Math.min(LIFT.high, LIFT.low + (angle / 360) * LIFT.cmPerRotation)) - this.armPivot.position.y;
     this.armRoot.position.set(x, 0, y);
     this.armRoot.rotation.set(0, -heading * DEG, 0);
     this.armRoot.updateMatrixWorld(true);

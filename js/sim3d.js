@@ -572,8 +572,9 @@ export class Sim3D {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, dy, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
     } else if (a.module === 'lift') {
-      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.6, 16, 6), armMat), [1, 3, 0]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(8, 0.8, 7), red), [5, 0, 0]);
+      for (const z of [-1.8, 1.8]) add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(0.8, 12, 0.8), armMat), [2.4, 3, z]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(6, 0.7, 6.4), red), [4.8, 0, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 9.6, 0.8), armMat), [0.9, 4.8, 0]);
     } else if (a.module === 'plow') {
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red), [4, -2.5, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat), [2, 0, 0]);
@@ -648,7 +649,7 @@ export class Sim3D {
     if (this.robotLego) this.robotPending++;
     const place = (group, pos, rot) => { group.matrixAutoUpdate = false; const m = new THREE.Matrix4().makeRotationFromEuler(new THREE.Euler(...rot)); m.setPosition(...pos); group.matrix.copy(m); return group; };
     const toSim = (g) => { const h = new THREE.Group(); g.rotation.x = Math.PI; g.scale.setScalar(LDU); h.add(g); return h; };   // LDraw y-down -> y-up, LDU -> cm
-    const names = { motor: 'motor', b3: 'beam3', b5: 'beam5', b7: 'beam7', b11: 'beam11', b11r: 'beam11red', b15: 'beam15', b15g: 'beam15grey' };
+    const names = { motor: 'motor', b3: 'beam3', b5: 'beam5', b7: 'beam7', b11: 'beam11', b11r: 'beam11red', b15: 'beam15', b15g: 'beam15grey', rack4: 'rack4', gear12: 'gear12' };
     const H = Math.PI / 2, ALONG_X = [0, H, 0], UPRIGHT = [H, 0, 0], ACROSS = [0, 0, 0];
     Promise.all(Object.values(names).map((n) => loadLDrawModel(`models/parts/${n}.mpd`))).then((loaded) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
@@ -675,11 +676,14 @@ export class Sim3D {
         put(moving, 'b3', [11.6, 0, 0], ACROSS);                              // ...and at the tip
         put(moving, 'b5', [12.4, -1.6, 0], UPRIGHT);                          // a red 5-long hanging from the tip hole
       } else if (module === 'lift') {
-        put(pivot, 'motor', [-1.2, 0, 0], [0, Math.PI, 0]);
-        for (const z of [-2.4, 2.4]) put(pivot, 'b15', [-1, 3, z], UPRIGHT);   // the mast, through the mount beams
-        for (const z of [-2.8, 2.8]) put(moving, 'b7', [4.5, 0, z], ALONG_X);  // the fork
-        put(moving, 'b5', [1.4, 0, 0], ACROSS);
-        put(moving, 'b5', [1.4, 1.6, 0], ACROSS);
+        // rack and pinion: the medium motor's axle carries a 12-tooth gear that climbs a gear rack bolted to the
+        // back of the fork; two upright 15-long beams in front of the motor guide the rack
+        put(pivot, 'motor', [0, 0, 0], [0, Math.PI, 0]);
+        put(pivot, 'gear12', [0.2, 0, 0], [0, 0, 0]);
+        for (const z of [-1.8, 1.8]) put(pivot, 'b15', [2.4, 3, z], UPRIGHT);
+        for (let k = 0; k < 3; k++) put(moving, 'rack4', [0.9, 1.6 + 3.2 * k, 0], [0, 0, -H]);   // teeth facing the gear
+        put(moving, 'b5', [1.6, 1.2, 0], UPRIGHT);                             // the fork's back, holding the rack
+        for (const z of [-2.8, 2.8]) put(moving, 'b7', [4.8, 0, z], ALONG_X);  // the tines
       } else if (module === 'plow') {
         for (const y of [-1.6, -3.2]) put(pivot, 'b15g', [4, y, 0], ACROSS);  // the blade: two 15-longs across
         for (const z of [-3.2, 3.2]) put(pivot, 'b7', [1.2, -1.6, z], ALONG_X); // struts from the frame to the blade
@@ -992,7 +996,7 @@ export class Sim3D {
       if (arm.module === 'arm') mv.rotation.set(0, 0, arm.angle * DEG);
       else if (arm.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, arm.angle) * DEG);
       else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
-      else if (arm.module === 'lift') mv.position.y = arm.liftHeight - 6;
+      else if (arm.module === 'lift') mv.position.y = arm.liftHeight - this.armPivot.position.y;
     }
     for (const m of this.obstacleMeshes) {
       const o = m.userData.obstacle;
