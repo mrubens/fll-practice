@@ -221,7 +221,7 @@ export const MECHANISMS = {
       skylight: { kind: 'slider', axis: [0, 0, 1], anchor: [3.34, 6.24, 1.76], shift: [0, 0, -4.8], range: [-4.8, 0], damp: 1.5, gravity: false, mass: 0.03,
         shape: [{ box: [4.8, 0.4, 4.8], at: [0, 0, 0] }, { box: [4, 0.4, 4.8], at: [0, 0, -4.8] }],
         parts: (p) => /^(10202|2431|6636)/.test(p.file) && p.c[1] < 6.5 && p.c[0] > 0.5 },
-      hatch: { kind: 'hinge', axis: [1, 0, 0], anchor: [-1.0, 1.84, 3.76], range: [0, 150], mass: 0.03, damp: 0.4,   // past upright it falls on to the mat
+      hatch: { kind: 'hinge', axis: [1, 0, 0], anchor: [-1.0, 1.84, 3.76], range: [0, 150], mass: 0.03, damp: 0.4, gravity: false,   // the crank holds it where it is left
         // the crank handle's box comes first: its ball is what reaches the mat when the hatch is open
         shape: [{ box: [4.2, 1, 1], at: [-2.9, 1.6, 1.6] }, { box: [3.2, 2.4, 0.8], at: [0.34, 1.6, -0.8] }],
         parts: (p) => p.c[2] > 2.6 && p.c[1] > 1.5 && p.c[1] < 4.8 && p.c[0] > -5.5 && p.c[0] < 1.0 && !/^(32000|65249)/.test(p.file) },
