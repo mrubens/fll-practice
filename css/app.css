@@ -217,7 +217,7 @@ select.vt { cursor: pointer; color: var(--fg); }
 @media (prefers-reduced-motion: reduce) { .toast, .round { transition: none; } }
 
 /* Touch pad for driving: only on touch screens, and only while nothing is running. */
-.touch-pad { display: none; position: absolute; left: 10px; bottom: 30px; z-index: 2; gap: 14px; align-items: flex-end; touch-action: none; user-select: none; -webkit-user-select: none; }
+.touch-pad { display: none; position: absolute; left: 10px; bottom: 30px; z-index: 3; gap: 14px; align-items: flex-end; touch-action: none; user-select: none; -webkit-user-select: none; }
 .touch-pad button { width: 58px; height: 58px; border-radius: 50%; border: 1px solid rgba(30,36,48,.14); background: rgba(255,255,255,.9); color: var(--fg); font: 800 18px var(--font); box-shadow: 0 6px 16px rgba(30,36,48,.18); touch-action: none; backdrop-filter: blur(4px); }
 .touch-pad button.held { background: var(--accent); color: #fff; border-color: var(--accent); }
 .pad-drive { display: grid; grid-template-columns: repeat(3, 58px); grid-template-rows: repeat(2, 58px); gap: 6px; }
@@ -228,6 +228,13 @@ select.vt { cursor: pointer; color: var(--fg); }
 .pad-arm { display: grid; grid-template-rows: repeat(2, 58px); gap: 6px; }
 .pad-arm button { width: 74px; border-radius: 16px; font-size: 13px; }
 @media (pointer: coarse) { .touch-pad { display: flex; } body.running .touch-pad, body.building .touch-pad { display: none; } #hubPanel { max-width: calc(100% - 240px); } }
+@media (pointer: coarse) and (max-width: 700px) {
+  .touch-pad { bottom: 10px; gap: 8px; }
+  .touch-pad button { width: 46px; height: 46px; font-size: 15px; }
+  .pad-drive { grid-template-columns: repeat(3, 46px); grid-template-rows: repeat(2, 46px); }
+  .pad-arm { grid-template-rows: repeat(2, 46px); }
+  .pad-arm button { width: 60px; font-size: 11px; }
+}
 
 /* ---- hub connection / python ---- */
 .tb.hub-btn-connect.connected { border-color: var(--run); color: #1B7F3B; background: #EAF9EF; }
