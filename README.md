@@ -38,9 +38,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   built from the LDraw part library, with a medium motor, a 15-long liftarm arm and a red liftarm paddle for the
   attachment, and the color sensor lens-down at the front. Pan the 3D view with a two-finger scroll on a touchpad
   (pinch or mouse wheel zooms, drag orbits, shift-drag pans).
-- **Start from the Guided Missions.** On the first visit the app opens FIRST's published Guided Mission for Mission
-  11 (the arm robot) and also saves the SPIKE app's own "The Guided Mission 2026-27" program as a second project,
-  "Guided Mission (SPIKE app)", with the bare Driving Base and the color sensor on B that its lesson builds.
+- **Start from FIRST's own Guided Mission.** On the first visit the app opens FIRST's published Guided Mission for
+  Mission 11 with the robot it was written for (Driving Base, color sensor on B, arm motor on E). Press Launch and
+  it drives from the left launch area, lifts the seed, pulls the root cover down and backs into the right launch area.
 - **Play a match like a referee scores it.** Launch starts a 2:30 match: the robot must be completely inside a
   launch area (the quarter circles in home), the equipment inspection bonus (20) is awarded if it fits there, and
   the team's loose equipment (the keystone species and four seeds) is loaded into the robot's basket attachment,
