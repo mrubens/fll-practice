@@ -35,7 +35,7 @@ class FieldSteering extends B.FieldNumber {
     wrap.className = 'spike-steer-editor';
     // Laid out like the SPIKE app's dial: a magenta disc with ticks just inside its rim, a translucent wedge from
     // twelve o'clock to the knob, a white steering wheel that turns with the value, and a white knob on the rim.
-    const SIZE = 260, C = SIZE / 2, R = 100, WHEEL_R = 46, KNOB_R = 19, DEG = Math.PI / 180;
+    const SIZE = 260, C = SIZE / 2, R = 100, WHEEL_R = 46, KNOB_R = 19, DEG = Math.PI / 180, SWEEP = 1.45;
     const svg = el('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, width: SIZE, height: SIZE, class: 'dial' });
     el('circle', { cx: C, cy: C, r: R, class: 'bg' }, svg);
     const wedge = el('path', { class: 'wedge' }, svg);
@@ -69,14 +69,15 @@ class FieldSteering extends B.FieldNumber {
       return b;
     };
     const paint = () => {
-      const v = Number(this.getValue()) || 0, a = v * 1.8 * DEG;
+      // SPIKE maps ±100 to ±145 degrees, so the knob never points straight down; its arrow shows the heading
+      const v = Number(this.getValue()) || 0, a = v * SWEEP * DEG;
       const kx = C + Math.sin(a) * R, ky = C - Math.cos(a) * R;
-      knob.setAttribute('transform', `translate(${kx} ${ky}) rotate(${v * 1.8})`);
+      knob.setAttribute('transform', `translate(${kx} ${ky}) rotate(${v * 0.9})`);
       pointer.setAttribute('x1', C + Math.sin(a) * WHEEL_R); pointer.setAttribute('y1', C - Math.cos(a) * WHEEL_R);
       pointer.setAttribute('x2', kx); pointer.setAttribute('y2', ky);
-      wheel.setAttribute('transform', `rotate(${v * 1.8} ${C} ${C})`);
+      wheel.setAttribute('transform', `rotate(${v * SWEEP} ${C} ${C})`);
       const ex = C + Math.sin(a) * R, ey = C - Math.cos(a) * R;
-      wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - R} A${R} ${R} 0 ${Math.abs(v) > 50 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
+      wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - R} A${R} ${R} 0 ${Math.abs(v) * SWEEP > 180 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
       label.textContent = this.getText();
     };
     const set = (v) => {
@@ -89,9 +90,10 @@ class FieldSteering extends B.FieldNumber {
       const r = svg.getBoundingClientRect();
       const dx = (e.clientX - r.left) * (SIZE / r.width) - C;
       const dy = (e.clientY - r.top) * (SIZE / r.height) - C;
-      let v = Math.atan2(dx, -dy) / DEG / 1.8;
+      let v = Math.atan2(dx, -dy) / DEG / SWEEP;
       const cur = Number(this.getValue()) || 0;
-      if (Math.abs(cur) > 50 && Math.abs(v) > 50 && Math.sign(v) !== Math.sign(cur)) v = Math.sign(cur) * 100;
+      if (Math.abs(v) > 100) v = Math.sign(cur || v) * 100;                       // the dead zone at the bottom
+      else if (Math.abs(cur) > 50 && Math.abs(v) > 50 && Math.sign(v) !== Math.sign(cur)) v = Math.sign(cur) * 100;
       set(v);
     };
     let dragging = false;
