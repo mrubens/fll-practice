@@ -464,7 +464,35 @@ export function createWorkspace(div, options = {}) {
       registerMyBlocksCategory(this.workspace_, (w) => makeBlockDialog(w));
       super.init();
     }
+    /** Clicking the selected category folds the palette away; clicking any category opens it again. */
+    setSelectedItem(item) {
+      const flyout = this.getFlyout();
+      if (item && item === this.selectedItem_ && flyout.isVisible()) {
+        flyout.setVisible(false);
+        super.setSelectedItem(null);
+        this.workspace_.resize();
+        return;
+      }
+      if (item && !flyout.isVisible()) {
+        flyout.setVisible(true);
+        this.workspace_.resize();
+        flyout.position();
+        flyout.getWorkspace().resizeContents();
+        flyout.recordScrollPositions && flyout.recordScrollPositions();
+        setTimeout(() => super.setSelectedItem(item), 0);   // scroll once the flyout has its size back
+        return;
+      }
+      super.setSelectedItem(item);
+    }
   }
+  // A folded-away palette gives its width back to the workspace.
+  const SpikeMetrics = CT ? class extends CT.ContinuousMetrics {
+    getFlyoutMetrics(own) {
+      const flyout = this.workspace_.getFlyout(own);
+      if (flyout && !flyout.isVisible()) return { width: 0, height: 0, position: this.workspace_.toolboxPosition };
+      return super.getFlyoutMetrics(own);
+    }
+  } : null;
   const ws = B.inject(div, {
     toolbox: buildToolbox(),
     renderer: 'zelos',
@@ -475,7 +503,7 @@ export function createWorkspace(div, options = {}) {
     trashcan: false,
     sounds: false,
     move: { scrollbars: { horizontal: true, vertical: true }, drag: true, wheel: false },
-    plugins: CT ? { toolbox: SpikePalette, flyoutsVerticalToolbox: CT.ContinuousFlyout, metricsManager: CT.ContinuousMetrics } : { toolbox: SpikePalette },
+    plugins: CT ? { toolbox: SpikePalette, flyoutsVerticalToolbox: CT.ContinuousFlyout, metricsManager: SpikeMetrics } : { toolbox: SpikePalette },
   });
   // A GitHub link at the foot of the category column.
   const toolboxDiv = div.querySelector('.blocklyToolboxDiv');
