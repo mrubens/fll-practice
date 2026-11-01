@@ -174,24 +174,23 @@ select.vt { cursor: pointer; color: var(--fg); }
 .spike-matrix-editor .cell { width: 30px; height: 30px; border-radius: 7px; border: 0; background: rgba(0,0,0,.35); padding: 0; }
 .spike-matrix-editor .cell.on { background: var(--led); box-shadow: 0 0 6px rgba(255,212,0,.8); }
 .spike-matrix-editor .tools { display: flex; gap: 6px; }
-.spike-steer-editor { padding: 10px 10px 6px; display: flex; flex-direction: column; align-items: center; gap: 2px; user-select: none; }
-.spike-steer-editor .dial { touch-action: none; cursor: pointer; }
-.spike-steer-editor .bg { fill: rgba(0,0,0,.18); }
-.spike-steer-editor .tick { stroke: rgba(255,255,255,.45); stroke-width: 2; stroke-linecap: round; }
-.spike-steer-editor .tick.big { stroke: rgba(255,255,255,.8); stroke-width: 3; }
-.spike-steer-editor .wedge { fill: rgba(255,255,255,.28); }
-.spike-steer-editor .wheel { fill: #fff; }
-.spike-steer-editor .wheel-in { fill: #9A9A9A; }
-.spike-steer-editor .spoke { fill: #fff; }
-.spike-steer-editor .stem { stroke: #9A9A9A; stroke-width: 12; stroke-linecap: round; }
-.spike-steer-editor .hub { fill: #fff; }
-.spike-steer-editor .pointer { stroke: #fff; stroke-width: 4; stroke-linecap: round; }
-.spike-steer-editor .knob circle { fill: #fff; filter: drop-shadow(0 2px 3px rgba(0,0,0,.35)); }
-.spike-steer-editor .knob .arrow { fill: none; stroke: rgba(0,0,0,.65); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.blocklyDropDownDiv:has(.spike-steer-editor) .blocklyDropDownContent { max-height: 420px; }   /* Blockly caps dropdowns at 300px; the SPIKE dial is taller */
+.spike-steer-editor { padding: 12px 14px 10px; display: flex; flex-direction: column; align-items: center; gap: 6px; user-select: none; }
+.spike-steer-editor .dial { touch-action: none; cursor: pointer; display: block; }
+.spike-steer-editor .bg { fill: #BD1481; }
+.spike-steer-editor .wedge { fill: rgba(255,255,255,.2); }
+.spike-steer-editor .tick { stroke: rgba(255,255,255,.75); stroke-width: 2.5; stroke-linecap: round; }
+.spike-steer-editor .ref, .spike-steer-editor .pointer { stroke: #fff; stroke-width: 2; stroke-linecap: round; }
+.spike-steer-editor .wheel-face { fill: #fff; }
+.spike-steer-editor .window { fill: #CE4FA1; }
+.spike-steer-editor .hub { fill: #CF168D; }
+.spike-steer-editor .knob .halo { fill: rgba(255,255,255,.3); }
+.spike-steer-editor .knob circle:not(.halo) { fill: #fff; }
+.spike-steer-editor .knob .arrow { fill: none; stroke: #A6257C; stroke-width: 3; stroke-linecap: round; stroke-linejoin: round; }
 .spike-steer-editor .row { display: flex; align-items: center; gap: 10px; width: 100%; justify-content: space-between; }
-.spike-steer-editor .row button { width: 40px; height: 40px; border-radius: 50%; border: 2px solid rgba(255,255,255,.5); background: transparent; color: #fff; font-size: 22px; font-weight: 700; line-height: 1; padding: 0; }
-.spike-steer-editor .row button:active { background: rgba(255,255,255,.25); }
-.spike-steer-editor .readout { color: #fff; font-weight: 700; font-size: 18px; }
+.spike-steer-editor .row button { width: 44px; height: 44px; border-radius: 50%; border: 2px solid rgba(255,255,255,.55); background: transparent; color: rgba(255,255,255,.9); font-size: 24px; font-weight: 500; line-height: 1; padding: 0; cursor: pointer; }
+.spike-steer-editor .row button:active { background: rgba(255,255,255,.2); }
+.spike-steer-editor .readout { color: #fff; font-weight: 600; font-size: 20px; }
 .model-card .note { margin: 4px 0 0; font-size: 11px; color: var(--muted, #667); }
 .spike-matrix-editor .tools button { flex: 1; border: 0; border-radius: 8px; padding: 6px 4px; background: rgba(255,255,255,.9); font-size: 12px; font-weight: 700; }
 

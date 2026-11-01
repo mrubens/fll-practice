@@ -33,30 +33,32 @@ class FieldSteering extends B.FieldNumber {
     div.innerHTML = '';
     const wrap = document.createElement('div');
     wrap.className = 'spike-steer-editor';
-    const SIZE = 220, C = SIZE / 2, R = 86, KNOB_R = 20, DEG = Math.PI / 180;
+    // Laid out like the SPIKE app's dial: a magenta disc with ticks just inside its rim, a translucent wedge from
+    // twelve o'clock to the knob, a white steering wheel that turns with the value, and a white knob on the rim.
+    const SIZE = 260, C = SIZE / 2, R = 100, WHEEL_R = 46, KNOB_R = 19, DEG = Math.PI / 180;
     const svg = el('svg', { viewBox: `0 0 ${SIZE} ${SIZE}`, width: SIZE, height: SIZE, class: 'dial' });
-    el('circle', { cx: C, cy: C, r: R + 18, class: 'bg' }, svg);
-    for (let i = 0; i < 36; i++) {
-      const a = i * 10 * DEG, big = i % 9 === 0;
-      const r0 = R + 6, r1 = big ? R + 16 : R + 12;
-      el('line', {
-        x1: C + Math.sin(a) * r0, y1: C - Math.cos(a) * r0,
-        x2: C + Math.sin(a) * r1, y2: C - Math.cos(a) * r1, class: big ? 'tick big' : 'tick',
-      }, svg);
-    }
+    el('circle', { cx: C, cy: C, r: R, class: 'bg' }, svg);
     const wedge = el('path', { class: 'wedge' }, svg);
-    // steering-wheel glyph in the middle: white rim, grey spokes, white hub; the stem from the hub turns with the value
-    const pointer = el('line', { class: 'pointer' }, svg);
-    el('circle', { cx: C, cy: C, r: 52, class: 'wheel' }, svg);
-    el('circle', { cx: C, cy: C, r: 38, class: 'wheel-in' }, svg);
-    for (let i = 0; i < 3; i++) {
-      el('rect', { x: C - 6, y: C - 40, width: 12, height: 34, rx: 3, class: 'spoke', transform: `rotate(${i * 120 + 180} ${C} ${C})` }, svg);
+    for (let i = 0; i < 36; i++) {
+      const a = i * 10 * DEG, r0 = R - 22, r1 = R - 10;
+      el('line', { x1: C + Math.sin(a) * r0, y1: C - Math.cos(a) * r0, x2: C + Math.sin(a) * r1, y2: C - Math.cos(a) * r1, class: 'tick' }, svg);
     }
-    const stem = el('line', { class: 'stem' }, svg);
-    el('circle', { cx: C, cy: C, r: 12, class: 'hub' }, svg);
+    el('line', { x1: C, y1: C - WHEEL_R, x2: C, y2: C - R, class: 'ref' }, svg);     // twelve o'clock reference
+    const pointer = el('line', { class: 'pointer' }, svg);
+    const wheel = el('g', { class: 'wheel' }, svg);
+    el('circle', { cx: C, cy: C, r: WHEEL_R, class: 'wheel-face' }, wheel);
+    // three windows between swept spokes (centres at 12, 4 and 8 o'clock), so the spokes sit at 6, 10 and 2
+    const P = (r, deg) => `${(C + Math.sin(deg * DEG) * r).toFixed(2)} ${(C - Math.cos(deg * DEG) * r).toFixed(2)}`;
+    for (const base of [0, 120, 240]) {
+      const ro = 38, ri = 15, half = 44, hub = 24, sweep = 14;
+      const d = `M${P(ro, base - half)} A${ro} ${ro} 0 0 1 ${P(ro, base + half)} Q${P((ro + ri) / 2, base + half - sweep)} ${P(ri, base + hub)} A${ri} ${ri} 0 0 0 ${P(ri, base - hub)} Q${P((ro + ri) / 2, base - half + sweep)} ${P(ro, base - half)} Z`;
+      el('path', { d, class: 'window' }, wheel);
+    }
+    el('circle', { cx: C, cy: C, r: 10, class: 'hub' }, wheel);
     const knob = el('g', { class: 'knob' }, svg);
+    el('circle', { cx: 0, cy: 0, r: KNOB_R + 8, class: 'halo' }, knob);
     el('circle', { cx: 0, cy: 0, r: KNOB_R }, knob);
-    el('path', { d: 'M0 -8 L0 8 M-6 -2 L0 -8 L6 -2', class: 'arrow' }, knob);
+    el('path', { d: 'M0 7 L0 -7 M-5.5 -1.5 L0 -7 L5.5 -1.5', class: 'arrow' }, knob);
     const label = document.createElement('div');
     label.className = 'readout';
     const mkBtn = (txt, d) => {
@@ -70,12 +72,11 @@ class FieldSteering extends B.FieldNumber {
       const v = Number(this.getValue()) || 0, a = v * 1.8 * DEG;
       const kx = C + Math.sin(a) * R, ky = C - Math.cos(a) * R;
       knob.setAttribute('transform', `translate(${kx} ${ky}) rotate(${v * 1.8})`);
-      pointer.setAttribute('x1', C); pointer.setAttribute('y1', C);
+      pointer.setAttribute('x1', C + Math.sin(a) * WHEEL_R); pointer.setAttribute('y1', C - Math.cos(a) * WHEEL_R);
       pointer.setAttribute('x2', kx); pointer.setAttribute('y2', ky);
-      stem.setAttribute('x1', C); stem.setAttribute('y1', C);
-      stem.setAttribute('x2', C + Math.sin(a) * 46); stem.setAttribute('y2', C - Math.cos(a) * 46);
-      const rr = R + 18, ex = C + Math.sin(a) * rr, ey = C - Math.cos(a) * rr;
-      wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - rr} A${rr} ${rr} 0 ${Math.abs(v) > 50 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
+      wheel.setAttribute('transform', `rotate(${v * 1.8} ${C} ${C})`);
+      const ex = C + Math.sin(a) * R, ey = C - Math.cos(a) * R;
+      wedge.setAttribute('d', v === 0 ? '' : `M${C} ${C} L${C} ${C - R} A${R} ${R} 0 ${Math.abs(v) > 50 ? 1 : 0} ${v > 0 ? 1 : 0} ${ex} ${ey} Z`);
       label.textContent = this.getText();
     };
     const set = (v) => {
@@ -107,8 +108,7 @@ class FieldSteering extends B.FieldNumber {
     wrap.appendChild(row);
     div.appendChild(wrap);
     paint();
-    const block = this.getSourceBlock();
-    B.DropDownDiv.setColour(block.getColour(), block.getColourTertiary ? block.getColourTertiary() : block.getColour());
+    B.DropDownDiv.setColour('#A6257C', '#A6257C');   // the SPIKE dial's deep magenta panel
     B.DropDownDiv.showPositionedByField(this);
   }
 }
