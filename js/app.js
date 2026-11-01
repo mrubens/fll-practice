@@ -132,6 +132,7 @@ sim.onPick = (obstacle) => {
 /** Free run (no match rules): models and the sheet start fresh every time. During a launched match, Run is a relaunch. */
 function startRun() {
   if (!world.matReady) { toast('The field is still loading. Try again in a moment.', 'warn'); return; }
+  sim.endChase();
   if (scoring.match.launched && !scoring.match.ended) { relaunch(); return; }
   hub.matchLeft = null;
   world.resetObstacles();
@@ -433,6 +434,7 @@ function applyBuildFromUi(b) {
   store.lastBuild = b;
   saveStore();
 }
+sim.renderer.domElement.addEventListener('pointerdown', () => sim.endChase(), { capture: true });
 builder.addEventListener('input', () => applyBuildFromUi(readBuilder()));
 builder.addEventListener('change', () => applyBuildFromUi(readBuilder()));
 builder.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => {
@@ -534,8 +536,8 @@ boardSelect.addEventListener('change', () => switchBoard(boardSelect.value));
 switchBoard(store.board || 'season', true);
 $('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
 $('#btnTurnR').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading + 15));
-$('#btnFollow').addEventListener('click', (e) => { sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });
-$('#btnCamera').addEventListener('click', () => { sim.follow = false; $('#btnFollow').classList.remove('active'); sim.camera.position.set(-40, 210, 150); sim.controls.target.set(0, 0, 0); });
+$('#btnFollow').addEventListener('click', (e) => { sim.endChase(); sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });
+$('#btnCamera').addEventListener('click', () => { sim.endChase(); sim.follow = false; $('#btnFollow').classList.remove('active'); sim.camera.position.set(-40, 210, 150); sim.controls.target.set(0, 0, 0); });
 
 // ---------- Python view ----------
 function currentPython() {
@@ -769,7 +771,6 @@ async function frame(now) {
   } else {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
-    if (sim.chase && (drive.idle += dt) > 3) sim.endChase();     // and flies back once the robot has sat still a few seconds
   }
   hub.update(now);
   if (!replay.active) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be

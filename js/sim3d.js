@@ -997,7 +997,7 @@ export class Sim3D {
    */
   startChase() {
     if (this.chase) return;
-    this.chase = { back: { pos: this.camera.position.clone(), target: this.controls.target.clone(), follow: this.follow }, t: 0 };
+    this.chase = { t: 0 };
     this.fly = null; this.follow = false;
     this.controls.enabled = false;
   }
@@ -1013,13 +1013,11 @@ export class Sim3D {
     this.camera.position.lerp(pos, k);
     this.controls.target.lerp(target, k);
   }
+  /** Leave the chase view where it is and hand the camera back to the user (a drag, the camera buttons, a run). */
   endChase() {
-    const c = this.chase;
-    if (!c) return;
+    if (!this.chase) return;
     this.chase = null;
     this.controls.enabled = true;
-    this.fly = { t: 0, fromPos: this.camera.position.clone(), fromTarget: this.controls.target.clone(), toPos: c.back.pos, toTarget: c.back.target };
-    this.follow = c.back.follow;
   }
 
   update(dt) { this.updateEffects(dt); this.updateShimmer(dt); this.updateFly(dt); this.updateChase(dt); this.watchPerformance(dt); }
