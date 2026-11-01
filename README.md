@@ -65,6 +65,8 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   sensor, and two open-frame Technic cubes to collect and bring to the goal square. The arm has a fork: lower it
   about 12 degrees, drive into a cube, lift a little (lift too far and it dangles), carry, lower, back out. Match rules and scoring only apply on the
   season table.
+- **One scrolling palette.** Like the SPIKE app, the block palette is one continuous list with a header per
+  category: click a category to scroll to it, and the highlighted category follows as you scroll.
 - **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
   hub flat), drawn from its real bricks. **Robot builder** sets the hub ports, the color and distance sensor mounts,
   and an attachment on the front, left, right or back: arm, sweeper, forklift, plow or basket, each built from the

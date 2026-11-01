@@ -155,6 +155,10 @@ select.vt { cursor: pointer; color: var(--fg); }
 /* ---- Blockly overrides ---- */
 .blocklyToolboxDiv { background: #fff !important; border-right: 1px solid var(--line); padding: 6px 0 !important; }
 .blocklyToolboxDiv { display: flex !important; flex-direction: column; }
+/* continuous palette: category headers in the flyout, SPIKE-style */
+.zelos-renderer.spike-theme .blocklyFlyoutLabel .blocklyFlyoutLabelText { font: 800 26px var(--font); }   /* drawn at the flyout's 0.7 scale; outranks the theme's label rule */
+.blocklyFlyoutBackground { fill: #F6F7FA; }
+.blocklyToolboxDiv .blocklyTreeRow { padding: 3px 0 !important; }
 .blocklyToolboxDiv .blocklyToolboxContents, .blocklyToolboxDiv .blocklyToolboxCategoryGroup { flex: 1 1 auto; }
 .toolbox-gh { flex: 0 0 auto; display: flex; justify-content: center; padding: 10px 0 10px; color: var(--muted); text-decoration: none; }
 .toolbox-gh:hover { color: var(--fg); }
@@ -282,6 +286,7 @@ body.building #hubPanel { display: none; }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/blockly@11.2.1/blockly.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@blockly/continuous-toolbox@6.0.16/dist/index.js"></script>
 <script type="importmap">
 { "imports": {
   "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
