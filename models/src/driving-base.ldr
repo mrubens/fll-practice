@@ -1,8 +1,8 @@
-0 Driving Base (FIRST robot guide: Driving Base 2 with the colour sensor of Driving Base 3)
+0 Driving Base (FIRST robot guide: Driving Base 2 with the color sensor of Driving Base 3)
 0 Name: driving-base.ldr
 0 Author: FLL Sim (scripted from the official building instructions); rearranged for fll-practice
 0 !LICENSE Model data for simulation use
-0 // drive C (left) + D (right), accessory motor E, colour sensor B
+0 // drive C (left) + D (right), accessory motor E, color sensor B
 1 26 0 -30 0 0 0 1 0 1 0 -1 0 0 39794.dat
 1 0 100 -40 -60 0 0 1 -1 0 0 0 -1 0 2780.dat
 1 0 100 -40 -20 0 -1 0 -1 0 0 0 0 -1 2780.dat
@@ -49,7 +49,7 @@
 1 0 -70 -90 -120 1 0 0 0 1 0 0 0 1 2780.dat
 1 0 -70 -50 -120 1 0 0 0 1 0 0 0 1 2780.dat
 1 14 -80 -70 -120 0 -1 0 0 0 1 -1 0 0 32523.dat
-0 // colour sensor B (front right)
+0 // color sensor B (front right)
 1 0 -100 -100 -180 0 1 0 1 0 0 0 0 -1 2780.dat
 1 0 -100 -100 -140 0 1 0 1 0 0 0 0 -1 2780.dat
 1 0 -100 -90 -160 0 -1 0 0 0 -1 1 0 0 37308.dat

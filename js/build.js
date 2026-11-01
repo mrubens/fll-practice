@@ -6,11 +6,12 @@ export const MOUNTS = ['front', 'left', 'right', 'back'];
 export const COLOR_MOUNTS = { front: 'front center', 'front-left': 'front left', 'front-right': 'front right', center: 'under the middle', back: 'back' };
 export const MODULES = {
   none: { label: 'none', motor: false },
-  arm: { label: 'arm (lifts up and down)', motor: true },
-  sweeper: { label: 'sweeper (swings sideways)', motor: true },
-  lift: { label: 'forklift (slides up)', motor: true },
-  plow: { label: 'plow blade (no motor)', motor: false },
-  basket: { label: 'basket (carries pieces, tips to dump)', motor: true },
+  arm: { label: 'arm (the robot guide\'s Driving Base 2 arm: lifts up and down)', motor: true },
+  // Hidden from the builder until they are rebuilt as real, pinned-together LEGO assemblies like the arm.
+  sweeper: { label: 'sweeper (swings sideways)', motor: true, hidden: true },
+  lift: { label: 'forklift (slides up)', motor: true, hidden: true },
+  plow: { label: 'plow blade (no motor)', motor: false, hidden: true },
+  basket: { label: 'basket (carries pieces, tips to dump)', motor: true, hidden: true },
 };
 
 export const PRESETS = {
@@ -37,7 +38,7 @@ export function normalizeBuild(b) {
   const base = PRESETS['training-camp'];
   const ports = Object.assign({}, base.ports, src.ports || {});
   const attachment = Object.assign({}, base.attachment, src.attachment || {});
-  if (!MODULES[attachment.module]) attachment.module = 'none';
+  if (!MODULES[attachment.module] || MODULES[attachment.module].hidden) attachment.module = 'none';
   // Attachments always go on the front and their motor is always on port E, like the Guided Mission robot:
   // one less thing for kids to decide. Whatever else was on E moves to its usual port.
   attachment.mount = 'front';
@@ -55,7 +56,7 @@ export function normalizeBuild(b) {
     track: base.track,
     hub: 'flat',
     ports,
-    colorMount: 'front-right',   // the Driving Base carries its colour sensor at the front right
+    colorMount: 'front-right',   // the Driving Base carries its color sensor at the front right
     distanceMount: MOUNTS.includes(src.distanceMount) ? src.distanceMount : 'front',
     attachment,
   };
@@ -73,7 +74,7 @@ export function geometryFor(build) {
   const [df, dl, da] = sensorMounts[build.distanceMount];
   const [af, al, aa] = mountPoints[build.attachment.mount];
   // The LEGO Driving Base (small wheels, 11.2 cm track, flat hub) has a known footprint, measured from its model:
-  // 5.2 cm behind the axle (the caster) to 7.6 ahead (the motor and colour sensor), 16.8 wide. Other builds are a circle.
+  // 5.2 cm behind the axle (the caster) to 7.6 ahead (the motor and color sensor), 16.8 wide. Other builds are a circle.
   const drivingBase = build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright';
   return {
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,

@@ -410,7 +410,7 @@ function fillBuilder(b) {
   B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
   B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
   B$('bDistMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.distanceMount ? ' selected' : ''}>${m}</option>`).join('');
-  B$('bModule').innerHTML = Object.entries(MODULES).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
+  B$('bModule').innerHTML = Object.entries(MODULES).filter(([, m]) => !m.hidden).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
   const motor = MODULES[b.attachment.module].motor;
   B$('bAttachInfo').textContent = b.attachment.module === 'none' ? '' : motor ? 'Mounted on the front. Its motor is on port E. Press Q and E over the 3D view to try it.' : 'Mounted on the front. No motor.';
   B$('bIssues').textContent = validateBuild(b).join(' ');

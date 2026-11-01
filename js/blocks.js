@@ -310,11 +310,11 @@ export function defineBlocks() {
 export function defineTheme() {
   const blockStyles = {}, categoryStyles = {};
   for (const [key, c] of Object.entries(CATEGORIES)) {
-    blockStyles[`${key}_blocks`] = { colourPrimary: c.colour, colourSecondary: c.secondary, colourTertiary: c.tertiary };
-    categoryStyles[`${key}_category`] = { colour: c.colour };
+    blockStyles[`${key}_blocks`] = { colorPrimary: c.color, colorSecondary: c.secondary, colorTertiary: c.tertiary };
+    categoryStyles[`${key}_category`] = { color: c.color };
   }
-  blockStyles.math_blocks = { colourPrimary: '#FFFFFF', colourSecondary: '#FFFFFF', colourTertiary: '#C8CDD6' };
-  blockStyles.text_blocks = { colourPrimary: '#FFFFFF', colourSecondary: '#FFFFFF', colourTertiary: '#C8CDD6' };
+  blockStyles.math_blocks = { colorPrimary: '#FFFFFF', colorSecondary: '#FFFFFF', colorTertiary: '#C8CDD6' };
+  blockStyles.text_blocks = { colorPrimary: '#FFFFFF', colorSecondary: '#FFFFFF', colorTertiary: '#C8CDD6' };
   return B.Theme.defineTheme('spike', {
     base: B.Themes.Zelos,
     blockStyles,
@@ -389,10 +389,10 @@ class SpikeCategory extends B.ToolboxCategory {
     dot.className = 'spikeCatDot';
     return dot;
   }
-  addColourBorder_(colour) {
+  addColourBorder_(color) {
     this.rowDiv_.style.borderLeft = 'none';
     const dot = this.rowDiv_.querySelector('.spikeCatDot');
-    if (dot) dot.style.backgroundColor = colour;
+    if (dot) dot.style.backgroundColor = color;
   }
   setSelected(isSelected) {
     this.rowDiv_.classList.toggle('spikeSelected', !!isSelected);
@@ -499,7 +499,7 @@ export function createWorkspace(div, options = {}) {
     theme,
     media: options.media ?? 'media/',
     zoom: { controls: false, wheel: true, pinch: true, startScale: 0.7, maxScale: 1.4, minScale: 0.35, scaleSpeed: 1.15 },
-    grid: { spacing: 28, length: 2, colour: '#DCE1EA', snap: false },
+    grid: { spacing: 28, length: 2, color: '#DCE1EA', snap: false },
     trashcan: false,
     sounds: false,
     move: { scrollbars: { horizontal: true, vertical: true }, drag: true, wheel: false },
