@@ -650,11 +650,11 @@ const fetchSample = (path) => fetch(path, { cache: 'no-cache' })
   .then((res) => (res.ok ? res.arrayBuffer() : fetch(path.replace('.llsp3', '.b64.txt'), { cache: 'no-cache' }).then((r1) => (r1.ok ? fromText(r1) : fetch('https://mrubens.github.io/fll-practice/' + path).then((r2) => (r2.ok ? r2.arrayBuffer() : null))))))
   .catch(() => null);
 // version 2: the turns use the standard steering blocks instead of the More Movement extension
-if (store.guidedVersion !== 2) {
+if (store.guidedVersion !== 3) {
   fetchSample('samples/guided-mission-bioglow-11.llsp3').then(async (buf) => {
     if (!buf) return;
     const { state } = await importLlsp3(buf);
-    store.guidedLoaded = true; store.guidedVersion = 2;
+    store.guidedLoaded = true; store.guidedVersion = 3;
     createProject('Guided Mission (M11)', state, normalizeBuild({ ...PRESETS['guided-mission'], preset: 'guided-mission' }));
     toast('Loaded the official FIRST Guided Mission for Mission 11. Press Launch to watch it run.');
   });
