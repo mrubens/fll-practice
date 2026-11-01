@@ -144,6 +144,8 @@ Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the
 
 ## Credits
 
-Mission models and the driving bases are LDraw reconstructions from the official building instructions by
-[fll-sim](https://github.com/martijas/fll-sim); part geometry is the [LDraw Parts Library](https://library.ldraw.org)
-(CC BY). The `.llsp3` format and block shapes were verified against files written by the SPIKE App.
+The mission models, the driving bases and the robot attachments (the Driving Base arm, the lift arm and the
+dozer blade) are LDraw reconstructions from the official building instructions by
+[fll-sim](https://github.com/martijas/fll-sim) (Martijas), whose measurements of the FIRST wireframe PDF also
+place the models on the mat. Part geometry is the [LDraw Parts Library](https://library.ldraw.org) (CC BY).
+See `models/ATTRIBUTION.md` for the details. The `.llsp3` format and block shapes were verified against files written by the SPIKE App.

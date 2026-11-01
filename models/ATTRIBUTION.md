@@ -4,10 +4,11 @@ The `.mpd` files in this folder are self-contained LDraw models (each one embeds
 
 - **Part geometry**: the [LDraw Parts Library](https://library.ldraw.org), licensed CC BY 4.0 (older parts
   CC BY 2.0) by the LDraw contributors. Packed with low-resolution primitives to keep the simulator fast.
-- **Mission models (`m01` … `m15`, `m01-stand`, `m12-post`) and the driving bases**: reconstructed part by part
-  from the official FIRST LEGO League BIOGLOW building instructions by the
-  [fll-sim](https://github.com/martijas/fll-sim) project (`apps/desktop/resources/missions` and
-  `resources/robots`), whose model files carry the note "Model data for simulation use". Model placement on the
+- **Mission models (`m01` … `m15`, `m01-stand`, `m12-post`), the driving bases and the attachments** (the
+  Driving Base arm, lift arm and dozer blade that the simulator's attachment modules are built from):
+  reconstructed part by part from the official FIRST LEGO League BIOGLOW building instructions by the
+  [fll-sim](https://github.com/martijas/fll-sim) project (`apps/desktop/resources/missions`, `resources/robots`
+  and `resources/tools`), whose model files carry the note "Model data for simulation use". Model placement on the
   mat also comes from fll-sim's measurements of the FIRST wireframe PDF.
 - `LDConfig.ldr`: LDraw color definitions (LDraw library, CC BY 4.0).
 
