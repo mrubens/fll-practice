@@ -113,13 +113,13 @@ export const MISSIONS = [
       { id: 'tie', label: 'The support tie is around the post', points: 10,
         met: (c) => { const t = c.p('M12 Forest Elder').tie; const post = c.obstacle('M12 Forest Elder post'); return !!post && Math.hypot(t.x - post.x, t.y - post.y) < 10; } },
     ] },
-  { id: 'M13', name: 'Keystone Species', models: ['Dock farm (M13-15)'],
+  { id: 'M13', name: 'Keystone Species', models: ['Dock city (M13-15)'],
     text: 'Build and deliver a keystone species to this newly protected habitat.',
     tasks: [
       { id: 'keystone', label: 'Your keystone species is on the restoration platform, and the young trees are raised', points: 30,
-        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock farm (M13-15)'); if (!k || !d.bar) return false; const l = c.local('Dock farm (M13-15)', k.pos); return d.bar.ext > 1.7 && l[0] > -5.5 && l[0] < 5.5 && l[2] > -6 && l[2] < 4 && l[1] > 4.5; } },
+        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock city (M13-15)'); if (!k || !d.bar) return false; const l = c.local('Dock city (M13-15)', k.pos); return d.bar.ext > 1.7 && l[0] > -5.5 && l[0] < 5.5 && l[2] > -6 && l[2] < 4 && l[1] > 4.5; } },
     ] },
-  { id: 'M14', name: 'Seeds of Renewal', models: ['Dock city (M13-15)'],
+  { id: 'M14', name: 'Seeds of Renewal', models: ['Dock mine (M13-15)'],
     text: 'Place the seeds your team has collected in the soil and watch them take root.',
     tasks: [
       { id: 'seeds', label: 'Seeds are contained within the replantation station (5 each)', points: 25, each: 5,
@@ -127,16 +127,16 @@ export const MISSIONS = [
       { id: 'seedsMat', label: 'Bonus: and are touching the mat (5 added each)', points: 25, each: 5,
         count: (c) => seedsIn(c).filter((s) => s.bottom < 0.6).length },
     ] },
-  { id: 'M15', name: 'Biocentric Architecture', models: ['Dock mine (M13-15)'], noEquipment: true,
+  { id: 'M15', name: 'Biocentric Architecture', models: ['Dock farm (M13-15)'], noEquipment: true,
     text: 'Modify the building to create homes for wildlife, restore soil health and bring in natural light.',
     tasks: [
       { id: 'canopy', label: 'The nesting canopy is raised', points: 10,
-        met: (c) => { const p = c.p('Dock mine (M13-15)').canopy; return !!p && p.angle > 30; } },
+        met: (c) => { const p = c.p('Dock farm (M13-15)').canopy; return !!p && p.angle > 30; } },
       { id: 'skylight', label: 'The garden skylight is completely in', points: 10,
-        met: (c) => { const p = c.p('Dock mine (M13-15)').skylight; return !!p && p.ext > -0.4; } },
+        met: (c) => { const p = c.p('Dock farm (M13-15)').skylight; return !!p && p.ext > -0.4; } },
       { id: 'hatch', label: 'The compost hatch is completely opened, touching the mat', points: 10,
-        met: (c) => { const p = c.p('Dock mine (M13-15)').hatch; return !!p && p.angle > 60 && p.bottom < 0.8; } },
-      { id: 'env', label: 'Environmental bonus: the building is on the mine dock, so the nesting canopy counts', points: 10, bonusOf: 'canopy', met: (c) => { const p = c.p('Dock mine (M13-15)').canopy; return !!p && p.angle > 30; } },
+        met: (c) => { const p = c.p('Dock farm (M13-15)').hatch; return !!p && p.angle > 60 && p.bottom < 0.8; } },
+      { id: 'env', label: 'Environmental bonus: the building is on the farm dock, so the compost hatch counts', points: 10, bonusOf: 'hatch', met: (c) => { const p = c.p('Dock farm (M13-15)').hatch; return !!p && p.angle > 60 && p.bottom < 0.8; } },
     ] },
 ];
 
@@ -158,7 +158,7 @@ function seedsIn(c) {
   for (const [model, name] of FIELD_SEEDS) {
     const s = c.p(model)[name];
     if (!s || !s.pos) continue;
-    const l = c.local('Dock city (M13-15)', s.pos);
+    const l = c.local('Dock mine (M13-15)', s.pos);
     if (l[0] > -5.4 && l[0] < 5.4 && l[2] > -3.8 && l[2] < 3.8 && l[1] < 9) out.push(s);
   }
   return out;

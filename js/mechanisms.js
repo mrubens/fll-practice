@@ -183,7 +183,7 @@ export const MECHANISMS = {
   },
   'M12 Forest Elder post': { base: [{ box: [7, 4, 2.6], at: [6, 2, 8.8] }], pieces: {} },
   // ---- M13: push the front bar in and the young trees rise; the keystone species must be on the platform ----
-  'Dock farm (M13-15)': {
+  'Dock city (M13-15)': {
     base: [{ box: [14, 6, 6], at: [0, 3, 0] }],
     pieces: {
       bar: { kind: 'slider', axis: [0, 0, -1], anchor: [0, 3.2, 5.8], range: [0, 2.6], damp: 1.5, gravity: false, mass: 0.05,
@@ -194,7 +194,7 @@ export const MECHANISMS = {
     platformZone: { x: [-5, 5], z: [-4, 3], y: 5 },
   },
   // ---- M14: seeds carried from home must end up inside the replantation station ----
-  'Dock city (M13-15)': {
+  'Dock mine (M13-15)': {
     base: [{ box: [1.6, 7.6, 11], at: [-6, 3.8, 0] }, { box: [1.6, 3, 11], at: [6, 1.5, 0] }, { box: [14, 7.6, 1.6], at: [0, 3.8, -4.4] }, { box: [14, 7.6, 1.6], at: [0, 3.8, 4.4] }],
     pieces: {},
     stationZone: { x: [-5.2, 5.2], z: [-3.6, 3.6] },
@@ -207,7 +207,7 @@ export const MECHANISMS = {
   //    it starts pulled out behind the building and is pushed in by its red frame
   //  - compost hatch: the black 3-beam panel low on the front, on the crank with the red ball; pushing the ball
   //    down swings the panel out and down until it lies on the mat
-  'Dock mine (M13-15)': {
+  'Dock farm (M13-15)': {
     // the body stops short of the front wall, which is an open frame: posts, a lintel and a sill around the hatch and crank
     // the body, the front wall (the crank's ball stands clear in front of it, under open sky), the lime end frames,
     // and the garden platform over the skylight's rails
