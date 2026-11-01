@@ -52,7 +52,8 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
-  keystone species can be dumped onto the restoration platform and the seeds into the replantation station.
+  keystone species can be dumped onto the restoration platform, and seeds collected from the field (the seed pod,
+  the research platform and M11's tree) can be carried to the replantation station.
 - **Practice one mission.** **Models** over the 3D view lists the fifteen missions with a checkbox each: untick
   the rest and their models leave the table and the scoresheet, so a kid can drive at one model without the others
   in the way. The choice is remembered.

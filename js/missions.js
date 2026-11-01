@@ -1,6 +1,6 @@
 // BIOGLOW (2026-27) missions, scored the way a referee does: from the physical state of the mission models
 // (see mechanisms.js) with the Robot Game Rulebook's wording and points. Each task's `met(ctx)` looks at the
-// pieces of its models; `how` is the hint shown to kids. `noEquipment` marks missions with the
+// pieces of its models; `noEquipment` marks missions with the
 // "no equipment constraint": they score nothing if the model is touching the robot at the end of the match.
 //
 // ctx helpers: ctx.p(modelId) -> piece states {angle, ext, height, moved, rotated, bottom, x, y, pos, touched, released}
@@ -8,6 +8,7 @@
 //              ctx.eq(id) -> an equipment piece's state (keystone species, seeds), or null before launch
 //              ctx.touching(modelId) -> the robot is touching that model right now
 
+import { FIELD_SEEDS } from './mechanisms.js';
 export const MISSIONS = [
   { id: 'M01', name: 'Drone Survey', models: ['M01 Drone Survey', 'M01 Drone stand'], noEquipment: true,
     text: 'Help the pilot launch the drone to create a LiDAR map of the rainforest.',
@@ -114,9 +115,9 @@ export const MISSIONS = [
   { id: 'M14', name: 'Seeds of Renewal', models: ['Dock city (M13-15)'],
     text: 'Place the seeds your team has collected in the soil and watch them take root.',
     tasks: [
-      { id: 'seeds', label: 'Seeds are contained within the replantation station (5 each)', points: 20, each: 5,
+      { id: 'seeds', label: 'Seeds are contained within the replantation station (5 each)', points: 25, each: 5,
         count: (c) => seedsIn(c).length },
-      { id: 'seedsMat', label: 'Bonus: and are touching the mat (5 added each)', points: 20, each: 5,
+      { id: 'seedsMat', label: 'Bonus: and are touching the mat (5 added each)', points: 25, each: 5,
         count: (c) => seedsIn(c).filter((s) => s.bottom < 0.6).length },
     ] },
   { id: 'M15', name: 'Biocentric Architecture', models: ['Dock mine (M13-15)'], noEquipment: true,
@@ -144,11 +145,12 @@ function fragIn(c, name) {
   const l = c.local(m, f.pos);
   return l[2] > -9.5 && l[2] < -3 && Math.abs(l[0]) < 7 && l[1] > 4;
 }
+/** The seeds collected from the field (M02, M09, M11) that sit inside the replantation station. */
 function seedsIn(c) {
   const out = [];
-  for (const id of ['seed1', 'seed2', 'seed3', 'seed4']) {
-    const s = c.eq(id);
-    if (!s) continue;
+  for (const [model, name] of FIELD_SEEDS) {
+    const s = c.p(model)[name];
+    if (!s || !s.pos) continue;
     const l = c.local('Dock city (M13-15)', s.pos);
     if (l[0] > -5.4 && l[0] < 5.4 && l[2] > -3.8 && l[2] < 3.8 && l[1] < 9) out.push(s);
   }

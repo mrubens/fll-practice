@@ -148,7 +148,7 @@ export const MECHANISMS = {
   'M10 Fragile Microhabitat B': {
     pieces: { habitat: { kind: 'loose', anchor: [-6.2, 0, 0], planar: true, mass: 0.08, friction: 0.9, whole: true, shape: [{ box: [10.3, 8.4, 4], at: [0, 4.2, 0] }], parts: () => true } },
   },
-  // ---- M11: pull the root cover forward onto the mat; a seed for M14 hangs on the left ----
+  // ---- M11: pull the root cover forward onto the mat; a seed for M14 hangs on the left and drops when knocked ----
   // Model frame: +x is the front (the window and its cover), +z is the seed side. The brown root cover
   // stands in front of the window, hinged on pins at its foot and leaning back a little against the box:
   // push or pull its top forward past upright and it falls flat. The seed hangs from a red connector at
@@ -156,7 +156,7 @@ export const MECHANISMS = {
   'M11 Window to the Past': {
     base: [{ box: [7.4, 6.5, 8], at: [-0.2, 3.25, -2.2] }],   // up to the green platform; the plants above bend out of the way
     pieces: {
-      seed: { kind: 'loose', anchor: [-1.37, 9.8, 7.4], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01, carry: true,
+      seed: { kind: 'loose', anchor: [-1.37, 9.8, 7.4], locked: true, releaseWhen: (s) => s.seed.touched, mass: 0.01,
         shape: [{ box: [2.6, 2.2, 4.4], at: [0, 0, 0] }], parts: (p) => p.c[2] > 5 && p.c[1] > 9 },
       cover: { kind: 'hinge', axis: [0, 0, -1], anchor: [4.23, 0.88, -2.38], range: [0, 86], mass: 0.04, friction: 1.2, damp: 0.6,
         shape: [{ box: [0.7, 6.2, 8.2], at: [-0.4, 3.1, 0] }], parts: (p) => p.c[0] > 2.7 && p.c[1] > 1.1 },
@@ -210,12 +210,11 @@ export const MECHANISMS = {
 };
 
 /** Equipment the team brings: loose pieces that start in home and get carried to the docks. */
+// The team's own equipment on the field: only the keystone species (bag 20). The seeds for M14 are collected
+// from the field itself: three from the seed pod (M02), one from the research platform (M09), one from M11.
 export const EQUIPMENT_PIECES = [
   { id: 'keystone', label: 'Keystone species', color: 0xE34A9A, box: [4, 4, 4], mass: 0.05 },
-  { id: 'seed1', label: 'Seed', color: 0x8B5A2B, box: [2, 2, 2], mass: 0.01 },
-  { id: 'seed2', label: 'Seed', color: 0x8B5A2B, box: [2, 2, 2], mass: 0.01 },
-  { id: 'seed3', label: 'Seed', color: 0x8B5A2B, box: [2, 2, 2], mass: 0.01 },
-  { id: 'seed4', label: 'Seed', color: 0x8B5A2B, box: [2, 2, 2], mass: 0.01 },
 ];
+export const FIELD_SEEDS = [['M02 Exploding Seeds', 'seed1'], ['M02 Exploding Seeds', 'seed2'], ['M02 Exploding Seeds', 'seed3'], ['M08-09 Tangled / Research Platform', 'seed'], ['M11 Window to the Past', 'seed']];
 
 export { DEG, near };
