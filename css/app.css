@@ -246,6 +246,7 @@ select.vt { cursor: pointer; color: var(--fg); }
 .builder input[type=range] { flex: 1; min-width: 0; }
 .builder output { font-weight: 800; color: var(--fg); font-variant-numeric: tabular-nums; width: 56px; }
 .builder .hint { margin: 2px 0 0; font-size: 12px; color: var(--stop); min-height: 1em; }
+.builder .hint.info { color: var(--fg); font-weight: 700; }
 body.building #hubPanel { display: none; }
 
 

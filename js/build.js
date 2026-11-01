@@ -38,8 +38,14 @@ export function normalizeBuild(b) {
   const ports = Object.assign({}, base.ports, src.ports || {});
   const attachment = Object.assign({}, base.attachment, src.attachment || {});
   if (!MODULES[attachment.module]) attachment.module = 'none';
-  if (!MOUNTS.includes(attachment.mount)) attachment.mount = 'front';
-  if (!MODULES[attachment.module].motor) ports.attachment = null;
+  // Attachments always go on the front and their motor is always on port E, like the Guided Mission robot:
+  // one less thing for kids to decide. Whatever else was on E moves to its usual port.
+  attachment.mount = 'front';
+  ports.attachment = MODULES[attachment.module].motor ? 'E' : null;
+  if (ports.attachment) {
+    if (ports.color === 'E') ports.color = 'B';
+    if (ports.distance === 'E') ports.distance = 'F';
+  }
   return {
     preset: src.preset || null,
     name: String(src.name || base.name),

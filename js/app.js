@@ -412,18 +412,16 @@ function fillBuilder(b) {
   B$('bColorMount').innerHTML = Object.entries(COLOR_MOUNTS).map(([k, l]) => `<option value="${k}"${k === b.colorMount ? ' selected' : ''}>${l}</option>`).join('');
   B$('bDistMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.distanceMount ? ' selected' : ''}>${m}</option>`).join('');
   B$('bModule').innerHTML = Object.entries(MODULES).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
-  B$('bMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.attachment.mount ? ' selected' : ''}>${m}</option>`).join('');
-  B$('bArmPort').innerHTML = portOptions(b.ports.attachment, true);
   const motor = MODULES[b.attachment.module].motor;
-  B$('bArmPort').disabled = !motor; B$('bMount').disabled = b.attachment.module === 'none';
+  B$('bAttachInfo').textContent = b.attachment.module === 'none' ? '' : motor ? 'Mounted on the front. Its motor is on port E.' : 'Mounted on the front. No motor.';
   B$('bIssues').textContent = validateBuild(b).join(' ');
 }
 function readBuilder() {
   return normalizeBuild({
     preset: null, name: 'Custom robot',
-    ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value, attachment: B$('bArmPort').value || null },
+    ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value },
     colorMount: B$('bColorMount').value, distanceMount: B$('bDistMount').value,
-    attachment: { module: B$('bModule').value, mount: B$('bMount').value },
+    attachment: { module: B$('bModule').value },
   });
 }
 function applyBuildFromUi(b) {
