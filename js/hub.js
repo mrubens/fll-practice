@@ -10,6 +10,7 @@ export class HubPanel {
     this.audio = null;
     this.lastText = 0;
     container.innerHTML = `
+      <button type="button" class="hub-toggle" aria-label="Hide the hub panel" title="Hide the hub panel"></button>
       <div class="hub">
         <div class="hub-face">
           <div class="hub-top"><span class="hub-dot"></span><span class="hub-name">SPIKE Prime Hub</span></div>
@@ -29,6 +30,16 @@ export class HubPanel {
           <div class="ports">${PORT_LETTERS.map((p) => `<div class="port" data-port="${p}"><b>${p}</b><span class="type"></span><span class="v"></span></div>`).join('')}</div>
         </div>
       </div>`;
+    // The panel folds down to a tab in the corner; the choice is remembered.
+    const toggle = container.querySelector('.hub-toggle');
+    const setFolded = (folded) => {
+      container.classList.toggle('folded', folded);
+      toggle.setAttribute('aria-label', folded ? 'Show the hub panel' : 'Hide the hub panel');
+      toggle.title = folded ? 'Show the hub panel' : 'Hide the hub panel';
+      try { localStorage.setItem('spikesim.hud', folded ? 'folded' : 'open'); } catch { /* ignore */ }
+    };
+    toggle.addEventListener('click', () => setFolded(!container.classList.contains('folded')));
+    try { if (localStorage.getItem('spikesim.hud') === 'folded') setFolded(true); } catch { /* ignore */ }
     this.pixels = [...container.querySelectorAll('.px')];
     this.center = container.querySelector('.hub-center');
     this.ro = { yaw: container.querySelector('[data-ro="yaw"]'), timer: container.querySelector('[data-ro="timer"]'), match: container.querySelector('[data-ro="match"]') };

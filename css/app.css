@@ -99,6 +99,15 @@ select.vt { cursor: pointer; color: var(--fg); }
 /* ---- hub panel ---- */
 /* The hub is a small fixed-size instrument panel over the bottom-left of the 3D view. */
 #hubPanel { position: absolute; right: 10px; bottom: 34px; width: 430px; max-width: calc(100% - 20px); background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 12px; box-shadow: 0 8px 24px rgba(30,36,48,.16); backdrop-filter: blur(6px); z-index: 2; }
+/* fold the panel down to a tab in the corner */
+.hub-toggle { position: absolute; right: 6px; top: 6px; width: 22px; height: 22px; border: 0; border-radius: 6px; background: transparent; color: #6B7280; cursor: pointer; z-index: 1; }
+.hub-toggle::before { content: ""; position: absolute; left: 7px; top: 5px; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); }
+.hub-toggle:hover { background: rgba(30,36,48,.08); color: var(--fg); }
+#hubPanel.folded { width: auto; }
+#hubPanel.folded .hub { display: none; }
+#hubPanel.folded .hub-toggle { position: static; display: block; width: auto; height: auto; padding: 6px 12px 6px 28px; font: 700 12px var(--font); color: var(--fg); }
+#hubPanel.folded .hub-toggle::after { content: "Hub"; }
+#hubPanel.folded .hub-toggle::before { left: 11px; top: 11px; transform: rotate(-135deg); }
 .hub { display: flex; gap: 8px; padding: 7px 8px; align-items: stretch; }
 .hub-face { flex: 0 0 86px; background: #fff; border: 2px solid #D6DBE4; border-radius: 12px; padding: 5px 6px 6px; display: flex; flex-direction: column; align-items: center; gap: 5px; box-shadow: inset 0 0 0 3px var(--hub-yellow); }
 .hub-top { display: none; }
