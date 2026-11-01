@@ -29,7 +29,7 @@ export async function createPhysics(world) {
 const ALL = 0xFFFF;
 const grp = (member, filter) => ((member & 0xFFFF) << 16) | (filter & 0xFFFF);
 const SHARED = grp(1, ALL);
-const MODEL_BIT = { 'M01 Drone Survey': 1, 'M01 Drone stand': 1 };   // the rest are assigned as they are built
+const MODEL_BIT = {};   // assigned as the models are built
 const modelGroup = (id) => { if (!(id in MODEL_BIT)) MODEL_BIT[id] = 2 + (Object.keys(MODEL_BIT).length - 1) % 14; const b = 1 << MODEL_BIT[id]; return grp(b, ALL & ~b); };
 
 const yawQuat = (headingDeg) => { const a = -headingDeg * DEG / 2; return { x: 0, y: Math.sin(a), z: 0, w: Math.cos(a) }; };
@@ -202,16 +202,24 @@ export class Physics {
           .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pd.whole || pd.kind === 'loose' ? SHARED : groups), body));
       const pc = { o, name, def: pd, body, colliders: cols, collider: cols[0], anchor: anchorW, q0: frame.q.clone(), axisW: pd.axis ? new THREE.Vector3(...pd.axis).applyQuaternion(frame.q).normalize() : null,
         locked, released: !locked, latched: false, touched: -1, angle: 0, ext: 0, height: 0, start: anchorW.clone() };
-      if (pd.kind === 'hinge') this._hingeJoint(pc, base, locked);
+      if (pd.kind === 'hinge' && !pd.parent) this._hingeJoint(pc, base, locked);
       if (pd.kind === 'slider') this._sliderJoint(pc, base, locked);
       this.pieces.push(pc);
       for (const c of cols) this.colliderToPiece.set(c.handle, pc);
     }
+    // hinges on another piece of the same model (a linkage), once every piece has a body
+    for (const pc of this.pieces) {
+      if (pc.o !== o || pc.def.kind !== 'hinge' || !pc.def.parent) continue;
+      const parent = this.pieces.find((q) => q.o === o && q.name === pc.def.parent);
+      if (parent) this._hingeJoint(pc, parent.body, pc.locked, parent);
+    }
   }
 
-  _hingeJoint(pc, base, collapsed = false) {
+  _hingeJoint(pc, base, collapsed = false, parent = null) {
     const { R } = this;
-    const a = pc.def.anchor, ax = pc.def.axis;
+    const ax = pc.def.axis;
+    // the anchor in the first body's frame: the model frame for the base, or relative to a parent piece's own anchor
+    const a = parent ? pc.def.anchor.map((v, i) => v - parent.def.anchor[i]) : pc.def.anchor;
     // Rapier measures the revolute angle the other way round from the right-hand rule used in mechanisms.js
     // (checked empirically), so the limits are mirrored.
     const data = R.JointData.revolute({ x: a[0] * S, y: a[1] * S, z: a[2] * S }, { x: 0, y: 0, z: 0 }, { x: -ax[0], y: -ax[1], z: -ax[2] });

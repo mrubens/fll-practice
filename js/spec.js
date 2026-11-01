@@ -41,24 +41,24 @@ const GLYPHS = {
 };
 GLYPHS.motor = GLYPHS.movement;
 GLYPHS.hub = GLYPHS.light;
-export function iconFor(name, color) {
-  const glyph = (GLYPHS[name] || '').replace(/BADGE/g, color);
+export function iconFor(name, colour) {
+  const glyph = (GLYPHS[name] || '').replace(/BADGE/g, colour);
   return 'data:image/svg+xml;utf8,' + encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="${color}"/>${glyph}</svg>`);
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="${colour}"/>${glyph}</svg>`);
 }
 export const ICONS = Object.fromEntries(Object.keys(GLYPHS).map((k) => [k, iconFor(k, '#444')]));   // legacy lookup
 
 export const CATEGORIES = {
-  movement: { name: 'Movement', color: '#FF4FA8', secondary: '#E93A95', tertiary: '#C72A7E', icon: 'movement' },
-  motors: { name: 'Motors', color: '#0A8DFF', secondary: '#0577DB', tertiary: '#0463B8', icon: 'motor' },
-  light: { name: 'Light', color: '#A05CFF', secondary: '#8C45EE', tertiary: '#7536CC', icon: 'light' },
-  sound: { name: 'Sound', color: '#D65CD6', secondary: '#C044C0', tertiary: '#A133A1', icon: 'sound' },
-  events: { name: 'Events', color: '#FFBF00', secondary: '#E8AA00', tertiary: '#C99300', icon: 'hub' },
-  control: { name: 'Control', color: '#FFA51F', secondary: '#EE9108', tertiary: '#CC7A00', icon: null },
-  sensors: { name: 'Sensors', color: '#3DB7E8', secondary: '#2AA3D6', tertiary: '#1C89B8', icon: 'sensor' },
-  operators: { name: 'Operators', color: '#2FC25B', secondary: '#26AC4E', tertiary: '#1E8F40', icon: null },
-  variables: { name: 'Variables', color: '#FF8C1A', secondary: '#F07C08', tertiary: '#D06A00', icon: null },
-  myblocks: { name: 'My Blocks', color: '#FF6680', secondary: '#F04F6C', tertiary: '#D03A58', icon: null },
+  movement: { name: 'Movement', colour: '#FF4FA8', secondary: '#E93A95', tertiary: '#C72A7E', icon: 'movement' },
+  motors: { name: 'Motors', colour: '#0A8DFF', secondary: '#0577DB', tertiary: '#0463B8', icon: 'motor' },
+  light: { name: 'Light', colour: '#A05CFF', secondary: '#8C45EE', tertiary: '#7536CC', icon: 'light' },
+  sound: { name: 'Sound', colour: '#D65CD6', secondary: '#C044C0', tertiary: '#A133A1', icon: 'sound' },
+  events: { name: 'Events', colour: '#FFBF00', secondary: '#E8AA00', tertiary: '#C99300', icon: 'hub' },
+  control: { name: 'Control', colour: '#FFA51F', secondary: '#EE9108', tertiary: '#CC7A00', icon: null },
+  sensors: { name: 'Sensors', colour: '#3DB7E8', secondary: '#2AA3D6', tertiary: '#1C89B8', icon: 'sensor' },
+  operators: { name: 'Operators', colour: '#2FC25B', secondary: '#26AC4E', tertiary: '#1E8F40', icon: null },
+  variables: { name: 'Variables', colour: '#FF8C1A', secondary: '#F07C08', tertiary: '#D06A00', icon: null },
+  myblocks: { name: 'My Blocks', colour: '#FF6680', secondary: '#F04F6C', tertiary: '#D03A58', icon: null },
 };
 
 // Selector shadow blocks ("menus"). Field name is always `field_<type>`, as in the SPIKE project files.

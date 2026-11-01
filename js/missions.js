@@ -14,9 +14,10 @@ export const MISSIONS = [
     text: 'Help the pilot launch the drone to create a LiDAR map of the rainforest.',
     tasks: [
       { id: 'drone', label: 'Drone is no longer touching the mat', points: 20,
-        met: (c) => c.p('M01 Drone Survey').drone.height > 0.5 },
+        met: (c) => { const p = c.p('M01 Drone Survey').pilot; return !!p && p.bottom > 0.5; } },
+      // the survey area is the patch of mat around the pilot's stand and the LiDAR map
       { id: 'map', label: 'Bonus: the LiDAR map is completely flipped over, scan marker in the survey area', points: 10, bonusOf: 'drone',
-        met: (c) => Math.abs(c.p('M01 Drone stand').map.angle) > 150 },
+        met: (c) => { const m = c.p('M01 Drone stand').map, k = c.p('M01 Drone Survey').marker, s = c.obstacle('M01 Drone stand'); return !!m && !!k && !!s && Math.abs(m.angle) > 150 && Math.hypot(k.x - s.x, k.y - s.y) < 16; } },
     ] },
   { id: 'M02', name: 'Exploding Seeds', models: ['M02 Exploding Seeds'],
     text: 'Release the seeds from the seed pod, propelling them to new ground.',

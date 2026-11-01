@@ -42,21 +42,24 @@ export const MECHANISMS = {
   // between the rings and lifts it by the top ring
   'Training cube': { pieces: { cube: { kind: 'loose', anchor: [0, 2.8, 0], whole: true, mass: 0.02, friction: 0.9, shape: [{ box: [0.8, 0.8, 4], at: [-1.6, -2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, -2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, -2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, -2.4, 1.6] }, { box: [0.8, 0.8, 4], at: [-1.6, 2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, 2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, 2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, 2.4, 1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, 1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, 1.6] }], parts: () => true } } },
   'Training cube 2': { pieces: { cube: { kind: 'loose', anchor: [0, 2.8, 0], whole: true, mass: 0.02, friction: 0.9, shape: [{ box: [0.8, 0.8, 4], at: [-1.6, -2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, -2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, -2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, -2.4, 1.6] }, { box: [0.8, 0.8, 4], at: [-1.6, 2.4, 0] }, { box: [0.8, 0.8, 4], at: [1.6, 2.4, 0] }, { box: [4, 0.8, 0.8], at: [0, 2.4, -1.6] }, { box: [4, 0.8, 0.8], at: [0, 2.4, 1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, -1.6] }, { box: [0.8, 5.6, 0.8], at: [-1.6, 0, 1.6] }, { box: [0.8, 5.6, 0.8], at: [1.6, 0, 1.6] }], parts: () => true } } },
-  // ---- M01: the drone rig (lying along the south wall) + the pilot stand with the LiDAR map ----
+  // ---- M01: the drone rig is an A-frame lying along the south wall: two pairs of long bars hinged at the drone
+  // (the apex). The pilot end pivots on the pilot's stand; the other end is the red Scan Marker, which slides on the
+  // mat. Pushing the marker toward the pilot folds the frame up and lifts the drone off the mat.
   'M01 Drone Survey': {
-    // the strings lie flat (the robot drives over them); the winch tower at the right end and the pulley at the
-    // left end stand up and stop the robot
-    base: [{ box: [56, 0.8, 6], at: [0, -0.2, 8.5] }, { box: [4.4, 6.2, 6.4], at: [26.5, 3.1, 8.8] }, { box: [2.4, 2.9, 3.2], at: [-25.5, 1.45, 8.8] }],
+    base: [{ box: [6.4, 5.5, 6.4], at: [25.9, 2.75, 8.8] }],   // the pilot's stand
     pieces: {
-      drone: { kind: 'lift', anchor: [-0.4, 0, 8.8], drivenBy: { model: 'M01 Drone stand', piece: 'lever', ratio: 10 / 55 },
-        shape: [{ box: [4, 3, 4], at: [0, 1.6, 0] }], parts: (p) => Math.abs(p.c[0]) < 2.6 && p.c[2] > 5 },
+      // the marker's bars hang from the apex pin on the pilot's bars (listed first so its parts are claimed first)
+      marker: { kind: 'hinge', parent: 'pilot', axis: [0, 0, 1], anchor: [-0.4, 3.44, 8.8], range: [-170, 170], mass: 0.05, friction: 0.5,
+        shape: [{ box: [4.8, 3.2, 3.4], at: [-26, -1.9, 0] }, { box: [25, 0.6, 6.4], at: [-13, -1, 0] }], parts: (p) => p.c[0] <= -0.5 },
+      // the pilot's bars with the drone at their far end (the drone's box is first: its bottom is what scores)
+      pilot: { kind: 'hinge', axis: [0, 0, -1], anchor: [25.9, 1.5, 8.8], range: [0, 85], mass: 0.03, friction: 0.5,
+        shape: [{ box: [4.8, 4.3, 4], at: [-26.3, 0.65, 0] }, { box: [25, 0.6, 6.4], at: [-13, 0.9, 0] }],
+        parts: (p) => p.c[0] > -0.5 && p.c[0] < 25.7 && (Math.abs(p.c[2] - 8.8) > 2 || p.c[0] < 3) },
     },
   },
   'M01 Drone stand': {
     base: [{ box: [10, 2.4, 5.4], at: [15.5, 1.2, -9.3] }, { box: [10, 0.3, 2.6], at: [15.5, 0.15, -5.3] }],
     pieces: {
-      lever: { kind: 'hinge', axis: [0, 0, -1], anchor: [10.8, 3.3, -7.5], range: [0, 55], damp: 2, gravity: false, mass: 0.03,
-        shape: [{ box: [3.4, 1.4, 1.4], at: [-1.8, 0, 0] }], parts: (p) => p.c[0] < 10.6 },
       map: { kind: 'hinge', axis: [-1, 0, 0], anchor: [15.8, 3.8, -6.6], range: [0, 180], mass: 0.05,
         shape: [{ box: [1.2, 1.2, 1.2], at: [0, 0.3, 0.35] }, { box: [5, 1.2, 2.6], at: [0, 0, 1.4] }], parts: (p) => p.c[0] > 10.6 && p.c[2] > -6.7 && p.c[1] > 0.7 },
     },
