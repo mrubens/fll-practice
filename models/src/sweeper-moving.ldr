@@ -1,0 +1,10 @@
+0 Sweeper (moving part, origin on motor E axle at the cross block)
+0 Name: sweeper-moving.ldr
+0 // 5-long axle through the motor and its gear, standing up
+1 4 0 20 0 0 -1 0 1 0 0 0 0 1 32073.dat
+0 // cross block on the axle with its two pin holes forward
+1 72 0 0 -20 0 0 -1 1 0 0 0 -1 0 42003.dat
+1 0 0 0 -20 1 0 0 0 1 0 0 0 1 2780.dat
+1 0 0 0 -40 1 0 0 0 1 0 0 0 1 2780.dat
+0 // 15-long beam on edge, running forward
+1 0 0 0 -160 0 -1 0 1 0 0 0 0 1 32278.dat

@@ -226,6 +226,30 @@ select.vt { cursor: pointer; color: var(--fg); }
 }
 @media (prefers-reduced-motion: reduce) { .toast, .round { transition: none; } }
 
+/* Touch controls, gamepad style: a thumbstick for driving on the left, two arm buttons on the right. Only on touch
+   screens, and only while nothing is running. */
+.touch-pad { display: none; position: absolute; left: 14px; right: 14px; bottom: 34px; z-index: 3; justify-content: space-between; align-items: flex-end; pointer-events: none; user-select: none; -webkit-user-select: none; }
+.touch-pad > * { pointer-events: auto; touch-action: none; }
+.stick { position: relative; width: 132px; height: 132px; border-radius: 50%; background: radial-gradient(circle at 50% 45%, rgba(30,36,48,.28), rgba(30,36,48,.5)); box-shadow: inset 0 0 0 3px rgba(255,255,255,.35), 0 8px 20px rgba(30,36,48,.25); backdrop-filter: blur(3px); }
+.stick::before { content: ""; position: absolute; inset: 14px; border-radius: 50%; border: 2px dashed rgba(255,255,255,.3); }
+.stick-knob { position: absolute; left: 50%; top: 50%; width: 60px; height: 60px; margin: -30px 0 0 -30px; border-radius: 50%; background: radial-gradient(circle at 40% 35%, #fff, #D6DBE4 70%, #B9C0CC); box-shadow: 0 4px 10px rgba(0,0,0,.35), inset 0 -3px 0 rgba(0,0,0,.08); transition: transform .12s ease; }
+.stick.live .stick-knob { transition: none; }
+.pad-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; margin-right: 440px; }
+.pad-btn { width: 66px; height: 66px; border-radius: 50%; border: 0; display: grid; place-items: center; gap: 0; padding: 0; color: #fff; background: radial-gradient(circle at 40% 35%, #FF7FBF, var(--accent) 70%, #B0206E); box-shadow: 0 5px 0 #8E1A58, 0 10px 18px rgba(30,36,48,.3), inset 0 0 0 3px rgba(255,255,255,.35); font: 800 10px var(--font); letter-spacing: .08em; }
+.pad-btn svg { width: 30px; height: 30px; }
+.pad-btn span { margin-top: -6px; }
+.pad-btn.held { transform: translateY(4px); box-shadow: 0 1px 0 #8E1A58, 0 4px 10px rgba(30,36,48,.3), inset 0 0 0 3px rgba(255,255,255,.35); }
+@media (pointer: coarse) { .touch-pad { display: flex; } body.running .touch-pad, body.building .touch-pad { display: none; } }
+@media (pointer: coarse) and (max-width: 900px) { .pad-buttons { margin-right: 310px; } }
+@media (pointer: coarse) and (max-width: 700px) {
+  .touch-pad { bottom: 12px; left: 10px; right: 10px; }
+  .stick { width: 110px; height: 110px; }
+  .stick-knob { width: 50px; height: 50px; margin: -25px 0 0 -25px; }
+  .pad-buttons { margin-right: 0; flex-direction: row; }
+  .pad-btn { width: 56px; height: 56px; }
+  #hubPanel { display: none; }
+}
+
 /* ---- hub connection / python ---- */
 .tb.hub-btn-connect.connected { border-color: var(--run); color: #1B7F3B; background: #EAF9EF; }
 .spike-modal.wide { width: min(720px, 100%); }
@@ -294,6 +318,7 @@ body.building #hubPanel { display: none; }
 .model-card .how { color: var(--muted); }
 .model-card .foot { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
 .model-card .foot .total { font-weight: 800; }
+
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/blockly@11.2.1/blockly.min.js"></script>
@@ -364,6 +389,13 @@ body.building #hubPanel { display: none; }
       <div class="model-card" id="modelCard" hidden></div>
       <div id="hubPanel"></div>
       <div class="mat-readout" id="matReadout" hidden></div>
+      <div class="touch-pad" id="touchPad" aria-label="Drive the robot">
+        <div class="stick" id="stick" aria-label="Drive: push the stick"><div class="stick-knob"></div></div>
+        <div class="pad-buttons">
+          <button type="button" class="pad-btn" data-key="q" aria-label="Arm up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5 12 8.5l6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ARM</span></button>
+          <button type="button" class="pad-btn" data-key="e" aria-label="Arm down"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5 12 15.5l6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ARM</span></button>
+        </div>
+      </div>
       <p class="view-hint">Drag the robot to move it, or drive it with W A S D (Q and E move the arm). Click a mission model to see what it scores. Shift-drag on the mat to measure. Arrow keys press the hub buttons.</p>
     </div>
     <section id="builder" class="builder" hidden aria-label="Robot builder">
@@ -383,7 +415,6 @@ body.building #hubPanel { display: none; }
         </fieldset>
         <fieldset><legend>Sensors</legend>
           <label>Color sensor port <select id="bColorPort"></select></label>
-          <label>Color sensor mount <select id="bColorMount"></select></label>
           <label>Distance sensor port <select id="bDistPort"></select></label>
           <label>Distance sensor mount <select id="bDistMount"></select></label>
         </fieldset>

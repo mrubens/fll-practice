@@ -477,6 +477,7 @@ export class Sim3D {
   buildRobot() {
     if (this.robotGroup) { this.scene.remove(this.robotGroup); this.robotGroup = null; }
     this.robotBuildGen = (this.robotBuildGen || 0) + 1;   // one generation per build: late loads for an old build are dropped
+    this.pendingHides = [];
     const r = this.robot, build = r.build, geom = r.geom;
     this.robotLego = isDrivingBase(build);                 // real bricks: nothing primitive shows until every part is in
     this.robotPending = 0; this.revealRobot = null;
@@ -576,29 +577,25 @@ export class Sim3D {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 8.6), armMat), [6.56, -2.85, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     } else if (a.module === 'sweeper') {
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 1.6, 1.6), armMat), [6, dy, 0]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 4, 4), red), [12, dy, 0]);
-      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat));
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 0.8, 0.8), armMat), [6.4, 0, 0]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0.8, 0, 0]);
+    } else if (a.module === 'plow') {
+      for (const z of [-1.6, 1.6]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0, -0.8, z]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 2.4, 8.8), armMat), [2, -1.6, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     } else if (a.module === 'lift') {
       for (const z of [-1.8, 1.8]) add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(0.8, 12, 0.8), armMat), [2.4, 3, z]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(6, 0.7, 6.4), red), [4.8, 0, 0]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 9.6, 0.8), armMat), [0.9, 4.8, 0]);
-    } else if (a.module === 'plow') {
-      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(1.2, 5, 14), red), [4, -2.5, 0]);
-      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 1.6, 1.6), armMat), [2, 0, 0]);
     } else if (a.module === 'basket') {
-      // The basket tips about its front lip (like a dump truck), so the lip stays high while the load slides out.
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 0.8, 12), armMat), [-5, -0.4, 0]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 4, 12), red), [-9.6, 2, 0]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red), [-5, 2, -5.6]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(10, 4, 0.8), red), [-5, 2, 5.6]);
-      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 1.6, 12), red), [0, 0.8, 0]);
-      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(4, 4, 3.6), armMat), [-10, 0, 0]);
+      for (const z of [-1.6, 1.6]) add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0, -0.8, z]);
+      add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 5.6), armMat), [2.4, -3.2, 0]);
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
-    if (a.module === 'arm') this.legoArm(body, prim);
+    if (['arm', 'plow', 'basket', 'sweeper'].includes(a.module)) this.legoTool(a.module, body, prim);
     else if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
-    this.armPivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), a.height - geom.lift, a.lat);   // body already rides at geom.lift
+    this.armPivot.position.set(a.fwd, a.height - geom.lift, a.lat);   // body already rides at geom.lift
     this.armPivot.rotation.y = -a.angle * DEG;
     body.add(this.armPivot);
 
@@ -640,6 +637,8 @@ export class Sim3D {
           g.add(group);
           this.robotLDraw = group;
           this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
+          for (const h of this.pendingHides || []) h();
+          this.pendingHides = [];
         }
         this.revealRobot && this.revealRobot();
       });
@@ -651,19 +650,42 @@ export class Sim3D {
    * bracket pins to the hub's front and stays with the body; the moving part's file has its origin on the arm axle,
    * so it goes straight into the pivot's moving frame. Both use the robot model's LDraw-to-sim matrix.
    */
-  legoArm(body, primitives) {
+  legoTool(module, body, primitives) {
     const gen = this.robotBuildGen;
     if (this.robotLego) this.robotPending++;
     const M = () => new THREE.Matrix4().set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
-    Promise.all([loadLDrawModel('models/attach/arm-fixed.mpd'), loadLDrawModel('models/attach/arm-moving.mpd')]).then(([fixed, moving]) => {
+    const files = { arm: ['arm-fixed', 'arm-moving'], plow: ['arm-fixed', 'dozer-moving'], basket: ['arm-fixed', 'basket-moving'], sweeper: [null, 'sweeper-moving'] }[module];
+    Promise.all(files.map((f) => (f ? loadLDrawModel(`models/attach/${f}.mpd`) : null))).then(([fixed, moving]) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
-      if (gen !== this.robotBuildGen || !fixed || !moving || !this.armPivot.parent) { done(); return; }
-      fixed.matrixAutoUpdate = false; fixed.matrix.copy(M()); body.add(fixed);
+      if (gen !== this.robotBuildGen || (files[0] && !fixed) || !moving || !this.armPivot.parent) { done(); return; }
+      if (fixed) { fixed.matrixAutoUpdate = false; fixed.matrix.copy(M()); body.add(fixed); }
       moving.matrixAutoUpdate = false; moving.matrix.copy(M()); this.armMoving.add(moving);
+      if (module === 'sweeper') this.hideBasePart('32062.dat', [6.4, 4, -3.2]);   // its 5-long axle replaces the base's 2-long one
       if (this.robotLDrawParts) this.robotLDrawParts = this.robotLDrawParts.filter((n) => n !== fixed);
       primitives.forEach((m) => { m.visible = false; });
       done();
     });
+  }
+
+  /** Hide one part of the robot's LDraw body (by file name, nearest to a point in the body frame), now or once it loads. */
+  hideBasePart(file, at) {
+    const gen = this.robotBuildGen;
+    const apply = () => {
+      const g = this.robotLDraw;
+      if (!g || gen !== this.robotBuildGen) return false;
+      g.updateMatrixWorld(true);
+      let best = null, bestD = 1.5;
+      for (const child of g.children) {
+        if ((child.userData.fileName || child.name || '').toLowerCase() !== file) continue;
+        const c = new THREE.Box3().setFromObject(child).getCenter(new THREE.Vector3());
+        this.robotGroup.worldToLocal(c);
+        const d = Math.hypot(c.x - at[0], c.y - at[1], c.z - at[2]);
+        if (d < bestD) { bestD = d; best = child; }
+      }
+      if (best) best.visible = false;
+      return true;
+    };
+    if (!apply()) this.pendingHides = (this.pendingHides || []).concat([apply]);
   }
 
   /**
@@ -1053,7 +1075,7 @@ export class Sim3D {
     const arm = r.arm();
     if (arm) {
       const mv = this.armMoving;
-      if (arm.module === 'arm') mv.rotation.set(0, 0, arm.angle * DEG);
+      if (arm.module === 'arm' || arm.module === 'plow') mv.rotation.set(0, 0, arm.angle * DEG);
       else if (arm.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, arm.angle) * DEG);
       else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
       else if (arm.module === 'lift') mv.position.y = arm.liftHeight - this.armPivot.position.y;

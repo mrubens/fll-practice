@@ -7,11 +7,11 @@ export const COLOR_MOUNTS = { front: 'front center', 'front-left': 'front left',
 export const MODULES = {
   none: { label: 'none', motor: false },
   arm: { label: 'arm (the robot guide\'s Driving Base 2 arm: lifts up and down)', motor: true },
-  // Hidden from the builder until they are rebuilt as real, pinned-together LEGO assemblies like the arm.
-  sweeper: { label: 'sweeper (swings sideways)', motor: true, hidden: true },
+  plow: { label: 'dozer blade (tilts up and down)', motor: true },
+  basket: { label: 'basket (carries pieces, tips to dump)', motor: true },
+  sweeper: { label: 'sweeper (swings sideways on the motor\'s axle)', motor: true },
+  // Hidden from the builder until it is rebuilt as a real, pinned-together LEGO assembly like the others.
   lift: { label: 'forklift (slides up)', motor: true, hidden: true },
-  plow: { label: 'plow blade (no motor)', motor: false, hidden: true },
-  basket: { label: 'basket (carries pieces, tips to dump)', motor: true, hidden: true },
 };
 
 export const PRESETS = {
@@ -84,9 +84,16 @@ export function geometryFor(build) {
     // The arm is the Driving Base 2 arm from the FIRST robot guide: its axle is 6.4 cm ahead of the wheels and
     // 5.2 cm up, geared off the motor E gear; the cross bar at its tip is 7.15 cm from the axle, 23.5 degrees below
     // horizontal at rest. Other modules still hang from a mount 8 cm ahead.
-    attachment: build.attachment.module === 'arm'
-      ? { module: 'arm', mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 }
-      : { module: build.attachment.module, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 },
+    // The dozer blade and basket hang from the same bracket and axle. The sweeper is a beam on motor E's own
+    // axle, which stands at the front left, so it swings about a vertical axis there.
+    attachment: (() => {
+      const m = build.attachment.module;
+      if (m === 'arm') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
+      if (m === 'plow') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 3.5, tipAngle: -45, height: 5.2 + lift, drop: 0 };
+      if (m === 'basket') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 4.8, height: 5.2 + lift, drop: 0 };
+      if (m === 'sweeper') return { module: m, mount: 'front', fwd: 6.4, lat: -3.2, angle: 0, length: 12.8, height: 5.6 + lift, drop: 0 };
+      return { module: m, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 };
+    })(),
   };
 }
 

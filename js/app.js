@@ -149,8 +149,8 @@ function placeEquipment() {
   const a = robot.geom.attachment;
   const items = EQUIPMENT_PIECES.map((e, i) => {
     if (a.module === 'basket') {   // the technicians load the basket by hand before the launch
-      const [x, y] = robot._point(a.fwd + 2.5 + (i % 2) * 4, -3 + Math.floor(i / 2) * 3);
-      return { ...e, x, y, h: a.height + 0.4 + e.box[1] / 2 + 0.3 };
+      const [x, y] = robot._point(a.fwd + 2.4 + (i % 2) * 1.6, -1.6 + Math.floor(i / 2) * 3.2);
+      return { ...e, x, y, h: a.height - 2 + e.box[1] / 2 + 0.3 };
     }
     return { ...e, x: -97 + (i % 3) * 5, y: 46 + Math.floor(i / 3) * 6 };
   });
@@ -665,8 +665,8 @@ let last = performance.now();
 let acc = 0;
 const STEP = 1 / 200;
 
-// ---------- hand driving (WASD and Q/E, or the touch pad) when no program is running ----------
-const drive = { keys: new Set(), warned: false, idle: 0 };
+// ---------- hand driving (WASD and Q/E, or the touch controls) when no program is running ----------
+const drive = { keys: new Set(), stick: null, warned: false, idle: 0 };
 const typing = () => { const a = document.activeElement; return !!(a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA' || a.tagName === 'SELECT' || a.isContentEditable)); };
 /** A drive input (a key or a pad button) went down; false when hand driving is not allowed right now. */
 function driveDown(k) {
@@ -682,7 +682,29 @@ document.addEventListener('keydown', (e) => {
 });
 document.addEventListener('keyup', (e) => drive.keys.delete(e.key.toLowerCase()));
 window.addEventListener('blur', () => drive.keys.clear());
-// Touch pad (shown by the stylesheet on touch screens only): hold a button to drive, like holding a key.
+// Touch controls (shown by the stylesheet on touch screens only). The thumbstick is analog: how far it is pushed
+// sets the speed, sideways sets the steering. The buttons act like holding a key.
+(() => {
+  const stick = $('#stick'), knob = stick.querySelector('.stick-knob');
+  let id = null;
+  const move = (e) => {
+    const r = stick.getBoundingClientRect(), R = r.width / 2 - 14;
+    let dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2);
+    const d = Math.hypot(dx, dy);
+    if (d > R) { dx *= R / d; dy *= R / d; }
+    knob.style.transform = `translate(${dx}px, ${dy}px)`;
+    drive.stick = { x: dx / R, y: -dy / R };
+  };
+  const end = () => { id = null; stick.classList.remove('live'); knob.style.transform = ''; drive.stick = null; };
+  stick.addEventListener('pointerdown', (e) => {
+    e.preventDefault();
+    if (!driveDown('stick')) return;
+    drive.keys.delete('stick');
+    id = e.pointerId; stick.setPointerCapture(id); stick.classList.add('live'); move(e);
+  });
+  stick.addEventListener('pointermove', (e) => { if (e.pointerId === id) move(e); });
+  for (const ev of ['pointerup', 'pointercancel', 'lostpointercapture']) stick.addEventListener(ev, (e) => { if (e.pointerId === id) end(); });
+})();
 for (const btn of document.querySelectorAll('#touchPad button')) {
   const k = btn.dataset.key;
   const up = () => { drive.keys.delete(k); btn.classList.remove('held'); };
@@ -693,12 +715,13 @@ for (const btn of document.querySelectorAll('#touchPad button')) {
 scoring.on((ev) => { if (ev.type === 'reset' || ev.type === 'end') drive.warned = false; });
 /** Set wheel and arm targets from the held keys; returns true while anything should keep moving. */
 function driveFromKeys() {
-  const k = drive.keys, cfg = robot.config;
-  const fwd = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0);
-  const turn = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0);          // d turns right (clockwise)
+  const k = drive.keys, cfg = robot.config, s = drive.stick;
+  let fwd = (k.has('w') ? 1 : 0) - (k.has('s') ? 1 : 0);
+  let turn = (k.has('d') ? 1 : 0) - (k.has('a') ? 1 : 0);          // d turns right (clockwise)
+  if (s) { if (Math.abs(s.y) > 0.15) fwd = s.y; if (Math.abs(s.x) > 0.15) turn = s.x; }   // the stick, past a dead zone
   const v = MAX_DEG_PER_S * 0.5;
   let l = 0, r = 0;
-  if (fwd) { l = r = fwd * v; if (turn) { if (turn > 0) r *= 0.3; else l *= 0.3; } }   // arcs while moving
+  if (fwd) { l = r = fwd * v; const ease = 1 - Math.min(1, Math.abs(turn)) * 0.7; if (turn > 0) r *= ease; else if (turn < 0) l *= ease; }   // arcs while moving
   else if (turn) { l = turn * v * 0.6; r = -turn * v * 0.6; }                           // pivots in place
   robot.motors[cfg.left].target = l; robot.motors[cfg.right].target = r;
   const arm = cfg.attachment && robot.motors[cfg.attachment];
@@ -731,7 +754,7 @@ async function frame(now) {
     acc += dt;
     while (acc >= STEP && runtime.running && !runtime.paused) { simStep(); acc -= STEP; await drain(); }
     sim.addTrailPoint(robot.x, robot.y);
-  } else if (drive.keys.size || driveFromKeys()) {
+  } else if (drive.keys.size || drive.stick || driveFromKeys()) {
     driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }

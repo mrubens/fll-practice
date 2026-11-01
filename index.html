@@ -78,15 +78,10 @@
       <div id="hubPanel"></div>
       <div class="mat-readout" id="matReadout" hidden></div>
       <div class="touch-pad" id="touchPad" aria-label="Drive the robot">
-        <div class="pad-drive">
-          <button type="button" data-key="w" aria-label="Forward">▲</button>
-          <button type="button" data-key="a" aria-label="Turn left">◀</button>
-          <button type="button" data-key="s" aria-label="Back">▼</button>
-          <button type="button" data-key="d" aria-label="Turn right">▶</button>
-        </div>
-        <div class="pad-arm">
-          <button type="button" data-key="q" aria-label="Arm up">Arm ▲</button>
-          <button type="button" data-key="e" aria-label="Arm down">Arm ▼</button>
+        <div class="stick" id="stick" aria-label="Drive: push the stick"><div class="stick-knob"></div></div>
+        <div class="pad-buttons">
+          <button type="button" class="pad-btn" data-key="q" aria-label="Arm up"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 14.5 12 8.5l6 6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ARM</span></button>
+          <button type="button" class="pad-btn" data-key="e" aria-label="Arm down"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9.5 12 15.5l6-6" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>ARM</span></button>
         </div>
       </div>
       <p class="view-hint">Drag the robot to move it, or drive it with W A S D (Q and E move the arm). Click a mission model to see what it scores. Shift-drag on the mat to measure. Arrow keys press the hub buttons.</p>

@@ -442,7 +442,7 @@ export class Physics {
     pivot.add(moving);
     root.add(pivot);
     this.armRoot = root; this.armPivot = pivot; this.armMoving = moving;
-    const hasMoving = ['arm', 'sweeper', 'basket', 'lift'].includes(a.module);
+    const hasMoving = ['arm', 'sweeper', 'basket', 'lift', 'plow'].includes(a.module);
     const armBody = hasMoving ? this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading))) : null;
     this.armBody = armBody;
     root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); root.updateMatrixWorld(true);
@@ -466,24 +466,27 @@ export class Physics {
       part(moving, [1.6, 1.6, 8.6], [6.56, -2.85, 0]);
       part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);
     } else if (a.module === 'sweeper') {
-      part(moving, [13.6, 2.4, 2.6], [6.8, 0, 0]);      // beam + paddle
-      part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor block
+      part(moving, [12, 0.8, 0.8], [6.4, 0, 0]);        // the 15-long beam on edge, running forward from the axle
+      part(moving, [0.8, 2.4, 0.8], [0.8, 0, 0]);       // the cross block on the axle
     } else if (a.module === 'basket') {
-      part(moving, [10, 0.8, 12], [-5, -0.4, 0]);       // floor
-      part(moving, [0.8, 4, 12], [-9.6, 2, 0]);         // back
-      part(moving, [10, 4, 0.8], [-5, 2, -5.6]);        // sides
-      part(moving, [10, 4, 0.8], [-5, 2, 5.6]);
-      part(moving, [0.8, 1.6, 12], [0, 0.8, 0]);        // front lip
-      part(pivot, [4, 4, 3.6], [-10, 0, 0]);            // motor block at the mount
+      for (const z of [-1.6, 1.6]) part(moving, [0.8, 2.4, 0.8], [0, -0.8, z]);   // cross blocks hanging from the axle
+      part(moving, [4, 0.8, 5.6], [2.4, -3.2, 0]);      // the 7x5 frame floor
+      part(moving, [0.8, 0.8, 5.6], [0.8, -2.4, 0]);    // rails: back, front, sides
+      part(moving, [0.8, 0.8, 5.6], [4, -2.4, 0]);
+      for (const z of [-2.4, 2.4]) part(moving, [2.4, 0.8, 0.8], [2.4, -2.4, z]);
+      part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);    // the bracket on the hub
+    } else if (a.module === 'plow') {
+      for (const z of [-1.6, 1.6]) part(moving, [0.8, 2.4, 0.8], [0, -0.8, z]);   // cross blocks hanging from the axle
+      part(moving, [0.8, 0.8, 12], [0.8, -0.8, 0]);     // 15-long beam across
+      part(moving, [0.8, 0.8, 8.8], [0.8, -1.6, 0]);    // 11-long beam below it
+      part(moving, [1.6, 2.4, 8.8], [2, -1.6, 0]);      // the blade panel
+      part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);    // the bracket on the hub
     } else if (a.module === 'lift') {
       part(pivot, [4, 4, 3.6], [0, 0, 0]);              // motor
       for (const z of [-1.8, 1.8]) part(pivot, [0.8, 12, 0.8], [2.4, 3, z]);   // the mast's two uprights
       part(moving, [6, 0.7, 6.4], [4.8, 0, 0]);         // the fork's tines
       part(moving, [0.8, 2.4, 4], [1.6, 1.2, 0]);       // the fork's back
       part(moving, [0.8, 9.6, 0.8], [0.9, 4.8, 0]);     // the rack
-    } else if (a.module === 'plow') {
-      part(pivot, [1.2, 5, 14], [4, -2.5, 0]);          // blade
-      part(pivot, [4, 1.6, 1.6], [2, 0, 0]);            // strut
     }
     this.module = a.module;
     this.lastArmAngle = this.attachmentAngle(robot);
@@ -498,7 +501,7 @@ export class Physics {
   /** Pose the attachment graph for a robot pose and motor angle (degrees); returns the moving frame's world pose (cm). */
   syncAttachment(x, y, heading, angle) {
     const mv = this.armMoving;
-    if (this.module === 'arm') mv.rotation.set(0, 0, angle * DEG);
+    if (this.module === 'arm' || this.module === 'plow') mv.rotation.set(0, 0, angle * DEG);
     else if (this.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, angle) * DEG);
     else if (this.module === 'sweeper') mv.rotation.set(0, angle * DEG, 0);
     else if (this.module === 'lift') mv.position.y = Math.max(LIFT.low, Math.min(LIFT.high, LIFT.low + (angle / 360) * LIFT.cmPerRotation)) - this.armPivot.position.y;

@@ -31,6 +31,7 @@ export class Robot {
     this.build = normalizeBuild(build);
     this.geom = geometryFor(this.build);
     this.config = portsOf(this.build);
+    if (this.config.attachment && this.motors[this.config.attachment]) Object.assign(this.motors[this.config.attachment], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment starts at rest
     if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
     this.world.robot = this;
     if (this.world.physics && this.x !== undefined) this.world.physics.rebuildRobot(this);
@@ -245,6 +246,8 @@ export class Robot {
     if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
     if (module === 'sweeper') return angle < -90 ? -90 : angle > 90 ? 90 : null;
     if (module === 'arm') return angle < ARM_STOPS.low ? ARM_STOPS.low : angle > ARM_STOPS.high ? ARM_STOPS.high : null;
+    if (module === 'plow') return angle < -30 ? -30 : angle > 90 ? 90 : null;      // the blade tilts from dug in to raised
+    if (module === 'basket') return angle < 0 ? 0 : angle > 110 ? 110 : null;      // level to tipped right over
     return null;
   }
 

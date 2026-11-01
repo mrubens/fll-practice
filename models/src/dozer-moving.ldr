@@ -1,0 +1,21 @@
+0 Dozer blade (moving part, origin at the arm axle)
+0 Name: dozer-moving.ldr
+0 // the 7-long arm axle with its bevel gear and bush, as on the arm
+1 14 0 0 0 1 0 0 0 1 0 0 0 1 44294.dat
+1 0 60 0 0 0 0 1 1 0 0 0 1 0 32270.dat
+1 71 -60 0 0 0 0 -1 0 1 0 1 0 0 3713.dat
+0 // cross blocks hanging from the arm axle (their top axle holes are on the axle)
+1 72 -40 20 0 1 0 0 0 1 0 0 0 1 32184.dat
+1 72 40 20 0 1 0 0 0 1 0 0 0 1 32184.dat
+0 // 15-long beam across the front, pinned to the cross blocks
+1 0 0 20 -20 0 0 1 1 0 0 0 1 0 32278.dat
+1 0 -40 20 -10 0 0 -1 0 1 0 1 0 0 2780.dat
+1 0 40 20 -10 0 0 -1 0 1 0 1 0 0 2780.dat
+0 // 11-long beam below it, on axle pins from the cross blocks lower axle holes
+1 26 0 40 -20 0 0 1 1 0 0 0 1 0 32525.dat
+1 1 -40 40 -10 0 0 -1 0 1 0 1 0 0 43093.dat
+1 1 40 40 -10 0 0 -1 0 1 0 1 0 0 43093.dat
+0 // the curved smooth panel is the blade face, pinned to the 15-long beam
+1 322 0 60 -40 0 0 -1 0 1 0 1 0 0 11954.dat
+1 0 -80 20 -30 0 0 -1 0 1 0 1 0 0 2780.dat
+1 0 80 20 -30 0 0 -1 0 1 0 1 0 0 2780.dat
