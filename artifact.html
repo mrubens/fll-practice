@@ -25,7 +25,10 @@
 }
 * { box-sizing: border-box; }
 html, body { height: 100%; margin: 0; }
-html { color-scheme: light; }   /* the page is light; form controls must not pick up the OS dark theme */
+html { color-scheme: light; }
+/* Blockly's inline number/text editor has no background of its own; pin it light so no host or OS dark theme turns it black. */
+.blocklyWidgetDiv { color-scheme: light; }
+.blocklyHtmlInput { background: #fff !important; color: var(--fg) !important; color-scheme: light; }   /* the page is light; form controls must not pick up the OS dark theme */
 body { font-family: var(--font); font-weight: 600; color: var(--fg); background: var(--bg); display: flex; flex-direction: column; overflow: hidden; }
 button { font: inherit; color: inherit; cursor: pointer; }
 button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid rgba(10,141,255,.45); outline-offset: 2px; }
