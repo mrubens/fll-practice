@@ -1,0 +1,1302 @@
+0 FILE p.ldr
+0 p
+0 Name: p.ldr
+1 71 0 0 0 1 0 0 0 1 0 0 0 1 64179.dat
+0 FILE 64179.dat
+0 Technic Beam  7 x  5 with Open Center  5 x  3
+0 Name: 64179.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Part UPDATE 2012-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2012-12-28 [PTadmin] Official Update 2012-03
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 s\64179s01.dat
+1 16 0 0 0 -1 0 0 0 1 0 0 0 1 s\64179s01.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 -1 s\64179s01.dat
+1 16 0 0 0 -1 0 0 0 1 0 0 0 -1 s\64179s01.dat
+1 16 0 0 70 -1 0 0 0 0 1 0 -1 0 peghole.dat
+0 BFC INVERTNEXT
+1 16 0 0 52 -6 0 0 0 0 6 0 16 0 4-4cyli.dat
+1 16 0 0 52 -6 0 0 0 0 6 0 16 0 4-4edge.dat
+1 16 0 0 70 -1 0 0 0 0 -1 0 -1 0 4-4ring8.dat
+1 16 50 0 0 0 -1 0 -1 0 0 0 0 1 peghole.dat
+0 BFC INVERTNEXT
+1 16 32 0 0 0 16 0 -6 0 0 0 0 6 4-4cyli.dat
+1 16 32 0 0 0 16 0 -6 0 0 0 0 6 4-4edge.dat
+1 16 50 0 0 0 -1 0 -1 0 0 0 0 -1 4-4ring8.dat
+1 16 0 0 -70 1 0 0 0 0 1 0 1 0 peghole.dat
+0 BFC INVERTNEXT
+1 16 0 0 -52 6 0 0 0 0 6 0 -16 0 4-4cyli.dat
+1 16 0 0 -52 6 0 0 0 0 6 0 -16 0 4-4edge.dat
+1 16 0 0 -70 1 0 0 0 0 -1 0 1 0 4-4ring8.dat
+1 16 -50 0 0 0 1 0 -1 0 0 0 0 -1 peghole.dat
+0 BFC INVERTNEXT
+1 16 -32 0 0 0 -16 0 -6 0 0 0 0 -6 4-4cyli.dat
+1 16 -32 0 0 0 -16 0 -6 0 0 0 0 -6 4-4edge.dat
+1 16 -50 0 0 0 1 0 -1 0 0 0 0 1 4-4ring8.dat
+0 //
+1 16 34 0 0 0 -1 0 0 0 9 -9 0 0 2-4ndis.dat
+1 16 32 0 0 0 -1 0 0 0 -9 9 0 0 2-4ndis.dat
+1 16 48 0 0 0 1 0 0 0 9 -9 0 0 2-4ndis.dat
+1 16 48 0 0 0 1 0 0 0 -9 9 0 0 2-4ndis.dat
+1 16 -34 0 0 0 1 0 0 0 9 -9 0 0 2-4ndis.dat
+1 16 -32 0 0 0 1 0 0 0 -9 9 0 0 2-4ndis.dat
+1 16 -48 0 0 0 -1 0 0 0 9 -9 0 0 2-4ndis.dat
+1 16 -48 0 0 0 -1 0 0 0 -9 9 0 0 2-4ndis.dat
+0 //
+1 16 32 0 0 0 1 0 2 0 0 0 0 -2 4-4ring3.dat
+1 16 32 0 0 0 1 0 0 0 8 -8 0 0 2-4ndis.dat
+1 16 30 0 0 0 1 0 0 0 -8 8 0 0 2-4ndis.dat
+0 BFC INVERTNEXT
+1 16 30 0 0 0 2 0 0 0 -8 -8 0 0 2-4cyli.dat
+4 16 30 -10 8 30 -8 8 30 -8 -8 30 -10 -8
+4 16 32 8 8 32 10 8 32 10 -8 32 8 -8
+1 16 31 5 8 0 0 1 5 0 0 0 1 0 rect2p.dat
+1 16 31 5 -8 0 0 1 5 0 0 0 -1 0 rect2p.dat
+1 16 32 0 0 0 1 0 0 0 -8 8 0 0 2-4edge.dat
+1 16 30 0 0 0 1 0 0 0 -8 8 0 0 2-4edge.dat
+1 16 50 0 0 0 -1 0 9 0 0 0 0 -9 4-4ndis.dat
+0 //
+1 16 -32 0 0 0 -1 0 2 0 0 0 0 -2 4-4ring3.dat
+1 16 -32 0 0 0 -1 0 0 0 8 -8 0 0 2-4ndis.dat
+1 16 -30 0 0 0 -1 0 0 0 -8 8 0 0 2-4ndis.dat
+0 BFC INVERTNEXT
+1 16 -30 0 0 0 -2 0 0 0 -8 -8 0 0 2-4cyli.dat
+4 16 -30 -10 -8 -30 -8 -8 -30 -8 8 -30 -10 8
+4 16 -32 8 -8 -32 10 -8 -32 10 8 -32 8 8
+1 16 -31 5 8 0 0 -1 5 0 0 0 1 0 rect2p.dat
+1 16 -31 5 -8 0 0 -1 5 0 0 0 -1 0 rect2p.dat
+1 16 -32 0 0 0 -1 0 0 0 -8 8 0 0 2-4edge.dat
+1 16 -30 0 0 0 -1 0 0 0 -8 8 0 0 2-4edge.dat
+1 16 -50 0 0 0 1 0 9 0 0 0 0 -9 4-4ndis.dat
+0 //
+1 16 0 0 52 0 0 2 2 0 0 0 1 0 4-4ring3.dat
+1 16 0 0 52 8 0 0 0 0 8 0 1 0 2-4ndis.dat
+1 16 0 0 50 -8 0 0 0 0 -8 0 1 0 2-4ndis.dat
+0 BFC INVERTNEXT
+1 16 0 0 50 8 0 0 0 0 -8 0 2 0 2-4cyli.dat
+4 16 -8 -9 50 -8 -8 50 8 -8 50 8 -9 50
+4 16 -8 8 52 -8 9 52 8 9 52 8 8 52
+1 16 -8 4.5 51 0 -1 0 4.5 0 0 0 0 1 rect2p.dat
+1 16 8 4.5 51 0 1 0 4.5 0 0 0 0 1 rect2p.dat
+1 16 0 0 52 -8 0 0 0 0 -8 0 1 0 2-4edge.dat
+1 16 0 0 50 -8 0 0 0 0 -8 0 1 0 2-4edge.dat
+0 //
+1 16 0 0 -52 0 0 2 2 0 0 0 -1 0 4-4ring3.dat
+1 16 0 0 -52 8 0 0 0 0 8 0 -1 0 2-4ndis.dat
+1 16 0 0 -50 -8 0 0 0 0 -8 0 -1 0 2-4ndis.dat
+0 BFC INVERTNEXT
+1 16 0 0 -50 8 0 0 0 0 -8 0 -2 0 2-4cyli.dat
+4 16 8 -9 -50 8 -8 -50 -8 -8 -50 -8 -9 -50
+4 16 8 8 -52 8 9 -52 -8 9 -52 -8 8 -52
+1 16 -8 4.5 -51 0 -1 0 4.5 0 0 0 0 -1 rect2p.dat
+1 16 8 4.5 -51 0 1 0 4.5 0 0 0 0 -1 rect2p.dat
+1 16 0 0 -52 -8 0 0 0 0 -8 0 -1 0 2-4edge.dat
+1 16 0 0 -50 -8 0 0 0 0 -8 0 -1 0 2-4edge.dat
+0 //
+0 //
+0 FILE parts/s/64179s01.dat
+0 ~Technic Beam  7 x  5 with Open Centre  5 x  3 Quarter
+0 Name: s\64179s01.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Subpart UPDATE 2023-05
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2012-12-28 [PTadmin] Official Update 2012-03
+0 !HISTORY 2022-07-15 [SwampKryakwa] Use of npeghole primitives
+0 !HISTORY 2022-12-17 [Holly-Wood] Eliminated duplicated quad, fixed some T-junk, more primitives substitution
+0 !HISTORY 2023-10-31 [OrionP] Official Update 2023-05
+
+
+2 24 8 9 50 12 9 50
+2 24 30 9 50 28 9 50
+2 24 30 -9 50 30 9 50
+2 24 30 10 48 30 10 60
+2 24 50 -10 0 50 -10 20
+2 24 50 -10 20 50 -10 60
+2 24 30 -10 60 30 -10 20
+2 24 30 -10 20 30 -10 0
+2 24 50 10 20 50 10 0
+2 24 50 10 60 50 10 20
+2 24 30 10 20 30 10 32
+2 24 30 10 10 30 10 20
+2 24 40 -9 70 0 -9 70
+2 24 40 9 70 0 9 70
+2 24 30 10 10 30 10 8
+2 24 32 10 8 30 10 8
+2 24 32 10 8 32 10 0
+
+1 16 40 0 60 1 0 0 0 1 0 0 0 1 connhole.dat
+1 16 40 0 20 1 0 0 0 1 0 0 0 1 connhole.dat
+1 16 20 0 60 -1 0 0 0 0 1 0 1 0 connhol2.dat
+
+1 16 20 0 70 1 0 0 0 0 1 0 -1 0 1-8ring9.dat
+1 16 20 0 70 1 0 0 0 0 -1 0 -1 0 1-8ring9.dat
+1 16 20 0 70 10 0 0 0 0 10 0 -1 0 1-16edge.dat
+1 16 20 0 70 10 0 0 0 0 -10 0 -1 0 1-16edge.dat
+1 16 20 0 70 0 0 9 -9 0 0 0 -1 0 1-8ndis.dat
+1 16 20 0 70 0 0 9 9 0 0 0 -1 0 1-8ndis.dat
+1 16 10 0 70 0 0 -1 1 0 0 0 -8 0 npeghol2.dat
+1 16 40 10 60 0 0 10 0 -20 0 10 0 0 1-4cyli.dat
+1 16 30 0 70 0 0 -1 1 0 0 0 -1 0 npeghol19.dat
+1 16 50 0 40 0 -1 0 9 0 0 0 0 -9 4-4ndis.dat
+1 16 40 -10 60 1 0 0 0 1 0 0 0 1 2-4ring9.dat
+1 16 40 10 60 1 0 0 0 -1 0 0 0 1 2-4ring9.dat
+
+1 16 40 -9 60 -10 0 0 0 1 0 0 0 10 1-4ndis.dat
+1 16 40 -10 60 -10 0 0 0 1 0 0 0 10 1-4cyli.dat
+1 16 30 -9.5 55 0 1 0 .5 0 0 0 0 -5 rect1.dat
+1 16 40 9 60 -10 0 0 0 -1 0 0 0 10 1-4ndis.dat
+1 16 40 9 60 -10 0 0 0 1 0 0 0 10 1-4cyli.dat
+1 16 30 9.5 55 0 1 0 -.5 0 0 0 0 5 rect1.dat
+1 16 20 0 50 -8 0 0 0 0 -8 0 1 0 2-4ndis.dat
+1 16 30 0 40 0 1 0 0 0 -8 8 0 0 2-4ndis.dat
+1 16 15 -9 60 0 0 15 0 1 0 -10 0 0 rect1.dat
+1 16 4 9 61 0 0 -4 0 -1 0 -9 0 0 rect1.dat
+1 16 10 9 51 0 0 -2 0 -1 0 -1 0 0 rect2p.dat
+3 16 30 9 50 30 10 50 30 10 48
+1 16 40 -10 60 10 0 0 0 -1 0 0 0 10 2-4edge.dat
+1 16 40 -9 60 0 0 -10 0 -1 0 10 0 0 1-4edge.dat
+1 16 40 10 60 10 0 0 0 -1 0 0 0 10 2-4edge.dat
+1 16 40 9 60 0 0 -10 0 -1 0 10 0 0 1-4edge.dat
+1 16 40 0 40 0 1 0 0 0 1 1 0 0 connhol2.dat
+0 BFC INVERTNEXT
+1 16 30 9 40 0 2 0 -1 0 0 0 0 8 box3u5p.dat
+
+4 16 50 -10 0 50 -9 0 50 -9 9 50 -10 10
+4 16 50 9 9 50 9 0 50 10 0 50 10 10
+4 16 50 10 10 50 -10 10 50 -9 9 50 9 9
+3 16 29.404 7.073 70 29 9 70 27.071 7.071 70
+3 16 29 -9 70 29.404 -7.073 70 27.071 -7.071 70
+4 16 40 -7.071 70 29.404 -7.073 70 29 -9 70 40 -9 70
+4 16 29 9 70 29.404 7.073 70 40 7.071 70 40 9 70
+4 16 50 -10 10 50 10 10 50 9 31 50 -9 31
+3 16 50 -10 10 50 -9 31 50 -10 30
+3 16 50 10 10 50 10 30 50 9 31
+4 16 50 -9 31 50 -9 40 50 -10 50 50 -10 30
+3 16 50 -10 50 50 -9 40 50 -9 49
+4 16 50 -9 49 50 0 49 50 -10 60 50 -10 50
+4 16 50 9 49 50 10 50 50 10 60 50 0 49
+3 16 50 0 49 50 10 60 50 -10 60
+4 16 50 9 49 50 9 31 50 10 30 50 10 50
+3 16 30 9 50 30 10 48 30 0 48
+4 16 30 9 50 30 0 48 30 -8 48 30 -10 50
+4 16 30 -10 30 30 -10 50 30 -8 48 30 -8 40
+3 16 30 -10 30 30 -8 40 30 -8 32
+3 16 30 10 20 30 10 10 30 -10 20
+3 16 30 -8 8 30 -10 8 30 -10 10
+4 16 30 -8 8 30 -10 10 30 -10 20 30 0 8
+4 16 30 -10 20 30 10 10 30 10 8 30 0 8
+4 16 30 -10 30 30 10 30 30 10 20 30 -10 20
+4 16 30 0 32 30 10 32 30 10 30 30 -10 30
+3 16 30 -8 32 30 0 32 30 -10 30
+3 16 8 9 50 12 9 50 12 0 50
+4 16 12 -8 50 8 -9 50 8 9 50 12 0 50
+4 16 12 -8 50 20 -8 50 30 -9 50 8 -9 50
+3 16 30 -9 50 20 -8 50 28 -8 50
+3 16 30 -9 50 28 -8 50 28 0 50
+4 16 28 9 50 30 9 50 30 -9 50 28 0 50
+3 16 8 9 52 8 9 70 9 9 70
+4 16 12 9 52 8 9 52 9 9 70 10 9 70
+3 16 12 9 52 10 9 70 11 9 70
+3 16 12 9 52 11 9 70 20 9 70
+4 16 29 9 70 28 9 52 12 9 52 20 9 70
+4 16 30 9 50 28 9 52 29 9 70 30 9 70
+3 16 28 9 52 30 9 50 28 9 50
+
+0 BFC INVERTNEXT
+1 16 20 8.5 50 0 0 -8 -.5 0 0 0 2 0 box3u5p.dat
+1 16 10 9 51 0 0 -2 0 -1 0 -1 0 0 rect2a.dat
+1 16 30 0 40 0 1 0 0 0 -8 8 0 0 2-4edge.dat
+
+1 16 40 0 10 -1 0 0 0 1 0 0 0 1 npeghol9.dat
+1 16 40 0 50 -1 0 0 0 1 0 0 0 1 npeghol9.dat
+1 16 40 0 30 -1 0 0 0 1 0 0 0 -1 npeghol9.dat
+
+0 FILE connhole.dat
+0 Technic Connector Hole Long
+0 Name: connhole.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2005-07-09 [mikeheide] use 4-4ring8 primitive
+0 !HISTORY 2009-09-03 [PTadmin] Official Update 2009-02
+0 !HISTORY 2024-01-05 [MagFors] Complete rewrite, original by t.woelk
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+1 16 0 10 0 1 0 0 0 -1 0 0 0 1 peghole.dat
+1 16 0 10 0 1 0 0 0 -1 0 0 0 -1 4-4ring8.dat
+0 BFC INVERTNEXT
+1 16 0 -8 0 6 0 0 0 16 0 0 0 6 4-4cyli.dat
+1 16 0 -10 0 1 0 0 0 1 0 0 0 1 4-4ring8.dat
+1 16 0 -10 0 1 0 0 0 1 0 0 0 1 peghole.dat
+0 FILE peghole.dat
+0 Peg Hole End
+0 Name: peghole.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-05-01 [mkennedy] replace code with ring3
+0 !HISTORY 2002-05-01 [sbliss] BFC
+0 !HISTORY 2002-06-11 [PTadmin] Official Update 2002-03
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-14 [cwdee] Update ring3 to 4-4ring3
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+1 16 0 0 0 8 0 0 0 1 0 0 0 8 4-4edge.dat
+1 16 0 2 0 8 0 0 0 1 0 0 0 8 4-4edge.dat
+1 16 0 2 0 6 0 0 0 1 0 0 0 6 4-4edge.dat
+1 16 0 2 0 2 0 0 0 1 0 0 0 2 4-4ring3.dat
+0 BFC INVERTNEXT
+1 16 0 0 0 8 0 0 0 2 0 0 0 8 4-4cyli.dat
+0
+0 FILE 4-4edge.dat
+0 Circle 1.0
+0 Name: 4-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 1998-12-15 [PTadmin] Official Update 1998-10
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0.3827 0 0.9239
+2 24 0.3827 0 0.9239 0 0 1
+2 24 0 0 1 -0.3827 0 0.9239
+2 24 -0.3827 0 0.9239 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -0.9239 0 0.3827
+2 24 -0.9239 0 0.3827 -1 0 -0
+2 24 -1 0 -0 -0.9239 0 -0.3827
+2 24 -0.9239 0 -0.3827 -0.7071 0 -0.7071
+2 24 -0.7071 0 -0.7071 -0.3827 0 -0.9239
+2 24 -0.3827 0 -0.9239 0 0 -1
+2 24 0 0 -1 0.3827 0 -0.9239
+2 24 0.3827 0 -0.9239 0.7071 0 -0.7071
+2 24 0.7071 0 -0.7071 0.9239 0 -0.3827
+2 24 0.9239 0 -0.3827 1 0 0
+0 FILE 4-4ring3.dat
+0 Ring  3 x 1.0
+0 Name: 4-4ring3.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2009-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 1998-12-15 [PTadmin] Official Update 1998-10
+0 !HISTORY 2002-04-05 [hafhead] Added BFC statement
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2008-08-26 [cwdee] Switch polygon winding and rename
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+
+
+4 16 -1.5308 0 3.6956 -1.1481 0 2.7717 0 0 3 0 0 4
+4 16 -2.8284 0 2.8284 -2.1213 0 2.1213 -1.1481 0 2.7717 -1.5308 0 3.6956
+4 16 -3.6956 0 1.5308 -2.7717 0 1.1481 -2.1213 0 2.1213 -2.8284 0 2.8284
+4 16 -4 0 0 -3 0 0 -2.7717 0 1.1481 -3.6956 0 1.5308
+4 16 -3.6956 0 -1.5308 -2.7717 0 -1.1481 -3 0 0 -4 0 0
+4 16 -2.8284 0 -2.8284 -2.1213 0 -2.1213 -2.7717 0 -1.1481 -3.6956 0 -1.5308
+4 16 -1.5308 0 -3.6956 -1.1481 0 -2.7717 -2.1213 0 -2.1213 -2.8284 0 -2.8284
+4 16 0 0 -4 0 0 -3 -1.1481 0 -2.7717 -1.5308 0 -3.6956
+4 16 1.5308 0 -3.6956 1.1481 0 -2.7717 0 0 -3 0 0 -4
+4 16 2.8284 0 -2.8284 2.1213 0 -2.1213 1.1481 0 -2.7717 1.5308 0 -3.6956
+4 16 3.6956 0 -1.5308 2.7717 0 -1.1481 2.1213 0 -2.1213 2.8284 0 -2.8284
+4 16 4 0 0 3 0 0 2.7717 0 -1.1481 3.6956 0 -1.5308
+4 16 3.6956 0 1.5308 2.7717 0 1.1481 3 0 0 4 0 0
+4 16 2.8284 0 2.8284 2.1213 0 2.1213 2.7717 0 1.1481 3.6956 0 1.5308
+4 16 1.5308 0 3.6956 1.1481 0 2.7717 2.1213 0 2.1213 2.8284 0 2.8284
+4 16 0 0 4 0 0 3 1.1481 0 2.7717 1.5308 0 3.6956
+0
+0 FILE 4-4cyli.dat
+0 Cylinder 1.0
+0 Name: 4-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 1998-12-15 [PTadmin] Official Update 1998-10
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement; merged headers from files in distributions LDraw 0.27 and Complete.
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2004-12-14 [guyvivan] BFC CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 1 1 0 0.9239 1 0.3827 0.9239 0 0.3827 1 0 0
+5 24 1 0 0 1 1 0 0.9239 0 0.3827 0.9239 0 -0.3827
+4 16 0.9239 1 0.3827 0.7071 1 0.7071 0.7071 0 0.7071 0.9239 0 0.3827
+5 24 0.9239 0 0.3827 0.9239 1 0.3827 0.7071 0 0.7071 1 0 0
+4 16 0.7071 1 0.7071 0.3827 1 0.9239 0.3827 0 0.9239 0.7071 0 0.7071
+5 24 0.7071 0 0.7071 0.7071 1 0.7071 0.3827 0 0.9239 0.9239 0 0.3827
+4 16 0.3827 1 0.9239 0 1 1 0 0 1 0.3827 0 0.9239
+5 24 0.3827 0 0.9239 0.3827 1 0.9239 0 0 1 0.7071 0 0.7071
+4 16 0 1 1 -0.3827 1 0.9239 -0.3827 0 0.9239 0 0 1
+5 24 0 0 1 0 1 1 -0.3827 0 0.9239 0.3827 0 0.9239
+4 16 -0.3827 1 0.9239 -0.7071 1 0.7071 -0.7071 0 0.7071 -0.3827 0 0.9239
+5 24 -0.3827 0 0.9239 -0.3827 1 0.9239 -0.7071 0 0.7071 0 0 1
+4 16 -0.7071 1 0.7071 -0.9239 1 0.3827 -0.9239 0 0.3827 -0.7071 0 0.7071
+5 24 -0.7071 0 0.7071 -0.7071 1 0.7071 -0.9239 0 0.3827 -0.3827 0 0.9239
+4 16 -0.9239 1 0.3827 -1 1 0 -1 0 0 -0.9239 0 0.3827
+5 24 -0.9239 0 0.3827 -0.9239 1 0.3827 -1 0 0 -0.7071 0 0.7071
+4 16 -1 1 0 -0.9239 1 -0.3827 -0.9239 0 -0.3827 -1 0 0
+5 24 -1 0 0 -1 1 0 -0.9239 0 -0.3827 -0.9239 0 0.3827
+4 16 -0.9239 1 -0.3827 -0.7071 1 -0.7071 -0.7071 0 -0.7071 -0.9239 0 -0.3827
+5 24 -0.9239 0 -0.3827 -0.9239 1 -0.3827 -0.7071 0 -0.7071 -1 0 0
+4 16 -0.7071 1 -0.7071 -0.3827 1 -0.9239 -0.3827 0 -0.9239 -0.7071 0 -0.7071
+5 24 -0.7071 0 -0.7071 -0.7071 1 -0.7071 -0.3827 0 -0.9239 -0.9239 0 -0.3827
+4 16 -0.3827 1 -0.9239 0 1 -1 0 0 -1 -0.3827 0 -0.9239
+5 24 -0.3827 0 -0.9239 -0.3827 1 -0.9239 0 0 -1 -0.7071 0 -0.7071
+4 16 0 1 -1 0.3827 1 -0.9239 0.3827 0 -0.9239 0 0 -1
+5 24 0 0 -1 0 1 -1 0.3827 0 -0.9239 -0.3827 0 -0.9239
+4 16 0.3827 1 -0.9239 0.7071 1 -0.7071 0.7071 0 -0.7071 0.3827 0 -0.9239
+5 24 0.3827 0 -0.9239 0.3827 1 -0.9239 0.7071 0 -0.7071 0 0 -1
+4 16 0.7071 1 -0.7071 0.9239 1 -0.3827 0.9239 0 -0.3827 0.7071 0 -0.7071
+5 24 0.7071 0 -0.7071 0.7071 1 -0.7071 0.9239 0 -0.3827 0.3827 0 -0.9239
+4 16 0.9239 1 -0.3827 1 1 0 1 0 0 0.9239 0 -0.3827
+5 24 0.9239 0 -0.3827 0.9239 1 -0.3827 1 0 0 0.7071 0 -0.7071
+0
+0 FILE 4-4ring8.dat
+0 Ring  8 x 1.0
+0 Name: 4-4ring8.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2003-12-19 [PTadmin] Official Update 2003-03
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+4 16 9 0 0 8.3151 0 3.4443 7.3912 0 3.0616 8 0 0
+4 16 8.3151 0 3.4443 6.3639 0 6.3639 5.6568 0 5.6568 7.3912 0 3.0616
+4 16 6.3639 0 6.3639 3.4443 0 8.3151 3.0616 0 7.3912 5.6568 0 5.6568
+4 16 3.4443 0 8.3151 0 0 9 0 0 8 3.0616 0 7.3912
+4 16 0 0 9 -3.4443 0 8.3151 -3.0616 0 7.3912 0 0 8
+4 16 -3.4443 0 8.3151 -6.3639 0 6.3639 -5.6568 0 5.6568 -3.0616 0 7.3912
+4 16 -6.3639 0 6.3639 -8.3151 0 3.4443 -7.3912 0 3.0616 -5.6568 0 5.6568
+4 16 -8.3151 0 3.4443 -9 0 0 -8 0 0 -7.3912 0 3.0616
+4 16 -9 0 0 -8.3151 0 -3.4443 -7.3912 0 -3.0616 -8 0 0
+4 16 -8.3151 0 -3.4443 -6.3639 0 -6.3639 -5.6568 0 -5.6568 -7.3912 0 -3.0616
+4 16 -6.3639 0 -6.3639 -3.4443 0 -8.3151 -3.0616 0 -7.3912 -5.6568 0 -5.6568
+4 16 -3.4443 0 -8.3151 0 0 -9 0 0 -8 -3.0616 0 -7.3912
+4 16 0 0 -9 3.4443 0 -8.3151 3.0616 0 -7.3912 0 0 -8
+4 16 3.4443 0 -8.3151 6.3639 0 -6.3639 5.6568 0 -5.6568 3.0616 0 -7.3912
+4 16 6.3639 0 -6.3639 8.3151 0 -3.4443 7.3912 0 -3.0616 5.6568 0 -5.6568
+4 16 8.3151 0 -3.4443 9 0 0 8 0 0 7.3912 0 -3.0616
+0 FILE connhol2.dat
+0 Technic Connector Hole Long with Extended End
+0 Name: connhol2.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+1 16 0 10 0 1 0 0 0 -1 0 0 0 1 peghole.dat
+0 BFC INVERTNEXT
+1 16 0 -8 0 6 0 0 0 16 0 0 0 6 4-4cyli.dat
+1 16 0 10 0 1 0 0 0 -1 0 0 0 -1 4-4ring8.dat
+1 16 0 -8 0 6 0 0 0 -1 0 0 0 -6 4-4edge.dat
+1 16 0 -8 0 2 0 0 0 1 0 0 0 2 4-4ring3.dat
+1 16 0 -8 0 8 0 0 0 1 0 0 0 8 2-4ndis.dat
+0 BFC INVERTNEXT
+1 16 0 -8 0 -8 0 0 0 -2 0 0 0 -8 2-4cyli.dat
+1 16 0 -8 0 -8 0 0 0 -1 0 0 0 -8 2-4edge.dat
+1 16 0 -10 0 -8 0 0 0 -1 0 0 0 -8 2-4edge.dat
+1 16 -8 -9 4 0 -1 0 0 0 1 -4 0 0 rect2p.dat
+1 16 8 -9 4 0 1 0 0 0 1 -4 0 0 rect2p.dat
+0 //
+0 FILE 2-4ndis.dat
+0 Disc Negative 0.5
+0 Name: 2-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+3 16 0.9239 0 0.3827 1 0 0 1 0 1
+3 16 0.7071 0 0.7071 0.9239 0 0.3827 1 0 1
+3 16 0.3827 0 0.9239 0.7071 0 0.7071 1 0 1
+3 16 0 0 1 0.3827 0 0.9239 1 0 1
+3 16 -0.3827 0 0.9239 0 0 1 -1 0 1
+3 16 -0.7071 0 0.7071 -0.3827 0 0.9239 -1 0 1
+3 16 -0.9239 0 0.3827 -0.7071 0 0.7071 -1 0 1
+3 16 -1 0 0 -0.9239 0 0.3827 -1 0 1
+0 FILE 2-4cyli.dat
+0 Cylinder 0.5
+0 Name: 2-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2004-12-11 [nielsk] Recreated using Primitive Generator, Edge lines fixed, BFC changed to CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 .9239 1 .3827 .9239 0 .3827 1 0 0 1 1 0
+4 16 .7071 1 .7071 .7071 0 .7071 .9239 0 .3827 .9239 1 .3827
+4 16 .3827 1 .9239 .3827 0 .9239 .7071 0 .7071 .7071 1 .7071
+4 16 0 1 1 0 0 1 .3827 0 .9239 .3827 1 .9239
+4 16 -.3827 1 .9239 -.3827 0 .9239 0 0 1 0 1 1
+4 16 -.7071 1 .7071 -.7071 0 .7071 -.3827 0 .9239 -.3827 1 .9239
+4 16 -.9239 1 .3827 -.9239 0 .3827 -.7071 0 .7071 -.7071 1 .7071
+4 16 -1 1 0 -1 0 0 -.9239 0 .3827 -.9239 1 .3827
+5 24 1 1 0 1 0 0 1 1 -.4142 .9239 1 .3827
+5 24 .9239 1 .3827 .9239 0 .3827 1 1 0 .7071 1 .7071
+5 24 .7071 1 .7071 .7071 0 .7071 .9239 1 .3827 .3827 1 .9239
+5 24 .3827 1 .9239 .3827 0 .9239 .7071 1 .7071 0 1 1
+5 24 0 1 1 0 0 1 .3827 1 .9239 -.3827 1 .9239
+5 24 -.3827 1 .9239 -.3827 0 .9239 0 1 1 -.7071 1 .7071
+5 24 -.7071 1 .7071 -.7071 0 .7071 -.3827 1 .9239 -.9239 1 .3827
+5 24 -.9239 1 .3827 -.9239 0 .3827 -.7071 1 .7071 -1 1 0
+5 24 -1 1 0 -1 0 0 -.9239 1 .3827 -1 1 -.4142
+0
+0 FILE 2-4edge.dat
+0 Circle 0.5
+0 Name: 2-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0.3827 0 0.9239
+2 24 0.3827 0 0.9239 0 0 1
+2 24 0 0 1 -0.3827 0 0.9239
+2 24 -0.3827 0 0.9239 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -0.9239 0 0.3827
+2 24 -0.9239 0 0.3827 -1 0 0
+0 FILE rect2p.dat
+0 Rectangle with 2 Parallel Edges
+0 Name: rect2p.dat
+0 Author: Donald Sutter [technog]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2003-08-01 [PTadmin] Official Update 2003-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-17 [mikeheide] changed winding to CCW
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+2 24 1 0 1 -1 0 1
+2 24 -1 0 -1 1 0 -1
+4 16 -1 0 1 -1 0 -1 1 0 -1 1 0 1
+0
+0 FILE 1-8ring9.dat
+0 Ring  9 x 0.125
+0 Name: 1-8ring9.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-11-06 [PTadmin] Official Update 2004-04
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+4 16 10 0 0 9.239 0 3.827 8.3151 0 3.4443 9 0 0
+4 16 9.239 0 3.827 7.071 0 7.071 6.3639 0 6.3639 8.3151 0 3.4443
+0 FILE 1-16edge.dat
+0 Circle 0.0625
+0 Name: 1-16edge.dat
+0 Author: Marc Klein [marckl]
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-03-02 [PTadmin] Official Update 2004-01
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+0 FILE 1-8ndis.dat
+0 Disc Negative 0.125
+0 Name: 1-8ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+3 16 0.9239 0 0.3827 1 0 0 1 0 1
+3 16 0.7071 0 0.7071 0.9239 0 0.3827 1 0 1
+0 FILE npeghol2.dat
+0 Technic Peg Hole Negative with Top Surface Extensions
+0 Name: npeghol2.dat
+0 Author: Orion Pobursky [OrionP]
+0 !LDRAW_ORG Primitive UPDATE 2023-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-03-14 [Philo] Changed to CCW, used 1-8ndis to avoid overlaps
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+0 !HISTORY 2021-03-18 [kuramapika1] Change cyli to cylo and adjusted to correct rounding errors
+0 !HISTORY 2022-01-14 [PTadmin] Official Update 2022-01
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 npeghol7a.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 -1 npeghol7a.dat
+0 FILE npeghol7a.dat
+0 Technic Peg Hole Negative 0.5 with Top Surface Extensions
+0 Name: npeghol7a.dat
+0 Author: Max Murtazin [SwampKryakwa]
+0 !LDRAW_ORG Primitive UPDATE 2024-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2018-04-02 [MagFors] adapted to four digit decimals
+0 !HISTORY 2020-09-05 [PTadmin] Official Update 2020-02
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+0 !HISTORY 2024-02-29 [OrionP] Update author to Max Murtazin
+0 !HISTORY 2024-03-24 [OrionP] Official Update 2024-02
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 npeghol7.dat
+1 16 0 0 10 9 0 0 0 1 0 0 0 -9 1-8ndis.dat
+1 16 0 0 10 -9 0 0 0 1 0 0 0 -9 1-8ndis.dat
+
+3 16 9 0 1 6.3639 0 3.6361 6.3639 0 1.5321
+4 16 9 0 1 6.3639 0 1.5321 6.3639 0 0 9 0 0
+3 16 -9 0 1 -6.3639 0 1.5321 -6.3639 0 3.6361
+4 16 -9 0 1 -9 0 0 -6.3639 0 0 -6.3639 0 1.5321
+0 FILE npeghol7.dat
+0 Technic Peg Hole Negative 0.5 without Top Surface Extensions
+0 Name: npeghol7.dat
+0 Author: Max Murtazin [SwampKryakwa]
+0 !LDRAW_ORG Primitive UPDATE 2024-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+0 !HISTORY 2024-02-29 [OrionP] Update author to Max Murtazin
+0 !HISTORY 2024-03-24 [OrionP] Official Update 2024-02
+
+1 16 0 0 10 0 0 9 0 1 0 -9 0 0 1-16cylo.dat
+
+1 16 6.3639 .5 .76606 0 1 0 0 0 .5 .76606 0 0 rect2p.dat
+3 16 3.4442 1 1.6851 0 1 1 6.3639 1 0
+0 BFC INVERTNEXT
+1 16 5.58171 0 1.7 .78219 0 .09843 0 1 0 -.16788 0 .78 8\3-8cylo.dat
+1 16 5.58171 1 1.7 .78219 0 .09843 0 1 0 -.16788 0 .78 8\3-8chrd.dat
+5 24 6.3639 1 1.5321 6.3639 0 1.5321 6.2044 0 2.13283 6.3639 1 -1.5321
+5 24 3.4443 1 1.6849 3.4443 0 1.6849 0 0 1 5.09822 0 2.37024
+5 24 5.09822 1 2.37024 5.09822 0 2.37024 3.4443 0 1.6849 5.68014 0 2.48
+1 16 0 0 10 6.36396 0 -6.36397 0 1 0 -6.36397 0 -6.36396 1-16tang.dat
+3 16 5.09822 0 2.37025 5.68014 0 2.48 6.3639 0 3.6361
+3 16 6.3639 0 3.6361 5.68014 0 2.48 6.2044 0 2.13283
+3 16 6.3639 0 3.6361 6.2044 0 2.13283 6.3639 0 1.5321
+
+1 16 0 0 10 0 0 -9 0 1 0 -9 0 0 1-16cylo.dat
+
+1 16 -6.3639 .5 .76606 0 -1 0 0 0 .5 .76606 0 0 rect2p.dat
+4 16 -6.3639 1 1.5321 -6.3639 1 0 -3.4442 1 1.6851 -5.09817 1 2.37024
+0 BFC INVERTNEXT
+1 16 -5.58171 0 1.7 -.78219 0 -.09843 0 1 0 -.16788 0 .78 8\3-8cylo.dat
+1 16 -5.58171 1 1.7 -.78219 0 -.09843 0 1 0 -.16788 0 .78 8\3-8chrd.dat
+5 24 -6.3639 1 1.5321 -6.3639 0 1.5321 -6.2044 0 2.13283 -6.3639 1 -1.5321
+5 24 -3.4443 1 1.6849 -3.4443 0 1.6849 0 0 1 -5.09822 0 2.37024
+5 24 -5.09822 1 2.37024 -5.09822 0 2.37024 -3.4443 0 1.6849 -5.68014 0 2.48
+1 16 0 0 10 -6.36396 0 6.36397 0 1 0 -6.36397 0 -6.36396 1-16tang.dat
+3 16 -5.68014 0 2.48 -5.09822 0 2.37025 -6.3639 0 3.6361
+3 16 -5.68014 0 2.48 -6.3639 0 3.6361 -6.2044 0 2.13283
+3 16 -6.2044 0 2.13283 -6.3639 0 3.6361 -6.3639 0 1.5321
+4 16 6.3639 1 1.5321 5.09817 1 2.37024 3.4442 1 1.6851 6.3639 1 0
+3 16 -3.4443 1 1.6849 -6.3639 1 0 0 1 1
+3 16 0 1 1 -6.3639 1 0 6.3639 1 0
+4 16 5.09817 0 2.37024 3.44417 0 1.68484 3.4442 1 1.6851 5.09817 1 2.37024
+4 16 -3.4443 0 1.6849 -5.09822 0 2.37024 -5.09822 1 2.37024 -3.4443 1 1.6849
+2 24 -5.09822 0 2.37024 -3.4443 0 1.6849
+2 24 -5.09822 1 2.37024 -3.4443 1 1.6849
+2 24 3.44417 0 1.68484 5.09817 0 2.37024
+2 24 3.4442 1 1.6851 5.09817 1 2.37024
+0 FILE 1-16cylo.dat
+0 Cylinder Open 0.0625
+0 Name: 1-16cylo.dat
+0 Author: Max Martin Richter [MMR1988]
+0 !LDRAW_ORG Primitive UPDATE 2014-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2014-06-21 [PTadmin] Official Update 2014-01
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 1-16cyli.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 1-16edge.dat
+1 16 0 1 0 1 0 0 0 1 0 0 0 1 1-16edge.dat
+0 FILE 1-16cyli.dat
+0 Cylinder 0.0625
+0 Name: 1-16cyli.dat
+0 Author: Marc Klein [marckl]
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-03-02 [PTadmin] Official Update 2004-01
+0 !HISTORY 2004-12-11 [nielsk] Recreated using Primitive Generator, Edge lines fixed, BFC changed to CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 .9239 1 .3827 .9239 0 .3827 1 0 0 1 1 0
+5 24 1 1 0 1 0 0 1 1 -.4142 .9239 1 .3827
+5 24 .9239 1 .3827 .9239 0 .3827 1 1 0 .7654 1 .7654
+0
+0 FILE 8/3-8cylo.dat
+0 Lo-Res Cylinder Open 0.375
+0 Name: 8\3-8cylo.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2020-06-28 [PTadmin] Official Update 2020-01
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 8\3-8edge.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 8\3-8cyli.dat
+1 16 0 1 0 1 0 0 0 1 0 0 0 1 8\3-8edge.dat
+0 FILE 8/3-8edge.dat
+0 Lo-Res Circle 0.375
+0 Name: 8\3-8edge.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2020-06-28 [PTadmin] Official Update 2020-01
+
+
+2 24 1 0 0 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0 0 1
+2 24 0 0 1 -0.7071 0 0.7071
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE 8/3-8cyli.dat
+0 Lo-Res Cylinder 0.375
+0 Name: 8\3-8cyli.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2020-06-28 [PTadmin] Official Update 2020-01
+
+
+4 16 0.7071 0 0.7071 1 0 0 1 1 0 0.7071 1 0.7071
+4 16 0 0 1 0.7071 0 0.7071 0.7071 1 0.7071 0 1 1
+4 16 -0.7071 0 0.7071 0 0 1 0 1 1 -0.7071 1 0.7071
+0 // conditional lines
+5 24 1 1 0 1 0 0 1 1 -1 0.7071 1 0.7071
+5 24 0.7071 1 0.7071 0.7071 0 0.7071 1 1 0 0 1 1
+5 24 0 1 1 0 0 1 0.7071 1 0.7071 -0.7071 1 0.7071
+5 24 -0.7071 1 0.7071 -0.7071 0 0.7071 0 1 1 -1.4142 1 0
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE 8/3-8chrd.dat
+0 Lo-Res Chord 0.375
+0 Name: 8\3-8chrd.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2020-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2020-06-28 [PTadmin] Official Update 2020-01
+
+
+4 16 .7071 0 .7071 0 0 1 -.7071 0 .7071 1 0 0
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE 1-16tang.dat
+0 Disc Negative Tangent 0.0625
+0 Name: 1-16tang.dat
+0 Author: Gerald Lasser [GeraldLasser]
+0 !LDRAW_ORG Primitive UPDATE 2020-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2020-09-05 [PTadmin] Official Update 2020-02
+
+
+3 16 1 0 0 1 0 .1989 .9239 0 .3827
+0 FILE 1-4cyli.dat
+0 Cylinder 0.25
+0 Name: 1-4cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement.
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+4 16 1 1 0 0.9239 1 0.3827 0.9239 0 0.3827 1 0 0
+5 24 1 0 0 1 1 0 0.9239 0 0.3827 1 0 -1
+4 16 0.9239 1 0.3827 0.7071 1 0.7071 0.7071 0 0.7071 0.9239 0 0.3827
+5 24 0.9239 0 0.3827 0.9239 1 0.3827 0.7071 0 0.7071 1 0 0
+4 16 0.7071 1 0.7071 0.3827 1 0.9239 0.3827 0 0.9239 0.7071 0 0.7071
+5 24 0.7071 0 0.7071 0.7071 1 0.7071 0.3827 0 0.9239 0.9239 0 0.3827
+4 16 0.3827 1 0.9239 0 1 1 0 0 1 0.3827 0 0.9239
+5 24 0.3827 0 0.9239 0.3827 1 0.9239 0 0 1 0.7071 0 0.7071
+5 24 0 0 1 0 1 1 0.3827 0 0.9239 -1 0 1
+0 FILE npeghol19.dat
+0 Technic Peg Hole Negative for Alternate Beam Type 3 Top Half without Extensions
+0 Name: npeghol19.dat
+0 Author: Max Murtazin [SwampKryakwa]
+0 !LDRAW_ORG Primitive UPDATE 2023-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-11-20 [Holly-Wood] Added complementary conds, fixed overlap, rounded
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+
+
+2 24 7.0711 5.5557 -1.6849 -7.0711 5.5557 -1.6849
+1 16 -7.0711 9 -10 0 14.14214 0 -9 0 0 0 0 9 3-16cyli.dat
+3 16 7.0711 5.5557 -1.6849 0 5.5557 0 -7.0711 5.5557 -1.6849
+
+1 16 7.0711 9 -10 0 1 0 -9 0 0 0 0 9 3-16ndis.dat
+1 16 7.0711 9 -10 0 1 0 -9 0 0 0 0 9 3-16edge.dat
+4 16 7.0711 5.5557 .5897 7.0711 5.5557 -1.6849 7.0711 0 -1 7.0711 0 .5897
+0 BFC INVERTNEXT
+1 16 6.2019 0 .7765 .86919 0 .10938 0 5.5557 0 -.18685 0 .86814 8\3-8cylo.dat
+1 16 6.2019 5.5557 .7765 .86919 0 .10938 0 1 0 -.18685 0 .86814 8\3-8chrd.dat
+4 16 3.8269 0 .7609 3.8269 5.5557 .7609 5.6646 5.5557 1.5225 5.6646 0 1.5225
+1 16 0 0 10 0 0 10 0 5.5557 0 -10 0 0 1-16cyli.dat
+1 16 0 5.5557 10 0 0 10 0 1 0 -10 0 0 1-16edge.dat
+2 24 7.0711 0 -1 7.0711 0 -10
+2 24 7.0711 5.5557 -1.6849 7.0711 5.5557 .5897
+2 24 7.0711 0 -1 7.0711 0 .5897
+2 24 3.827 5.5557 .761 5.6646 5.5557 1.5225
+2 24 5.6646 0 1.5225 3.8269 0 .7609
+
+1 16 0 0 10 7.07107 0 -7.07107 0 1 0 -7.07107 0 -7.07107 1-16tang.dat
+
+3 16 5.6646 0 1.5225 6.3113 0 1.6447 7.0711 0 2.9289
+3 16 6.3113 0 1.6447 6.8938 0 1.2583 7.0711 0 2.9289
+3 16 6.8938 0 1.2583 7.0711 0 .5897 7.0711 0 2.9289
+
+4 16 7.0711 5.5557 .5897 5.6646 5.5557 1.5225 3.827 5.5557 .761 7.0711 5.5557 -1.6849
+3 16 7.0711 5.5557 -1.6849 3.827 5.5557 .761 0 5.5557 0
+
+1 16 -7.0711 9 -10 0 -1 0 -9 0 0 0 0 9 3-16ndis.dat
+1 16 -7.0711 9 -10 0 -1 0 -9 0 0 0 0 9 3-16edge.dat
+4 16 -7.0711 0 -1 -7.0711 5.5557 -1.6849 -7.0711 5.5557 .5897 -7.0711 0 .5897
+0 BFC INVERTNEXT
+1 16 -6.2019 0 .7765 -.86919 0 -.10938 0 5.5557 0 -.18685 0 .86814 8\3-8cylo.dat
+1 16 -6.2019 5.5557 .7765 -.86919 0 -.10938 0 1 0 -.18685 0 .86814 8\3-8chrd.dat
+4 16 -5.6646 5.5557 1.5225 -3.8269 5.5557 .7609 -3.8269 0 .7609 -5.6646 0 1.5225
+1 16 0 0 10 0 0 -10 0 5.5557 0 -10 0 0 1-16cyli.dat
+1 16 0 5.5557 10 0 0 -10 0 1 0 -10 0 0 1-16edge.dat
+2 24 -7.0711 0 -1 -7.0711 0 -10
+2 24 -7.0711 5.5557 -1.6849 -7.0711 5.5557 .5897
+2 24 -7.0711 0 -1 -7.0711 0 .5897
+2 24 -3.827 5.5557 .761 -5.6646 5.5557 1.5225
+2 24 -5.6646 0 1.5225 -3.8269 0 .7609
+1 16 0 0 10 -7.07107 0 7.07107 0 1 0 -7.07107 0 -7.07107 1-16tang.dat
+3 16 -6.3113 0 1.6447 -5.6646 0 1.5225 -7.0711 0 2.9289
+3 16 -6.8938 0 1.2583 -6.3113 0 1.6447 -7.0711 0 2.9289
+3 16 -7.0711 0 .5897 -6.8938 0 1.2583 -7.0711 0 2.9289
+4 16 -3.827 5.5557 .761 -5.6646 5.5557 1.5225 -7.0711 5.5557 .5897 -7.0711 5.5557 -1.6849
+3 16 -3.827 5.5557 .761 -7.0711 5.5557 -1.6849 0 5.5557 0
+5 24 -7.0711 0 .5897 -7.0711 5.5557 .5897 -6.8938 5.5557 1.2583 -7.0711 5.5557 -1.6849
+5 24 -5.6646 0 1.5225 -5.6646 5.5557 1.5225 -6.3113 5.5557 1.6447 -3.827 5.5557 .761
+5 24 5.6646 0 1.5225 5.6646 5.5557 1.5225 6.3113 5.5557 1.6447 3.8269 5.5557 .7609
+5 24 7.0711 0 .5897 7.0711 5.5557 .5897 6.8938 5.5557 1.2583 7.0711 5.5557 -1.6849
+0 FILE 3-16cyli.dat
+0 Cylinder 0.1875
+0 Name: 3-16cyli.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-03-02 [PTadmin] Official Update 2004-01
+0 !HISTORY 2004-12-11 [nielsk] Recreated using Primitive Generator, Edge lines fixed, BFC changed to CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 .9239 1 .3827 .9239 0 .3827 1 0 0 1 1 0
+4 16 .7071 1 .7071 .7071 0 .7071 .9239 0 .3827 .9239 1 .3827
+4 16 .3827 1 .9239 .3827 0 .9239 .7071 0 .7071 .7071 1 .7071
+5 24 1 1 0 1 0 0 1 1 -.4142 .9239 1 .3827
+5 24 .9239 1 .3827 .9239 0 .3827 1 1 0 .7071 1 .7071
+5 24 .7071 1 .7071 .7071 0 .7071 .9239 1 .3827 .3827 1 .9239
+5 24 .3827 1 .9239 .3827 0 .9239 .7071 1 .7071 0 1 1.0824
+0
+0 FILE 3-16ndis.dat
+0 Disc Negative 0.1875
+0 Name: 3-16ndis.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2024-01-03 [MagFors] Complete regeneration, original by guyvivan
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+3 16 1 0 1 0.9239 0 0.3827 1 0 0
+3 16 1 0 1 0.7071 0 0.7071 0.9239 0 0.3827
+3 16 1 0 1 0.3827 0 0.9239 0.7071 0 0.7071
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE 3-16edge.dat
+0 Circle 0.1875
+0 Name: 3-16edge.dat
+0 Author: Donald Sutter [technog]
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-03-02 [PTadmin] Official Update 2004-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0.3827 0 0.9239
+0 FILE 4-4ndis.dat
+0 Disc Negative 1.0
+0 Name: 4-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC statement; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+3 16 0.9239 0 0.3827 1 0 0 1 0 1
+3 16 0.7071 0 0.7071 0.9239 0 0.3827 1 0 1
+3 16 0.3827 0 0.9239 0.7071 0 0.7071 1 0 1
+3 16 0 0 1 0.3827 0 0.9239 1 0 1
+3 16 -0.3827 0 0.9239 0 0 1 -1 0 1
+3 16 -0.7071 0 0.7071 -0.3827 0 0.9239 -1 0 1
+3 16 -0.9239 0 0.3827 -0.7071 0 0.7071 -1 0 1
+3 16 -1 0 0 -0.9239 0 0.3827 -1 0 1
+3 16 -0.9239 0 -0.3827 -1 0 0 -1 0 -1
+3 16 -0.7071 0 -0.7071 -0.9239 0 -0.3827 -1 0 -1
+3 16 -0.3827 0 -0.9239 -0.7071 0 -0.7071 -1 0 -1
+3 16 0 0 -1 -0.3827 0 -0.9239 -1 0 -1
+3 16 0.3827 0 -0.9239 0 0 -1 1 0 -1
+3 16 0.7071 0 -0.7071 0.3827 0 -0.9239 1 0 -1
+3 16 0.9239 0 -0.3827 0.7071 0 -0.7071 1 0 -1
+3 16 1 0 0 0.9239 0 -0.3827 1 0 -1
+0 FILE 2-4ring9.dat
+0 Ring  9 x 0.5
+0 Name: 2-4ring9.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-09-03 [PTadmin] Official Update 2009-02
+0 !HISTORY 2024-01-10 [Holly-Wood] Complete regeneration, original by guyvivan
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+4 16 10 0 0 9.239 0 3.827 8.3151 0 3.4443 9 0 0
+4 16 9.239 0 3.827 7.071 0 7.071 6.3639 0 6.3639 8.3151 0 3.4443
+4 16 7.071 0 7.071 3.827 0 9.239 3.4443 0 8.3151 6.3639 0 6.3639
+4 16 3.827 0 9.239 0 0 10 0 0 9 3.4443 0 8.3151
+4 16 0 0 10 -3.827 0 9.239 -3.4443 0 8.3151 0 0 9
+4 16 -3.827 0 9.239 -7.071 0 7.071 -6.3639 0 6.3639 -3.4443 0 8.3151
+4 16 -7.071 0 7.071 -9.239 0 3.827 -8.3151 0 3.4443 -6.3639 0 6.3639
+4 16 -9.239 0 3.827 -10 0 0 -9 0 0 -8.3151 0 3.4443
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE 1-4ndis.dat
+0 Disc Negative 0.25
+0 Name: 1-4ndis.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-03-23 [sbliss] Added BFC Statement
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+3 16 0.9239 0 0.3827 1 0 0 1 0 1
+3 16 0.7071 0 0.7071 0.9239 0 0.3827 1 0 1
+3 16 0.3827 0 0.9239 0.7071 0 0.7071 1 0 1
+3 16 0 0 1 0.3827 0 0.9239 1 0 1
+0 FILE rect1.dat
+0 Rectangle with 1 Edge
+0 Name: rect1.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2003-12-19 [PTadmin] Official Update 2003-03
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-17 [mikeheide] changed winding to CCW
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+2 24 1 0 -1 1 0 1
+4 16 -1 0 1 -1 0 -1 1 0 -1 1 0 1
+0
+0 FILE 1-4edge.dat
+0 Circle 0.25
+0 Name: 1-4edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0.3827 0 0.9239
+2 24 0.3827 0 0.9239 0 0 1
+0 FILE box3u5p.dat
+0 Box with  3 Faces without  5 Edges
+0 Name: box3u5p.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-09-03 [PTadmin] Official Update 2009-02
+0 !HISTORY 2024-01-02 [Holly-Wood] Complete re-write, original by WilliamH
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+2 24 1 1 -1 -1 1 -1
+2 24 1 0 -1 -1 0 -1
+4 16 -1 0 -1 -1 1 -1 1 1 -1 1 0 -1
+
+2 24 -1 1 1 1 1 1
+2 24 -1 0 1 1 0 1
+4 16 1 0 1 1 1 1 -1 1 1 -1 0 1
+
+2 24 -1 1 1 -1 1 -1
+4 16 1 1 1 1 1 -1 -1 1 -1 -1 1 1
+
+2 24 -1 0 1 -1 1 1
+2 24 -1 0 -1 -1 1 -1
+0 FILE rect2a.dat
+0 Rectangle with 2 Adjacent Edges
+0 Name: rect2a.dat
+0 Author: Chris Dee [cwdee]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2003-12-19 [PTadmin] Official Update 2003-03
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-17 [mikeheide] changed winding to CCW
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+2 24 1 0 1 -1 0 1
+2 24 1 0 -1 1 0 1
+4 16 -1 0 1 -1 0 -1 1 0 -1 1 0 1
+0
+0 FILE npeghol9.dat
+0 Technic Peg Hole Negative for Alternate Beam Type 2 with Extensions
+0 Name: npeghol9.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2023-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2012-12-28 [PTadmin] Official Update 2012-03
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2022-11-16 [Holly-Wood] Merged vertices, rounded
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 npeghol10.dat
+1 16 0 -10 10 1 0 0 0 1 0 0 0 -1 2-4ring9.dat
+1 16 0 -10 10 10 0 0 0 1 0 0 0 -10 1-8ndis.dat
+1 16 0 -10 10 -10 0 0 0 1 0 0 0 -10 1-8ndis.dat
+1 16 0 10 10 1 0 0 0 -1 0 0 0 -1 2-4ring9.dat
+1 16 0 10 10 -10 0 0 0 -1 0 0 0 -10 1-8ndis.dat
+1 16 0 10 10 10 0 0 0 -1 0 0 0 -10 3-16ndis.dat
+3 16 -7.0728 10 .5962 -10 10 0 -7.0711 10 2.9289
+4 16 -10 10 0 -7.0728 10 .5962 -7.071 10 -10 -10 10 -10
+3 16 3.8269 10 .7612 8 10 -2 3.8152 10 -.9883
+4 16 10 10 0 10 10 -2 8 10 -2 3.8261 10 .7612
+4 16 3.8152 10 -.9883 8 10 -2 8 10 -10 3.8152 10 -10
+3 16 -10 -10 0 -7.0711 -10 .5897 -7.0711 -10 2.9289
+3 16 7.071 -10 2.929 7.0711 -10 .5897 10 -10 0
+4 16 7.0711 -10 .5897 7.071 -10 -10 10 -10 -10 10 -10 0
+4 16 -7.0711 -10 .5897 -10 -10 0 -10 -10 -10 -7.0711 -10 -10
+0 FILE npeghol10.dat
+0 Technic Peg Hole Negative for Alternate Beam Type 2 without Extensions
+0 Name: npeghol10.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2023-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2012-12-28 [PTadmin] Official Update 2012-03
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+
+
+1 16 0 -10 0 1 0 0 0 1 0 0 0 1 npeghol8.dat
+1 16 -7.071 0 -10 0 10.8979 0 9 0 0 0 0 9 3-16cyli.dat
+1 16 -7.071 0 -10 0 1 0 9 0 0 0 0 9 3-16edge.dat
+1 16 3.827 0 -10 0 1 0 9 0 0 0 0 9 3-16edge.dat
+1 16 -7.071 0 -10 0 -1 0 9 0 0 0 0 9 3-16ndis.dat
+1 16 3.827 0 -10 0 1 0 9 0 0 0 0 9 3-16tndis.dat
+2 24 3.8269 3.4443 -1.6849 -7.071 3.4443 -1.6849
+1 16 0 10 10 0 0 -10 0 -6.5559 0 -10 0 0 1-16cylo.dat
+1 16 0 10 10 -3.82683 0 -9.2388 0 -1 0 -9.2388 0 3.82683 1-16tang.dat
+3 16 -3.827 3.444 .761 0 3.444 0 -7.071 3.4443 -1.6849
+4 16 -7.0728 10 .59625 -7.0728 3.4443 .5962 -7.071 3.4443 -1.6849 -7.071 9 -1
+0 BFC INVERTNEXT
+1 16 -6.20404 10 .78169 -.86876 0 -.1107 0 -6.5557 0 -.18549 0 .86794 8\3-8cylo.dat
+1 16 -6.20404 3.4443 .78169 -.86876 0 -.1107 0 -1 0 -.18549 0 .86794 8\3-8chrd.dat
+3 16 -7.0728 10 .59625 -7.0713 10 2.92881 -6.89641 10 1.26448
+2 24 -7.071 3.4443 -1.6849 -7.0728 3.4443 .5962
+4 16 -7.0728 10 .59625 -7.071 9 -1 -7.071 9 -10 -7.071 10 -10
+
+1 16 0 10 10 0 0 10 0 -1 0 -10 0 0 1-16tang.dat
+0 BFC INVERTNEXT
+1 16 3.0106 10 -.7996 -.4537 0 .684 0 -6.5557 0 .6568 0 .39 8\3-8cylo.dat
+1 16 3.0106 3.4443 -.7996 -.4537 0 .684 0 -1 0 .6568 0 .39 8\3-8chrd.dat
+4 16 2.5569 10 -.1428 2.5569 3.4443 -.14284 0 3.444 0 0 10 0
+3 16 1.989 10 0 2.5569 10 -.1428 0 10 0
+4 16 3.17347 10 -.0594 2.5569 10 -.1428 1.989 10 0 3.8265 10 .7612
+4 16 3.8269 3.4443 -1.6849 3.81515 3.4443 -.9883 3.81513 10 -.98828 3.827 9 -1.6849
+4 16 3.81513 10 -.98828 3.8152 10 -10 3.8269 9 -10 3.827 9 -1.6849
+2 24 3.81515 3.4443 -.9883 3.8269 3.4443 -1.6849
+2 24 3.8152 10 -10 3.81513 10 -.98828
+4 16 0 3.444 0 2.5569 3.4443 -.14284 3.81515 3.4443 -.9883 3.8269 3.4443 -1.6849
+3 16 0 3.444 0 3.8269 3.4443 -1.6849 -7.071 3.4443 -1.6849
+2 24 0 3.444 0 2.5569 3.4443 -.14284
+2 24 2.5569 10 -.1428 0 10 0
+3 16 3.6946 10 -.4096 3.17347 10 -.0594 3.8265 10 .7612
+3 16 3.81513 10 -.98828 3.6946 10 -.4096 3.8265 10 .7612
+2 24 -7.071 10 -10 -7.0728 10 .59625
+3 16 -6.31474 10 1.64963 -6.89641 10 1.26448 -7.0713 10 2.92881
+3 16 -5.66442732 10 1.522356487 -6.31474 10 1.64963 -7.0713 10 2.92881
+4 16 -3.827 3.444 .761 -5.66802 3.4443 1.52657 -5.66442732 10 1.522356487 -3.827 10 .761
+2 24 -5.66802 3.4443 1.52657 -3.827 3.444 .761
+2 24 -5.66442732 10 1.522356487 -3.827 10 .761
+4 16 -7.071 3.4443 -1.6849 -7.0728 3.4443 .5962 -5.66802 3.4443 1.52657 -3.827 3.444 .761
+5 24 2.5569 10 -.1428 2.5569 3.4443 -.14284 3.17344513 10 -.05940772 0 10 0
+5 24 3.81506767 10 -.98825428 3.81506767 3.4443 -.98825428 3.8269 3.4443 -1.6849 3.6946 3.4443 -.4096
+5 24 -5.668015774 10 1.526570353 -5.668015774 3.4443 1.526570353 -3.827 10 .761 -6.31474 10 1.64963
+5 24 -7.0728 10 .5962 -7.0728 3.4443 .5962 -6.896616166 3.4443 1.264250395 -7.071 3.4443 -1.6849
+5 24 -3.827 10 .761 -3.827 3.444 .761 0 10 0 -5.668015774 10 1.526570353
+5 24 0 10 0 0 3.444 0 2.5569 10 -.1428 -3.827 10 .761
+0 FILE npeghol8.dat
+0 Technic Peg Hole Negative for Alternate Beam Type 1 Half without Extensions
+0 Name: npeghol8.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2023-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2012-12-28 [PTadmin] Official Update 2012-03
+0 !HISTORY 2022-07-08 [SwampKryakwa] New primitive shape - corners of npegholes are now smoothed similar to the actual lego parts
+0 !HISTORY 2023-01-28 [Holly-Wood] Fixed control points, used 3-16tndis instead of 3-16tang
+0 !HISTORY 2023-03-05 [OrionP] Official Update 2023-01
+
+
+1 16 -7.07107 10 -10 0 -1 0 -9 0 0 0 0 9 3-16tndis.dat
+1 16 7.07107 10 -10 0 1 0 -9 0 0 0 0 9 3-16tndis.dat
+
+1 16 -7.07107 10 -10 0 14.1421 0 -9 0 0 0 0 9 3-16cyli.dat
+1 16 -7.07107 10 -10 0 1 0 -9 0 0 0 0 9 3-16edge.dat
+1 16 7.07107 10 -10 0 1 0 -9 0 0 0 0 9 3-16edge.dat
+
+5 24 7.07105 6.5557 -1.6849 -7.07107 6.5557 -1.6849 7.07304 9 -1.11148 7.07107 3.6361 -3.6361
+2 24 -7.07304 9 -1.11148 7.07304 9 -1.11148
+4 16 7.07105 6.5557 -1.6849 7.07304 9 -1.11148 -7.07304 9 -1.11148 -7.07107 6.5557 -1.6849
+2 24 -7.07107 0 .58966 -7.07107 0 -10
+2 24 -7.07107 6.5557 -1.6849 -7.07304 9 -1.11148
+4 16 -7.07107 0 .58966 -7.07107 0 -10 -7.07107 1 -10 -7.07107 1 -1.6849
+3 16 -7.07107 0 .58966 -7.07107 1 -1.6849 -7.07107 6.5557 -1.6849
+4 16 -7.07107 9 .58966 -7.07107 0 .58966 -7.07107 6.5557 -1.6849 -7.07304 9 -1.11148
+
+2 24 7.07105 6.5557 -1.6849 7.07304 9 -1.11148
+2 24 7.07107 0 .58966 7.07107 0 -10
+4 16 7.07107 0 -10 7.07107 0 .58966 7.07107 1 -1.6849 7.07107 1 -10
+3 16 7.07107 0 .58966 7.07105 6.5557 -1.6849 7.07107 1 -1.6849
+4 16 7.07107 9 .58966 7.07304 9 -1.11148 7.07105 6.5557 -1.6849 7.07107 0 .58966
+1 16 0 0 10 0 0 10 0 9 0 -10 0 0 1-16cylo.dat
+3 16 3.827 9 .761 0 9 0 7.07304 9 -1.11148
+0 BFC INVERTNEXT
+1 16 6.20188 0 .77651 .86919 0 .10938 0 9 0 -.18685 0 .86814 8\3-8cylo.dat
+1 16 6.20188 9 .77651 .86919 0 .10938 0 1 0 -.18685 0 .86814 8\3-8chrd.dat
+5 24 5.66462 9 1.52249 5.66462 0 1.52249 6.31484 0 1.64876 3.82686 0 .76094
+1 16 0 0 10 7.07107 0 -7.07107 0 1 0 -7.07107 0 -7.07107 1-16tang.dat
+1 16 0 0 10 0 0 -10 0 9 0 -10 0 0 1-16cylo.dat
+4 16 -7.07107 9 .58966 -7.07304 9 -1.11148 -3.827 9 .761 -5.66462 9 1.52249
+0 BFC INVERTNEXT
+1 16 -6.20188 0 .77651 -.86919 0 -.10938 0 9 0 -.18685 0 .86814 8\3-8cylo.dat
+1 16 -6.20188 9 .77651 -.86919 0 -.10938 0 1 0 -.18685 0 .86814 8\3-8chrd.dat
+5 24 -5.66462 9 1.52249 -5.66463 0 1.52249 -6.31484 0 1.64876 -3.827 0 .761
+1 16 0 0 10 -7.07107 0 7.07107 0 1 0 -7.07107 0 -7.07107 1-16tang.dat
+4 16 7.07107 9 .58966 5.66462 9 1.52249 3.827 9 .761 7.07304 9 -1.11148
+3 16 -3.827 9 .761 -7.07304 9 -1.11148 0 9 0
+3 16 0 9 0 -7.07304 9 -1.11148 7.07304 9 -1.11148
+3 16 -7.07107 0 2.92893 -7.07107 0 .58966 -6.89383 0 1.25825
+3 16 -7.07107 0 2.92893 -6.89383 0 1.25825 -6.31126 0 1.64465
+3 16 -7.07107 0 2.92893 -6.31126 0 1.64465 -5.66463 0 1.52249
+3 16 6.89383 0 1.25825 7.07107 0 .58966 7.07107 0 2.92893
+3 16 6.89383 0 1.25825 7.07107 0 2.92893 6.31126 0 1.64465
+3 16 5.66462 0 1.52249 6.31126 0 1.64465 7.07107 0 2.92893
+4 16 -3.827 9 .761 -3.827 0 .761 -5.66463 0 1.52249 -5.66462 9 1.52249
+4 16 5.66462 0 1.52249 3.82686 0 .76094 3.827 9 .761 5.66462 9 1.52249
+2 24 3.82686 0 .76094 5.66462 0 1.52249
+2 24 3.827 9 .761 5.66462 9 1.52249
+2 24 -5.66463 0 1.52249 -3.827 0 .761
+2 24 -5.66462 9 1.52249 -3.827 9 .761
+2 24 7.07304 9 -1.11148 7.07107 9 .58966
+2 24 -7.07304 9 -1.11148 -7.07107 9 .58966
+
+5 24 7.07107 9 .58966 7.07107 0 .58966 6.89383 9 1.25825 7.07304 9 -1.11148
+5 24 -7.07107 9 .58966 -7.07107 0 .58966 -6.89383 9 1.25825 -7.07304 9 -1.11148
+0 FILE 3-16tndis.dat
+0 Disc Negative Truncated 0.1875
+0 Name: 3-16tndis.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-03-06 [PTadmin] Official Update 2022-02
+
+
+3 16 1 0 .9239 .9239 0 .3827 1 0 0
+3 16 1 0 .9239 .7071 0 .7071 .9239 0 .3827
+3 16 1 0 .9239 .3827 0 .9239 .7071 0 .7071

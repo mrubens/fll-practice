@@ -984,8 +984,8 @@ export class Sim3D {
     if (!c) return;
     const r = this.robot, h = r.heading * DEG;
     const fwd = new THREE.Vector3(Math.cos(h), 0, Math.sin(h));
-    const pos = new THREE.Vector3(r.x, 0, r.y).addScaledVector(fwd, -34).add(new THREE.Vector3(0, 22, 0));
-    const target = new THREE.Vector3(r.x, 3, r.y).addScaledVector(fwd, 12);
+    const pos = new THREE.Vector3(r.x, 0, r.y).addScaledVector(fwd, -52).add(new THREE.Vector3(0, 34, 0));
+    const target = new THREE.Vector3(r.x, 3, r.y).addScaledVector(fwd, 16);
     c.t = Math.min(1, c.t + dt / 0.6);
     const k = c.t < 1 ? 1 - Math.pow(1 - c.t, 3) : 1 - Math.exp(-dt * 6);   // ease in, then trail smoothly
     this.camera.position.lerp(pos, k);
