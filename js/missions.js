@@ -9,6 +9,12 @@
 //              ctx.touching(modelId) -> the robot is touching that model right now
 
 import { FIELD_SEEDS } from './mechanisms.js';
+/** A point given in a piece's own frame, on the table (cm): the piece's pose applied to it. */
+function pointOf(state, local) {
+  const [qx, qy, qz, qw] = state.q, [x, y, z] = local;
+  const ix = qw * x + qy * z - qz * y, iy = qw * y + qz * x - qx * z, iz = qw * z + qx * y - qy * x, iw = -qx * x - qy * y - qz * z;
+  return [ix * qw - iw * qx - iy * qz + iz * qy + state.pos[0], iy * qw - iw * qy - iz * qx + ix * qz + state.pos[1], iz * qw - iw * qz - ix * qy + iy * qx + state.pos[2]];
+}
 export const MISSIONS = [
   { id: 'M01', name: 'Drone Survey', models: ['M01 Drone Survey', 'M01 Drone stand'], noEquipment: true,
     text: 'Help the pilot launch the drone to create a LiDAR map of the rainforest.',
@@ -17,7 +23,7 @@ export const MISSIONS = [
         met: (c) => { const p = c.p('M01 Drone Survey').pilot; return !!p && p.bottom > 0.5; } },
       // the survey area is the patch of mat around the pilot's stand and the LiDAR map
       { id: 'map', label: 'Bonus: the LiDAR map is completely flipped over, scan marker in the survey area', points: 10, bonusOf: 'drone',
-        met: (c) => { const m = c.p('M01 Drone stand').map, k = c.p('M01 Drone Survey').marker, s = c.obstacle('M01 Drone stand'); return !!m && !!k && !!s && Math.abs(m.angle) > 150 && Math.hypot(k.x - s.x, k.y - s.y) < 16; } },
+        met: (c) => { const m = c.p('M01 Drone stand').map, k = c.p('M01 Drone Survey').marker; if (!m || !k) return false; const b = pointOf(k, [-26, -1.9, 0]); return Math.abs(m.angle) > 150 && Math.hypot(b[0] - m.x, b[2] - m.y) < 16; } },
     ] },
   { id: 'M02', name: 'Exploding Seeds', models: ['M02 Exploding Seeds'],
     text: 'Release the seeds from the seed pod, propelling them to new ground.',
