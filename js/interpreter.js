@@ -41,7 +41,7 @@ export class Runtime {
   stop() {
     if (!this.running) return;
     this.running = false;
-    for (const t of this.threads.values()) { t.stopped = true; this.glow(t.hat, false); }
+    for (const t of this.threads.values()) { t.stopped = true; this.glow(t.hat, false); this.mark(t, null); }
     this.threads.clear();
     const waiters = this.tickWaiters;
     this.tickWaiters = [];
@@ -63,6 +63,13 @@ export class Runtime {
   glow(block, on) {
     try { const root = block.getSvgRoot(); if (root) root.classList.toggle('spike-running', on); } catch { /* block gone */ }
   }
+  /** Outline the block a thread is on right now; the outline moves with the thread and goes when it ends. */
+  mark(ctx, block) {
+    if (ctx.active === block) return;
+    if (ctx.active) { try { const r = ctx.active.getSvgRoot(); if (r) r.classList.remove('spike-active'); } catch { /* gone */ } }
+    ctx.active = block;
+    if (block) { try { const r = block.getSvgRoot(); if (r) r.classList.add('spike-active'); } catch { /* gone */ } }
+  }
 
   launch(hat) {
     const old = this.threads.get(hat.id);
@@ -76,6 +83,7 @@ export class Runtime {
       } catch (e) {
         if (!(e instanceof StopSignal)) { console.error(e); this.log('Error: ' + (e.message || e)); }
       } finally {
+        this.mark(ctx, null);
         if (this.threads.get(hat.id) === ctx) { this.threads.delete(hat.id); this.glow(hat, false); }
         this.checkFinished();
       }
@@ -83,7 +91,7 @@ export class Runtime {
   }
 
   stopOtherThreads(ctx) {
-    for (const [id, t] of this.threads) if (t !== ctx) { t.stopped = true; this.glow(t.hat, false); this.threads.delete(id); }
+    for (const [id, t] of this.threads) if (t !== ctx) { t.stopped = true; this.glow(t.hat, false); this.mark(t, null); this.threads.delete(id); }
   }
 
   /** Called once per frame after the robot has been stepped. */
@@ -143,6 +151,7 @@ export class Runtime {
 
   async exec(block, ctx) {
     this.ctx = ctx;
+    this.mark(ctx, block);
     const h = HANDLERS[block.type];
     if (!h) { this.log(`"${block.type}" is not supported in the simulator yet.`); return; }
     await h.call(this, block, ctx);

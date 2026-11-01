@@ -169,6 +169,8 @@ select.vt { cursor: pointer; color: var(--fg); }
 .blocklyMainBackground { stroke: none; }
 .blocklyText { font-family: var(--font) !important; }
 .spike-running { filter: drop-shadow(0 0 6px #FFD400) drop-shadow(0 0 2px #FFD400); }
+/* the block a running program is on: a white outline with a soft shadow that moves down the stack */
+.spike-active > .blocklyPath { stroke: #fff; stroke-width: 4px; paint-order: stroke; filter: drop-shadow(0 0 4px rgba(30,36,48,.55)); }
 .spike-matrix-editor { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
 .spike-matrix-editor .grid { display: grid; grid-template-columns: repeat(5, 30px); gap: 4px; }
 .spike-matrix-editor .cell { width: 30px; height: 30px; border-radius: 7px; border: 0; background: rgba(0,0,0,.35); padding: 0; }
