@@ -260,7 +260,7 @@ export const MECHANISMS = {
     pieces: {
       cover: { kind: 'hinge', axis: [0, 0, -1], anchor: [4.23, 0.88, -2.38], range: [0, 101.2], mass: 0.04, friction: 1.0, damp: 0.1,
         parts: (p) => p.i >= 1 && p.i <= 14 },
-      seed: { kind: 'slider', axis: [0, 0.924, 0.383], anchor: [-1.37, 10.86, 5.11], range: [0, 1.2], freeAt: 1.0, mass: 0.003, damp: 0.1, contact: true,
+      seed: { kind: 'slider', axis: [0, 0.924, 0.383], anchor: [-1.37, 10.86, 5.11], range: [0, 1.2], freeAt: 1.0, freeWhen: (s) => s.seed.touched, mass: 0.003, damp: 0.1, contact: true,
         parts: (p) => p.i >= 101 && p.i <= 110 },
     },
   },
@@ -282,7 +282,7 @@ export const MECHANISMS = {
       // the "root" (book step 23: tan cone on a green round plate, a red #1 connector on top) hangs by its connector on
       // the tip of the brown curved bar, its tip on the mat; it is one of the seeds teams carry to M14 (missions video
       // 474 s). Lift it about a centimetre along the bar and it comes off.
-      seed: { kind: 'slider', axis: [-0.383, 0.924, 0], anchor: [-7.52, 3.8, 0.56], range: [0, 1.2], freeAt: 1.0, mass: 0.004, damp: 0.1, contact: true,
+      seed: { kind: 'slider', axis: [-0.383, 0.924, 0], anchor: [-7.52, 3.8, 0.56], range: [0, 1.2], freeAt: 1.0, freeWhen: (s) => s.seed.touched, mass: 0.004, damp: 0.1, contact: true,
         parts: (p) => p.i >= 110 && p.i <= 116 },
     },
   },

@@ -29,6 +29,7 @@ function dropHidden(boxes) {
 }
 
 const RIDE = 0.7;   // cm an attachment rides over
+const ATTACH_FRICTION = 0.3;   // LEGO plastic on LEGO plastic: pieces slide off an attachment instead of clinging to it
 /** Highest / lowest point of a cuboid collider (cm), from its current pose. */
 function colliderExtent(c, sign) {
   let h = null;
@@ -795,7 +796,7 @@ export class Physics {
       parent.add(node);
       node.updateMatrixWorld(true);
       const onArm = parent === moving && armBody;
-      const desc = R.ColliderDesc.cuboid((size[0] / 2) * S, (size[1] / 2) * S, (size[2] / 2) * S).setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT);
+      const desc = R.ColliderDesc.cuboid((size[0] / 2) * S, (size[1] / 2) * S, (size[2] / 2) * S).setFriction(ATTACH_FRICTION).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT);
       if (onArm) { desc.setTranslation(pos[0] * S, pos[1] * S, pos[2] * S); if (pitch) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, pitch * DEG)); desc.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); } }   // relative to the moving frame
       else { const w = new THREE.Vector3(); node.getWorldPosition(w); const q = new THREE.Quaternion(); node.getWorldQuaternion(q); desc.setTranslation(w.x * S, w.y * S, w.z * S).setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
       const collider = this.world.createCollider(desc, onArm ? armBody : body);
@@ -819,7 +820,7 @@ export class Physics {
         const along = [0, 0, 0]; along[order[2]] = 1;
         cr.multiply(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...along)));
       } else desc = R.ColliderDesc.cuboid(Math.max(0.05, h[0]) * S, Math.max(0.05, h[1]) * S, Math.max(0.05, h[2]) * S);
-      desc.setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT).setTranslation(pos.x * S, pos.y * S, pos.z * S).setRotation({ x: cr.x, y: cr.y, z: cr.z, w: cr.w });
+      desc.setFriction(ATTACH_FRICTION).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT).setTranslation(pos.x * S, pos.y * S, pos.z * S).setRotation({ x: cr.x, y: cr.y, z: cr.z, w: cr.w });
       const collider = this.world.createCollider(desc, armBody);
       this.robotParts.push({ collider, node, half: h, onArm: true });
     };
