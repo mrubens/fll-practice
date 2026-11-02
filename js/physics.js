@@ -425,7 +425,8 @@ export class Physics {
     if (pc.joint) { this.world.removeImpulseJoint(pc.joint, true); pc.joint = null; }
     pc.body.setEnabledTranslations(true, true, true, true);
     pc.body.setEnabledRotations(true, true, true, true);
-    pc.body.setLinearDamping(1.5); pc.body.setAngularDamping(1.5);
+    const damp = pc.def.tether && pc.def.tether.rest ? 8 : 1.5;   // a seed on a stiff hose does not swing about
+    pc.body.setLinearDamping(damp); pc.body.setAngularDamping(damp);
     for (const c of pc.colliders) c.setCollisionGroups(SHARED);
     const t = pc.def.tether;
     if (t && t.rest && !pc.springJoint) {
