@@ -8,7 +8,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
-import { MECHANISMS } from './mechanisms.js';
+import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 
 const DEG = Math.PI / 180;
 const LDU = 0.04; // 1 LDraw unit = 0.4 mm = 0.04 cm
@@ -147,22 +147,26 @@ function loadLDrawRaw(url) {
  * Split a raw LDraw model into its mechanism pieces: returns { base: Group, pieces: { name: Group } } with every
  * group in the model's own frame (cm, y up), ready to hang under a holder or a moving piece node.
  */
-function splitModel(raw, def) {
+function splitModel(raw, def, parts = null) {
   const tmp = new THREE.Group();
   raw.rotation.x = Math.PI; raw.scale.setScalar(LDU);
   tmp.add(raw);
   tmp.updateMatrixWorld(true);
   const names = Object.keys(def.pieces || {});
   const buckets = { base: [] };
+  const byLine = parts ? new Map(parts.map((e) => [e.i, e])) : null;
   for (const n of names) buckets[n] = [];
-  for (const child of raw.children) {
+  for (const [index, child] of raw.children.entries()) {
     const bb = new THREE.Box3().setFromObject(child);
     const c = bb.getCenter(new THREE.Vector3()), sz = bb.getSize(new THREE.Vector3());
     let color = '';
     child.traverse((m) => { if (!color && m.isMesh) { const mat = Array.isArray(m.material) ? m.material[0] : m.material; color = String(mat.userData.code ?? mat.name); } });
-    const info = { color, c: [c.x, c.y, c.z], s: [sz.x, sz.y, sz.z], file: child.userData.fileName || '' };
-    const hit = names.find((n) => { try { return def.pieces[n].parts(info); } catch { return false; } });
-    buckets[hit || 'base'].push(child);
+    // i: the part's line number in the model (1-based); the measured parts (the physics' own) when there are some
+    const measured = byLine && byLine.get(index + 1);
+    const info = measured ? partInfo(measured) : { i: index + 1, color, c: [c.x, c.y, c.z], s: [sz.x, sz.y, sz.z], file: child.userData.fileName || '' };
+    const who = pieceOfPart(def, info);
+    if (who === null) continue;      // drawn another way (the M12 chain is a live tether line)
+    buckets[who].push(child);
   }
   const out = { base: flattenObjects(buckets.base), pieces: {} };
   for (const n of names) out.pieces[n] = flattenObjects(buckets[n]);
@@ -278,7 +282,6 @@ export class Sim3D {
     this.installDrag();
     this.matrixDirty = true;
     this.effects = [];           // running model animations / pulses
-    this.buildTrail();
     robot.on('matrix', () => { this.matrixDirty = true; });
     robot.on('build', () => this.buildRobot());
   }
@@ -399,7 +402,7 @@ export class Sim3D {
     for (const m of this.obstacleExtras || []) this.scene.remove(m);
     for (const m of this.shimmers.filter((x) => !x.userData.robot)) this.scene.remove(m);
     this.shimmers = this.shimmers.filter((x) => x.userData.robot);
-    for (const pn of this.pieceNodes || []) this.scene.remove(pn.node);
+    for (const pn of this.pieceNodes || []) { this.scene.remove(pn.node); if (pn.tetherMesh) this.scene.remove(pn.tetherMesh); }
     this.obstacleMeshes = [];
     this.obstacleExtras = [];
     this.pieceNodes = [];
@@ -431,7 +434,7 @@ export class Sim3D {
           if (generation !== this.buildGeneration) return;
           unghost();
           if (!raw) { m.visible = true; return; }
-          const split = splitModel(raw, def);
+          const split = splitModel(raw, def, o.parts);
           const pose = o.modelPose || { x: o.x, y: o.y, heading: 0 };
           const holder = new THREE.Group();
           holder.add(split.base);
@@ -449,7 +452,7 @@ export class Sim3D {
             node.add(inner);
             node.userData.obstacle = o;
             this.scene.add(node);
-            this.pieceNodes.push({ o, name, node, anchor: new THREE.Vector3(...pd.anchor), holder });
+            this.pieceNodes.push({ o, name, node, anchor: new THREE.Vector3(...pd.anchor), holder, tether: pd.tether || null });
           }
           o.hasModel = true;
         });
@@ -767,31 +770,6 @@ export class Sim3D {
     });
   }
 
-  // ---- path trail ----
-  buildTrail() {
-    this.trailMax = 4000;
-    this.trailGeo = new THREE.BufferGeometry();
-    this.trailPos = new Float32Array(this.trailMax * 3);
-    this.trailGeo.setAttribute('position', new THREE.BufferAttribute(this.trailPos, 3));
-    this.trailGeo.setDrawRange(0, 0);
-    this.trail = new THREE.Line(this.trailGeo, new THREE.LineBasicMaterial({ color: 0x0A8DFF, transparent: true, opacity: 0.9 }));
-    this.trail.frustumCulled = false;
-    this.trailCount = 0;
-    this.trailLast = null;
-    this.scene.add(this.trail);
-  }
-  clearTrail() { this.trailCount = 0; this.trailLast = null; this.trailGeo.setDrawRange(0, 0); }
-  addTrailPoint(x, y) {
-    if (this.trailLast && Math.hypot(x - this.trailLast[0], y - this.trailLast[1]) < 0.8) return;
-    if (this.trailCount >= this.trailMax) return;
-    const i = this.trailCount * 3;
-    this.trailPos[i] = x; this.trailPos[i + 1] = 0.3; this.trailPos[i + 2] = y;
-    this.trailCount++;
-    this.trailLast = [x, y];
-    this.trailGeo.attributes.position.needsUpdate = true;
-    this.trailGeo.setDrawRange(0, this.trailCount);
-  }
-
   // ---- mission feedback: green pulse plus an optional whole-model motion ----
   extrasFor(obstacle) { return this.obstacleExtras.filter((e) => e.userData.obstacle === obstacle); }
   celebrate(obstacle, animate) {
@@ -969,6 +947,29 @@ export class Sim3D {
     if (this.onMatPoint) this.onMatPoint(this.lastMatPoint || null);
   }
 
+  /** A chain between a model and one of its pieces, sagging under its own weight. */
+  drawTether(pn) {
+    const t = pn.tether;
+    const a = new THREE.Vector3(...t.from).applyQuaternion(pn.holder.quaternion).add(pn.holder.position);
+    const b = new THREE.Vector3(...t.to).applyQuaternion(pn.node.quaternion).add(pn.node.position);
+    const slack = Math.max(0, t.length - a.distanceTo(b));
+    // a chain sags; a springy hose (M02) arches up and out from where it is plugged in
+    const mid = a.clone().lerp(b, 0.5);
+    if (t.hose) mid.y = Math.max(a.y, b.y) + slack * 0.35;
+    else mid.y = Math.max(0.3, mid.y - slack * 0.45);
+    const curve = new THREE.QuadraticBezierCurve3(a, mid, b);
+    const radius = t.radius || 0.18;
+    if (!pn.tetherMesh) {
+      const mat = t.hose ? new THREE.MeshStandardMaterial({ color: t.color ?? 0xA5CA18, roughness: 0.7 }) : new THREE.MeshStandardMaterial({ color: 0x9BA1AA, metalness: 0.6, roughness: 0.4 });
+      pn.tetherMesh = new THREE.Mesh(new THREE.TubeGeometry(curve, 24, radius, 8), mat);
+      pn.tetherMesh.castShadow = true;
+      this.scene.add(pn.tetherMesh);
+    } else {
+      pn.tetherMesh.geometry.dispose();
+      pn.tetherMesh.geometry = new THREE.TubeGeometry(curve, 24, radius, 8);
+    }
+  }
+
   /** Smoothly move the camera to look at a point from a given offset; remembers where it was. */
   flyTo(point, offset = [24, 22, 30]) {
     if (!this.flyBack) this.flyBack = { pos: this.camera.position.clone(), target: this.controls.target.clone(), follow: this.follow };
@@ -1059,6 +1060,7 @@ export class Sim3D {
       const pose = ph ? ph.piecePose(pn.o.id, pn.name) : null;
       if (pose) { pn.node.position.set(pose.p[0], pose.p[1], pose.p[2]); pn.node.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]); }
       else { pn.node.position.copy(pn.anchor).applyQuaternion(pn.holder.quaternion).add(pn.holder.position); pn.node.quaternion.copy(pn.holder.quaternion); }
+      if (pn.tether) this.drawTether(pn);
     }
     for (const eq of this.equipmentNodes || []) {
       const pose = ph ? ph.piecePose(null, eq.id) : null;

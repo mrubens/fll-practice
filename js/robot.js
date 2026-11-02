@@ -10,7 +10,7 @@ export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
 // rotation, and the rack gives 9 cm of travel: the fork rides from 1.5 cm to 10.5 cm above the mat.
 export const LIFT = { low: 1.5, high: 10.5, cmPerRotation: 3.77 };
 /** The arm's travel in motor degrees: a little below its rest pose (the mat stops it) up to where its elbows meet the hub. */
-export const ARM_STOPS = { low: -15, high: 100 };
+export const ARM_STOPS = { low: -35, high: 100 };   // low: the arm can come down until it rests on the mat (the mat stalls it first)
 const ACCEL = 3600;                       // deg/s^2 ramp
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 

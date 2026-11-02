@@ -138,7 +138,6 @@ function startRun() {
   world.resetObstacles();
   scoring.reset();
   sim.resetEffects();
-  sim.clearTrail();
   hub.ensureAudio();
   replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading } };
   replay.snaps.clear();
@@ -176,7 +175,6 @@ function startMatch() {
   world.resetObstacles();
   scoring.reset();
   sim.resetEffects();
-  sim.clearTrail();
   robot.resetPose();
   placeEquipment();
   hub.matchLeft = MATCH_SECONDS;
@@ -229,7 +227,7 @@ async function stepBack(toStart) {
   replay.active = true;
   updateRunState();
   runtime.stop();
-  world.resetObstacles(); scoring.reset(); sim.resetEffects(); sim.clearTrail();
+  world.resetObstacles(); scoring.reset(); sim.resetEffects();
   if (start.kind === 'match') { robot.resetPose(); placeEquipment(); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
   else { hub.matchLeft = null; robot.resetPose(start.pose); }
   runtime.setStepMode(true);
@@ -241,7 +239,7 @@ async function stepBack(toStart) {
   for (let n = 0; n < target && runtime.running; n++) {
     runtime.step();
     await drain();
-    while (runtime.running && !runtime.paused && steps < limit) { simStep(); steps++; if (steps % 8 === 0) sim.addTrailPoint(robot.x, robot.y); await drain(); }
+    while (runtime.running && !runtime.paused && steps < limit) { simStep(); steps++; await drain(); }
   }
   replay.active = false;
   sim.render();
@@ -525,7 +523,6 @@ async function switchBoard(id, quiet) {
   hub.matchLeft = null;
   scoring.reset();
   sim.resetEffects();
-  sim.clearTrail();
   const ok = await world.loadBoard(b);
   robot.resetPose();
   store.board = b.id; saveStore();
@@ -759,12 +756,10 @@ async function frame(now) {
   } else if (runtime.running) {
     acc += dt;
     while (acc >= STEP && runtime.running && !runtime.paused) { simStep(); acc -= STEP; await drain(); }
-    sim.addTrailPoint(robot.x, robot.y);
   } else if (drive.keys.size || drive.stick || driveFromKeys()) {
     driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
-    sim.addTrailPoint(robot.x, robot.y);
     drive.idle = 0;
     const steering = drive.stick || ['w', 'a', 's', 'd'].some((k) => drive.keys.has(k));
     if (steering && !sim.dragging) sim.startChase();   // the view drops in behind the robot while it is being driven (not for the arm alone)
@@ -810,7 +805,7 @@ async function fastRun(maxSeconds = 600) {
   const limit = 200 * maxSeconds;
   let steps = 0;
   await drain();
-  while (runtime.running && steps < limit) { simStep(); steps++; if (steps % 8 === 0) sim.addTrailPoint(robot.x, robot.y); await drain(); }
+  while (runtime.running && steps < limit) { simStep(); steps++; await drain(); }
   if (runtime.running) runtime.stop();
   replay.active = false; sim.render(); updateRunState();
   return { steps, seconds: +(steps / 200).toFixed(1), score: scoring.score, met: Object.entries(scoring.state).filter(([, v]) => v.met).map(([k]) => k) };

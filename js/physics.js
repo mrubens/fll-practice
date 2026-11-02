@@ -4,12 +4,63 @@
 // boxes are dynamic bodies that get shoved. Frames: sim x east / y south / heading clockwise  <->  Rapier x east / z south / y up.
 import * as THREE from 'three';
 import { LIFT } from './robot.js';
-import { MECHANISMS } from './mechanisms.js';
+import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
 const DEG = Math.PI / 180;
 const SKIN = 0.25;              // cm the controller keeps between the robot and whatever it touches
 const STALL_MARGIN = 0.35;      // cm the attachment shape is shrunk by for "would this motor move hit something" tests
+
+/** Boxes that lie entirely inside another box of the same piece (a pin in a beam's hole) are left out. */
+function dropHidden(boxes) {
+  const inside = (p, b) => {
+    const v = new THREE.Vector3(p.x - b.c[0], p.y - b.c[1], p.z - b.c[2]).applyQuaternion(b.qi);
+    return Math.abs(v.x) <= b.h[0] + 1e-3 && Math.abs(v.y) <= b.h[1] + 1e-3 && Math.abs(v.z) <= b.h[2] + 1e-3;
+  };
+  const all = boxes.map((b) => ({ ...b, qi: new THREE.Quaternion(...b.q).invert(), vol: b.h[0] * b.h[1] * b.h[2] }));
+  return all.filter((b) => {
+    const q = new THREE.Quaternion(...b.q);
+    const corners = [];
+    for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) corners.push(new THREE.Vector3(sx * b.h[0], sy * b.h[1], sz * b.h[2]).applyQuaternion(q).add(new THREE.Vector3(...b.c)));
+    return !all.some((o) => o !== b && o.vol >= b.vol && corners.every((p) => inside(p, o)));
+  });
+}
+
+const RIDE = 0.7;   // cm an attachment rides over
+/** Highest / lowest point of a cuboid collider (cm), from its current pose. */
+function colliderExtent(c, sign) {
+  let h = null;
+  try { h = c.halfExtents(); } catch { h = null; }
+  if (!h) { const hh = c.halfHeight(), rr = c.radius(); h = { x: rr, y: hh + rr, z: rr }; }   // a capsule (axle)
+  const r = c.rotation(), t = c.translation();
+  const q = new THREE.Quaternion(r.x, r.y, r.z, r.w);
+  let best = sign * -Infinity;
+  for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+    const y = new THREE.Vector3(sx * h.x, sy * h.y, sz * h.z).applyQuaternion(q).y + t.y;
+    best = sign > 0 ? Math.max(best, y) : Math.min(best, y);
+  }
+  return best / S;
+}
+const colliderTop = (c) => colliderExtent(c, 1);
+const colliderBottom = (c) => colliderExtent(c, -1);
+
+/** Up to 26 outermost corners (one per direction) of a piece's part boxes, relative to its anchor. */
+function supportPoints(entries, anchor) {
+  const pts = [];
+  for (const e of entries) {
+    const q = new THREE.Quaternion(...e.q);
+    for (const b of e.b || [[...e.p, ...e.h]]) for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
+      pts.push(new THREE.Vector3(sx * b[3], sy * b[4], sz * b[5]).applyQuaternion(q).add(new THREE.Vector3(b[0] - anchor[0], b[1] - anchor[1], b[2] - anchor[2])));
+  }
+  const out = new Set();
+  for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) for (const dz of [-1, 0, 1]) {
+    if (!dx && !dy && !dz) continue;
+    let best = null, bv = -Infinity;
+    for (const p of pts) { const v = p.x * dx + p.y * dy + p.z * dz; if (v > bv) { bv = v; best = p; } }
+    out.add(best);
+  }
+  return [...out];
+}
 
 export async function createPhysics(world) {
   let R;
@@ -30,7 +81,11 @@ const ALL = 0xFFFF;
 const grp = (member, filter) => ((member & 0xFFFF) << 16) | (filter & 0xFFFF);
 const SHARED = grp(1, ALL);
 const MODEL_BIT = {};   // assigned as the models are built
-const modelGroup = (id) => { if (!(id in MODEL_BIT)) MODEL_BIT[id] = 2 + (Object.keys(MODEL_BIT).length - 1) % 14; const b = 1 << MODEL_BIT[id]; return grp(b, ALL & ~b); };
+const modelGroup = (id, ground = true) => { if (!(id in MODEL_BIT)) { const n = Object.keys(MODEL_BIT).length; MODEL_BIT[id] = 2 + (n % 12); } const b = 1 << MODEL_BIT[id]; return grp(b, ALL & ~b & (ground ? ALL : ~MAT_BIT)); };
+// two spare bits let a piece touch chosen pieces of its own model (the M10 catch leaning on the web's upright)
+const PAIR_A = 1 << 14, PAIR_B = 1 << 15;
+const withPair = (g, member, filter) => (((g >>> 16) | member) << 16) | ((g & 0xFFFF) | filter);
+const MAT_BIT = 2;   // the table (mat and walls) has a group of its own: a piece whose square ends would dig into it can skip it
 
 const yawQuat = (headingDeg) => { const a = -headingDeg * DEG / 2; return { x: 0, y: Math.sin(a), z: 0, w: Math.cos(a) }; };
 const yawOf = (q) => Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.z * q.z)) / DEG;   // degrees, counter-clockwise from above
@@ -56,6 +111,7 @@ export class Physics {
     this.obstacleBodies = [];
     this.pieces = [];              // moving mission-model pieces (see mechanisms.js) and equipment
     this.colliderToPiece = new Map();
+    this.colliderTop = new Map();     // fixed model colliders: their top (cm), for an attachment riding over them
     this.colliderToObstacle = new Map();
     this.robotBody = null; this.armBody = null;
     this.robotParts = [];        // { collider, node } attachment pieces that follow the attachment motor
@@ -127,12 +183,12 @@ export class Physics {
     const t = this.sim.table;
     const hw = this.sim.innerHalfW, hh = this.sim.innerHalfH, w = t.wall, h = t.wallHeight;
     const body = this.world.createRigidBody(R.RigidBodyDesc.fixed());
-    const add = (x, z, hx, hz) => this.world.createCollider(R.ColliderDesc.cuboid(hx * S, (h / 2) * S, hz * S).setTranslation(x * S, (h / 2) * S, z * S).setCollisionGroups(SHARED), body);
+    const add = (x, z, hx, hz) => this.world.createCollider(R.ColliderDesc.cuboid(hx * S, (h / 2) * S, hz * S).setTranslation(x * S, (h / 2) * S, z * S).setCollisionGroups(grp(MAT_BIT, ALL)), body);
     add(0, -hh - w / 2, hw + w, w / 2);
     add(0, hh + w / 2, hw + w, w / 2);
     add(-hw - w / 2, 0, w / 2, hh + w);
     add(hw + w / 2, 0, w / 2, hh + w);
-    this.world.createCollider(R.ColliderDesc.cuboid((hw + w) * S, 1 * S, (hh + w) * S).setTranslation(0, -1 * S, 0).setFriction(0.8).setCollisionGroups(SHARED), body);   // the mat
+    this.world.createCollider(R.ColliderDesc.cuboid((hw + w) * S, 1 * S, (hh + w) * S).setTranslation(0, -1 * S, 0).setFriction(0.8).setCollisionGroups(grp(MAT_BIT, ALL)), body);   // the mat
     this.wallsBody = body;
   }
 
@@ -142,6 +198,7 @@ export class Physics {
     const { R } = this;
     for (const ob of this.obstacleBodies) this.world.removeRigidBody(ob.body);
     this.obstacleBodies = [];
+    this.colliderTop = new Map();
     for (const pc of this.pieces) if (!pc.equipment) this.world.removeRigidBody(pc.body);
     this.pieces = this.pieces.filter((pc) => pc.equipment);
     this.colliderToPiece = new Map(this.pieces.map((pc) => [pc.collider.handle, pc]));
@@ -179,7 +236,14 @@ export class Physics {
     const base = this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(frame.p.x * S, 0, frame.p.z * S).setRotation(rq));
     const groups = modelGroup(o.id);
     const colliders = [];
-    for (const b of def.base || []) {
+    // which measured part belongs to which piece (the same split the 3D view draws)
+    const own = { base: [] };
+    for (const n of Object.keys(def.pieces || {})) own[n] = [];
+    // soft parts (plants, flexible hoses, string) are drawn but bend out of the way, so they get no colliders
+    if (o.parts) for (const e of o.parts) { const info = partInfo(e); const who = pieceOfPart(def, info); if (who && !(who === 'base' && def.soft && def.soft(info))) own[who].push(e); }
+    if (o.parts) colliders.push(...this._partColliders(own.base, base, [0, 0, 0], groups, 0, 0.7));
+    for (const c of colliders) this.colliderTop.set(c.handle, colliderTop(c));
+    for (const b of (o.parts ? def.baseExtra : def.base) || []) {
       const cd = R.ColliderDesc.cuboid((b.box[0] / 2) * S, (b.box[1] / 2) * S, (b.box[2] / 2) * S).setTranslation(b.at[0] * S, b.at[1] * S, b.at[2] * S).setFriction(0.7).setCollisionGroups(groups);
       if (b.rot) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(b.rot[0] * DEG, b.rot[1] * DEG, b.rot[2] * DEG)); cd.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
       colliders.push(this.world.createCollider(cd, base));
@@ -191,33 +255,106 @@ export class Physics {
       const startW = pd.shift ? toWorld(pd.anchor.map((v, i) => v + pd.shift[i])) : anchorW.clone();   // a piece may start away from its anchor (a drawer pulled out)
       const locked = !!pd.locked;
       let desc;
-      if (pd.kind === 'lift' || pd.kind === 'follow') desc = R.RigidBodyDesc.kinematicPositionBased();
+      if (pd.kind === 'lift' || pd.kind === 'follow' || pd.kind === 'gear') desc = R.RigidBodyDesc.kinematicPositionBased();
       else desc = R.RigidBodyDesc.dynamic().setLinearDamping(pd.kind === 'loose' ? 1.5 : 0.8).setAngularDamping(pd.kind === 'loose' ? 1.5 : 0.8).setGravityScale(pd.gravity === false ? 0 : 1);
       // A locked piece is a dynamic body with every degree of freedom switched off (a body born fixed cannot be
       // jointed later), released by switching them back on.
       if (locked) desc.enabledTranslations(false, false, false).enabledRotations(false, false, false);
       else if (pd.planar && pd.kind === 'loose') desc.enabledTranslations(true, false, true).enabledRotations(false, true, false);
       // a follower starts turned to where its driver starts (the young trees lean out while the platform is up)
-      const q0 = pd.kind === 'follow' ? frame.q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pd.axis).normalize(), pd.angle * DEG)) : frame.q;
-      desc.setTranslation(startW.x * S, startW.y * S, startW.z * S).setRotation({ x: q0.x, y: q0.y, z: q0.z, w: q0.w }).setCcdEnabled(true).setCanSleep(false);
+      // a gear starts turned to where its driver starts (the M06 camshaft with the rack pulled out)
+      const driverStart = (d) => { const src = def.pieces[d.piece]; return src && src.shift ? src.shift.reduce((t, v, i) => t + v * src.axis[i], 0) : 0; };
+      const turn = pd.kind === 'follow' ? pd.angle : pd.kind === 'gear' ? (driverStart(pd.drivenBy) * pd.drivenBy.ratio) / DEG : pd.kind === 'hinge' && pd.start ? pd.start : 0;
+      const q0 = turn ? frame.q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pd.axis).normalize(), turn * DEG)) : frame.q;
+      desc.setTranslation(startW.x * S, startW.y * S, startW.z * S).setRotation({ x: q0.x, y: q0.y, z: q0.z, w: q0.w }).setCcdEnabled(pd.kind === 'loose');   // resting pieces sleep; a push wakes them
       const body = this.world.createRigidBody(desc);
-      const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
-      const cols = shapes.map((sh, i) => this.world.createCollider(
-        R.ColliderDesc.cuboid((sh.box[0] / 2) * S, (sh.box[1] / 2) * S, (sh.box[2] / 2) * S).setTranslation(sh.at[0] * S, sh.at[1] * S, sh.at[2] * S)
-          .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pd.whole || pd.kind === 'loose' ? SHARED : groups), body));
-      const pc = { o, name, def: pd, body, colliders: cols, collider: cols[0], anchor: anchorW, q0: frame.q.clone(), axisW: pd.axis ? new THREE.Vector3(...pd.axis).applyQuaternion(frame.q).normalize() : null,
+      const pieceGroups = pd.whole || pd.kind === 'loose' ? SHARED : pd.noGround ? modelGroup(o.id, false) : groups;
+      let cols;
+      if (pd.shape && pd.shape.length || !o.parts || !own[name].length) {
+        // hand-drawn boxes (relative to the anchor): only where a piece needs something its parts do not give
+        const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
+        cols = shapes.map((sh, i) => {
+          const cd = R.ColliderDesc.cuboid((sh.box[0] / 2) * S, (sh.box[1] / 2) * S, (sh.box[2] / 2) * S).setTranslation(sh.at[0] * S, sh.at[1] * S, sh.at[2] * S)
+            .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pieceGroups);
+          if (sh.rot) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(sh.rot[0] * DEG, sh.rot[1] * DEG, sh.rot[2] * DEG)); cd.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
+          return this.world.createCollider(cd, body);
+        });
+      } else {
+        // one box per real part, placed relative to the anchor; the weight spread by volume (or held at pd.com)
+        cols = this._partColliders(own[name], body, pd.anchor, pieceGroups, pd.com ? 0 : (pd.mass ?? 0.05), pd.friction ?? 0.7, true, pd.shrink || 0);
+        if (pd.com) {
+          const m = pd.mass ?? 0.05, c = pd.com.map((v, i) => (v - pd.anchor[i]) * S), r = 2 * S;
+          body.setAdditionalMassProperties(m, { x: c[0], y: c[1], z: c[2] }, { x: m * r * r, y: m * r * r, z: m * r * r }, { x: 0, y: 0, z: 0, w: 1 }, true);
+        }
+      }
+      // a few outermost points of the piece (body frame) for its lowest point, from its real parts when it has them
+      const hull = !(pd.shape && pd.shape.length) && o.parts && own[name].length ? supportPoints(own[name], pd.anchor) : null;
+      const pc = { o, name, def: pd, body, colliders: cols, hull, baseHandles: pd.contact ? new Set(colliders.map((c) => c.handle)) : null, collider: cols[0], anchor: anchorW, q0: frame.q.clone(), qStart: q0.clone ? q0.clone() : frame.q.clone(), axisW: pd.axis ? new THREE.Vector3(...pd.axis).applyQuaternion(frame.q).normalize() : null,
         locked, released: !locked, latched: false, touched: -1, angle: 0, ext: 0, height: 0, start: startW.clone() };
       if (pd.kind === 'hinge' && !pd.parent) this._hingeJoint(pc, base, locked);
       if (pd.kind === 'slider') this._sliderJoint(pc, base, locked);
+      // a tether (the M12 support tie's chain): a rope from a point on the model to a point on the piece
+      if (pd.tether) {
+        const t = pd.tether;
+        pc.tetherJoint = this.world.createImpulseJoint(R.JointData.rope(t.length * S, { x: t.from[0] * S, y: t.from[1] * S, z: t.from[2] * S }, { x: t.to[0] * S, y: t.to[1] * S, z: t.to[2] * S }), base, body, true);
+      }
       this.pieces.push(pc);
       for (const c of cols) this.colliderToPiece.set(c.handle, pc);
     }
     // hinges on another piece of the same model (a linkage), once every piece has a body
     for (const pc of this.pieces) {
-      if (pc.o !== o || pc.def.kind !== 'hinge' || !pc.def.parent) continue;
-      const parent = this.pieces.find((q) => q.o === o && q.name === pc.def.parent);
-      if (parent) this._hingeJoint(pc, parent.body, pc.locked, parent);
+      if (pc.o !== o) continue;
+      if (pc.def.kind === 'hinge' && pc.def.parent) {
+        const parent = this.pieces.find((q) => q.o === o && q.name === pc.def.parent);
+        if (parent) this._hingeJoint(pc, parent.body, pc.locked, parent);
+      }
+      // a piece that leans on chosen pieces of its own model
+      for (const n of pc.def.collidesWith || []) {
+        const other = this.pieces.find((q) => q.o === o && q.name === n);
+        if (!other) continue;
+        for (const c of pc.colliders) c.setCollisionGroups(withPair(c.collisionGroups(), PAIR_A, PAIR_B));
+        for (const c of other.colliders) c.setCollisionGroups(withPair(c.collisionGroups(), PAIR_B, PAIR_A));
+      }
+      // pins to other pieces that close a loop (the M10 web's cross beams on its three uprights)
+      for (const l of pc.def.links || []) {
+        const other = this.pieces.find((q) => q.o === o && q.name === l.piece);
+        if (!other) continue;
+        const a1 = l.at.map((v, i) => (v - other.def.anchor[i]) * S), a2 = l.at.map((v, i) => (v - pc.def.anchor[i]) * S), ax = pc.def.axis;
+        (pc.linkJoints ||= []).push(this.world.createImpulseJoint(R.JointData.revolute({ x: a1[0], y: a1[1], z: a1[2] }, { x: a2[0], y: a2[1], z: a2[2] }, { x: ax[0], y: ax[1], z: ax[2] }), other.body, pc.body, true));
+      }
     }
+  }
+
+  /** Colliders for measured parts on a body whose origin sits at `origin` in the model frame (one box per part, or
+   * the part's several boxes); `mass` (kg) is spread over them by volume, 0 for none. */
+  _partColliders(entries, body, origin, groups, mass, friction, merge = false, shrink = 0) {
+    const { R } = this;
+    let boxes = [];
+    for (const e of entries) {
+      const list = e.b || [[...e.p, ...e.h]];
+      for (const b of list) boxes.push({ c: b.slice(0, 3), h: b.slice(3, 6).map((v) => Math.max(0.05, v - shrink)), q: e.q });   // shrink: a loose fit (a leaf in its slot)
+    }
+    if (merge && boxes.length > 8) boxes = dropHidden(boxes);   // a moving piece: boxes buried inside others add nothing
+    const vol = (b) => Math.max(1e-3, 8 * b.h[0] * b.h[1] * b.h[2]);
+    const total = boxes.reduce((t, b) => t + vol(b), 0);
+    return boxes.map((b) => {
+      // a long thin part with a square section (an axle, a bar) is round in real life: a capsule along its length, so
+      // things roll and wedge on it instead of sitting flat
+      const order = [0, 1, 2].sort((i, j) => b.h[i] - b.h[j]);
+      const [a0, a1, a2] = order.map((i) => b.h[i]);
+      let cd, rot = new THREE.Quaternion(b.q[0], b.q[1], b.q[2], b.q[3]);
+      if (a0 < 0.4 && a1 - a0 < 0.06 && a2 > 2.5 * a1) {
+        const r = (a0 + a1) / 2;
+        cd = R.ColliderDesc.capsule(Math.max(0.01, a2 - r) * S, r * S);
+        const along = [0, 0, 0]; along[order[2]] = 1;
+        rot = rot.multiply(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...along)));
+      } else cd = R.ColliderDesc.cuboid(Math.max(0.02, b.h[0]) * S, Math.max(0.02, b.h[1]) * S, Math.max(0.02, b.h[2]) * S);
+      cd.setTranslation((b.c[0] - origin[0]) * S, (b.c[1] - origin[1]) * S, (b.c[2] - origin[2]) * S)
+        .setRotation({ x: rot.x, y: rot.y, z: rot.z, w: rot.w })
+        .setFriction(friction).setCollisionGroups(groups);
+      cd.setMass(mass > 0 ? (mass * vol(b)) / total : 0);
+      return this.world.createCollider(cd, body);
+    });
   }
 
   _hingeJoint(pc, base, collapsed = false, parent = null) {
@@ -250,7 +387,7 @@ export class Physics {
     const r = pc.def.range;
     if (pc.def.kind === 'hinge') {
       if (collapsed) pc.joint.setLimits(-r[0] * DEG, -r[0] * DEG);
-      else if (latched) pc.joint.setLimits(-r[1] * DEG, -r[1] * DEG);
+      else if (latched) { const at = pc.def.latchAt ?? r[1]; pc.joint.setLimits(-at * DEG, -at * DEG); }
       else pc.joint.setLimits(-r[1] * DEG, -r[0] * DEG);
     } else {
       if (collapsed) pc.joint.setLimits(r[0] * S, r[0] * S);
@@ -269,13 +406,40 @@ export class Physics {
     // a joint that was created collapsed stays stuck when widened, so build a fresh one
     if (pc.joint) { this.world.removeImpulseJoint(pc.joint, true); pc.joint = null; }
     const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
-    if (base && pc.def.kind === 'hinge') this._hingeJoint(pc, base.body);
+    const parent = pc.def.parent && this.pieces.find((q) => q.o === pc.o && q.name === pc.def.parent);
+    if (parent && pc.def.kind === 'hinge') this._hingeJoint(pc, parent.body, false, parent);
+    else if (base && pc.def.kind === 'hinge') this._hingeJoint(pc, base.body);
     if (base && pc.def.kind === 'slider') this._sliderJoint(pc, base.body);
     pc.body.wakeUp();
     if (pc.def.kick) {
       const k = new THREE.Vector3(...pc.def.kick).applyQuaternion(pc.q0);
       pc.body.setLinvel({ x: k.x * 0.5, y: k.y * 0.5, z: k.z * 0.5 }, true);
     }
+    // a nearly balanced piece let go (the M09 camera trap) gets the nudge that starts it falling (rad/s about its axis)
+    if (pc.def.kickSpin && pc.axisW) { const w = pc.axisW.clone().multiplyScalar(pc.def.kickSpin); pc.body.setAngvel({ x: w.x, y: w.y, z: w.z }, true); }
+  }
+
+  /** A jointed piece comes loose for good (off the end of its bar): no joint, and it now collides with its own model. */
+  freePiece(pc) {
+    pc.freed = true; pc.released = true; pc.locked = false;
+    if (pc.joint) { this.world.removeImpulseJoint(pc.joint, true); pc.joint = null; }
+    pc.body.setEnabledTranslations(true, true, true, true);
+    pc.body.setEnabledRotations(true, true, true, true);
+    pc.body.setLinearDamping(1.5); pc.body.setAngularDamping(1.5);
+    for (const c of pc.colliders) c.setCollisionGroups(SHARED);
+    const t = pc.def.tether;
+    if (t && t.rest && !pc.springJoint) {
+      // a springy hose: once free, the seed is held out where the bent hose puts it (a soft spring to that point)
+      const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
+      if (base) pc.springJoint = this.world.createImpulseJoint(this.R.JointData.spring(0, t.k ?? 4, t.d ?? 0.15,
+        { x: t.rest[0] * S, y: t.rest[1] * S, z: t.rest[2] * S }, { x: t.to[0] * S, y: t.to[1] * S, z: t.to[2] * S }), base.body, pc.body, true);
+    }
+    if (pc.def.kick) {
+      const k = new THREE.Vector3(...pc.def.kick).applyQuaternion(pc.q0);
+      const v = pc.body.linvel();
+      pc.body.setLinvel({ x: v.x + k.x * S, y: v.y + k.y * S, z: v.z + k.z * S }, true);   // kick in cm/s
+    }
+    pc.body.wakeUp();
   }
 
   /** Current state of every piece of a model, for the scoring rules. */
@@ -288,11 +452,12 @@ export class Physics {
   /** Reset mechanism pieces to their start (new launch). */
   resetPieces() {
     for (const pc of this.pieces) {
-      const rq = { x: pc.q0.x, y: pc.q0.y, z: pc.q0.z, w: pc.q0.w };
+      const qs = pc.qStart || pc.q0;
+      const rq = { x: qs.x, y: qs.y, z: qs.z, w: qs.w };
       pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, true);
       pc.body.setRotation(rq, true);
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0;
+      pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false;
       if (pc.carried) {
         if (pc.carryJoint) this.world.removeImpulseJoint(pc.carryJoint, true);
         pc.carryJoint = null; pc.carried = false;
@@ -306,6 +471,16 @@ export class Physics {
         const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
         if (base && pc.def.kind === 'hinge') this._hingeJoint(pc, base.body, true);
         if (base && pc.def.kind === 'slider') this._sliderJoint(pc, base.body, true);
+      } else if (pc.freed) {
+        // back on its bar: joint and own-model collision filter restored
+        pc.freed = false;
+        if (pc.springJoint) { this.world.removeImpulseJoint(pc.springJoint, true); pc.springJoint = null; }
+        pc.body.setLinearDamping(0.8); pc.body.setAngularDamping(0.8);
+        for (const c of pc.colliders) c.setCollisionGroups(modelGroup(pc.o.id));
+        const base = this.obstacleBodies.find((ob) => ob.o === pc.o);
+        const parent = pc.def.parent && this.pieces.find((q) => q.o === pc.o && q.name === pc.def.parent);
+        if (base && pc.def.kind === 'slider') this._sliderJoint(pc, base.body);
+        if (pc.def.kind === 'hinge') { if (parent) this._hingeJoint(pc, parent.body, false, parent); else if (base) this._hingeJoint(pc, base.body); }
       } else {
         this._jointLimits(pc, false);
       }
@@ -338,10 +513,92 @@ export class Physics {
         const st = this.pieceState(pc.o.id);
         st._impact = pc.o.impact || 0;
         if (!pc.released && pc.def.releaseWhen && pc.def.releaseWhen(st)) this.releasePiece(pc);
+        // a slider that comes off the end of its travel (a ring slid off its bar) is a free piece from then on
+        if (!pc.freed && ((pc.def.kind === 'slider' && pc.def.freeAt !== undefined && pc.ext >= pc.def.freeAt) || (pc.def.freeWhen && pc.def.freeWhen(st)))) this.freePiece(pc);
+      }
+      if (pc.def.pushedBy && pc.joint && !pc.freed) {
+        // threaded behind another piece on the same bar: it is shoved along when that one comes up against it
+        const d = this.pieces.find((q) => q.o === pc.o && q.name === pc.def.pushedBy);
+        if (d && !d.freed && d.ext > pc.ext) {
+          const p = pc.anchor.clone().addScaledVector(pc.axisW, d.ext);
+          pc.body.setTranslation({ x: p.x * S, y: p.y * S, z: p.z * S }, true);
+          pc.body.setLinvel(d.body.linvel(), true);
+          pc.ext = d.ext;
+        }
       }
       if (pc.def.latch && pc.joint && !pc.latched) {
-        const atEnd = pc.def.kind === 'hinge' ? Math.abs(pc.angle) >= Math.max(Math.abs(pc.def.range[0]), Math.abs(pc.def.range[1])) - 3 : pc.ext >= pc.def.range[1] - 0.3;
+        const atEnd = pc.def.kind === 'hinge' ? (pc.def.latchAt !== undefined ? Math.abs(pc.angle - pc.def.latchAt) < 3 : Math.abs(pc.angle) >= Math.max(Math.abs(pc.def.range[0]), Math.abs(pc.def.range[1])) - 3) : pc.ext >= pc.def.range[1] - 0.3;
         if (atEnd) { pc.latched = true; this._jointLimits(pc, false, true); }
+      }
+      // pin and slide friction: a jointed piece loses a fixed amount of speed every step (rad/s^2 or cm/s^2), so a light
+      // bump dies out while a real push, or gravity once it has a proper hold (a cane past centre, a falling web), wins
+      if (pc.joint && !pc.def.parent && !pc.freed && (pc.def.kind === 'hinge' || pc.def.kind === 'slider')) {
+        const drag = pc.def.drag ?? (pc.def.kind === 'hinge' ? 12 : 25);
+        if (drag > 0) {
+          const dt = this.world.timestep;
+          if (pc.def.kind === 'hinge') {
+            const w = pc.body.angvel(), wv = new THREE.Vector3(w.x, w.y, w.z), along = wv.dot(pc.axisW);
+            const cut = Math.sign(along) * Math.min(Math.abs(along), drag * dt);
+            if (cut) { wv.addScaledVector(pc.axisW, -cut); pc.body.setAngvel({ x: wv.x, y: wv.y, z: wv.z }, false); }
+          } else {
+            const v = pc.body.linvel(), vv = new THREE.Vector3(v.x, v.y, v.z), along = vv.dot(pc.axisW);
+            const cut = Math.sign(along) * Math.min(Math.abs(along), drag * S * dt);
+            if (cut) { vv.addScaledVector(pc.axisW, -cut); pc.body.setLinvel({ x: vv.x, y: vv.y, z: vv.z }, false); }
+          }
+        }
+      }
+      if (pc.def.stiction) {
+        // pin friction (the M10 web): while nothing pushes on it and it is barely moving, it stays where it is; once
+        // gravity has it moving properly (a few degrees over) it goes
+        const d = pc.def.stiction, group = d.pieces.map((n) => this.pieces.find((x) => x.o === pc.o && x.name === n)).filter(Boolean);
+        const pushed = group.some((q) => q.touched >= 0 && time - q.touched < 0.3);
+        const slow = group.every((q) => { const w = q.body.angvel(); return Math.hypot(w.x, w.y, w.z) < (d.below ?? 0.05); });
+        if (!pushed && slow) for (const q of group) { q.body.setAngvel({ x: 0, y: 0, z: 0 }, false); q.body.setLinvel({ x: 0, y: 0, z: 0 }, false); }
+      }
+      if (pc.def.prop && pc.joint && !pc.propped && pc.angle > pc.def.prop.after) {
+        // a prop that swings under once the piece has been lifted far enough (the M15 canopy's L-liftarm)
+        pc.propped = true;
+        const r = pc.def.range;
+        pc.joint.setLimits(-r[1] * DEG, -pc.def.prop.rest * DEG);
+      }
+      if (pc.def.ratchet && pc.joint) {
+        // a ladder of catches (the M09 platform's bar over the trunk's stud pins): once past one it cannot drop below it
+        const floor = Math.max(0, ...pc.def.ratchet.filter((r) => pc.ext >= r));
+        if (floor > (pc.floor || 0)) { pc.floor = floor; pc.joint.setLimits(floor * S, pc.def.range[1] * S); }
+      }
+      if (pc.def.couple && pc.joint) {
+        // geared to another hinge both ways (the M03 levers and the rock): the piece is held where the driver puts it,
+        // and pushing it ahead (or behind) of that turns the driver to catch up
+        const c = pc.def.couple;
+        const src = this.pieces.find((q) => q.o === pc.o && q.name === c.piece);
+        if (src && src.joint) {
+          const th = src.angle, phi = c.map(th);
+          pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 2e-3, c.d ?? 1e-4);
+          const slope = (c.map(th + 1) - c.map(th - 1)) / 2;
+          const e = pc.angle - phi;
+          if (Math.abs(e) > 1.5 && Math.abs(slope) > 0.1 && pc.touched >= 0 && time - pc.touched < 0.3) {
+            const rate = Math.max(-3, Math.min(3, (e / slope) * (c.gain ?? 6) * DEG));   // rad/s along the driver's axis
+            const ax = new THREE.Vector3(...src.def.axis).applyQuaternion(src.q0).normalize();
+            const w = src.body.angvel(), wv = new THREE.Vector3(w.x, w.y, w.z);
+            const now = wv.dot(ax);
+            if (Math.sign(rate) !== Math.sign(now) || Math.abs(rate) > Math.abs(now)) {
+              wv.addScaledVector(ax, rate - now);
+              src.body.setAngvel({ x: wv.x, y: wv.y, z: wv.z }, true);
+            }
+          }
+        }
+      }
+      if (pc.def.kind === 'gear') {
+        // kinematic: turns on its own axle in step with its driver (ratio in radians per cm the driver slides)
+        const d = pc.def.drivenBy;
+        const src = this.pieces.find((q) => q.o === pc.o && q.name === d.piece);
+        if (src) {
+          const a = src.ext * d.ratio;
+          const q = pc.q0.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pc.def.axis).normalize(), a));
+          pc.angle = a / DEG;
+          pc.body.setNextKinematicTranslation({ x: pc.anchor.x * S, y: pc.anchor.y * S, z: pc.anchor.z * S });
+          pc.body.setNextKinematicRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
+        }
       }
       if (pc.def.kind === 'follow') {
         // kinematic: rides on its driver (a slider) and turns with how far the driver has travelled
@@ -390,12 +647,30 @@ export class Physics {
       const rotated = 2 * Math.acos(Math.min(1, Math.abs(relq.w))) / DEG;
       // lowest point of the first shape (approximate: box corners)
       let bottom = Infinity;
-      const sh = (pc.def.shape && pc.def.shape[0]) || { box: pc.def.box || [2, 2, 2], at: [0, 0, 0] };
-      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
-        const c = new THREE.Vector3(sh.at[0] + sx * sh.box[0] / 2, sh.at[1] + sy * sh.box[1] / 2, sh.at[2] + sz * sh.box[2] / 2).applyQuaternion(q).add(pos);
-        if (c.y < bottom) bottom = c.y;
+      if (pc.hull) for (const h of pc.hull) { const c = h.clone().applyQuaternion(q); if (c.y + pos.y < bottom) bottom = c.y + pos.y; }
+      else {
+        const sh = (pc.def.shape && pc.def.shape[0]) || { box: pc.def.box || [2, 2, 2], at: [0, 0, 0] };
+        for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+          const c = new THREE.Vector3(sh.at[0] + sx * sh.box[0] / 2, sh.at[1] + sy * sh.box[1] / 2, sh.at[2] + sz * sh.box[2] / 2).applyQuaternion(q).add(pos);
+          if (c.y < bottom) bottom = c.y;
+        }
       }
-      pc.state = { angle: pc.angle, ext: pc.ext, vel: pc.vel || 0, height: pc.def.kind === 'lift' ? pc.height : pos.y - pc.start.y, pos: [pos.x, pos.y, pos.z], x: pos.x, y: pos.z, moved, rotated, bottom,
+      // pieces whose scoring asks "no longer touching the model": real contact with the model's fixed parts, and
+      // where its outline lies on the table
+      let touchesBase = false, outline = null;
+      if (pc.baseHandles) {
+        for (const c of pc.colliders) {
+          this.world.contactPairsWith(c, (other) => {
+            if (touchesBase || !pc.baseHandles.has(other.handle)) return;
+            this.world.contactPair(c, other, (m) => { if (m.numContacts() > 0) touchesBase = true; });
+          });
+          if (touchesBase) break;
+        }
+      }
+      if ((pc.baseHandles || pc.def.outline) && pc.hull) {
+        outline = pc.hull.map((h) => { const c = h.clone().applyQuaternion(q).add(pos); return [c.x, c.z]; });
+      }
+      pc.state = { touchesBase, outline, freed: !!pc.freed, angle: pc.angle, ext: pc.ext, vel: pc.vel || 0, height: pc.def.kind === 'lift' ? pc.height : pos.y - pc.start.y, pos: [pos.x, pos.y, pos.z], x: pos.x, y: pos.z, moved, rotated, bottom,
         touched: pc.touched >= 0 && time - pc.touched < 0.3, everTouched: pc.touched >= 0, released: pc.released, latched: pc.latched, q: [q.x, q.y, q.z, q.w] };
     }
   }
@@ -600,7 +875,14 @@ export class Physics {
     const touched = new Set();
     const speed = Math.hypot(move.x, move.z) / S / dt;   // cm/s
     const pass = (collider) => {
-      this.cc.computeColliderMovement(collider, move, R.QueryFilterFlags.EXCLUDE_DYNAMIC | R.QueryFilterFlags.EXCLUDE_KINEMATIC, undefined, notRobot);
+      // an attachment rides over studs and plate edges: fixed parts that stick up less than RIDE above its underside
+      // do not stop the drive (a real arm resting on a model lifts over them)
+      let filter = notRobot;
+      if (collider !== this.bodyCollider) {
+        const under = colliderBottom(collider) + RIDE;
+        filter = (c) => notRobot(c) && !(this.colliderTop.has(c.handle) && this.colliderTop.get(c.handle) < under);
+      }
+      this.cc.computeColliderMovement(collider, move, R.QueryFilterFlags.EXCLUDE_DYNAMIC | R.QueryFilterFlags.EXCLUDE_KINEMATIC, undefined, filter);
       const m = this.cc.computedMovement();
       move = { x: m.x, y: 0, z: m.z };
       for (let i = 0; i < this.cc.numComputedCollisions(); i++) {

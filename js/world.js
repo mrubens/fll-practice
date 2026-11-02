@@ -177,6 +177,11 @@ export class World {
     if (Array.isArray(cfg.obstacles)) {
       this.obstacles = cfg.obstacles.map((o, i) => ({ id: o.id || `model${i}`, x: +o.x, y: +o.y, w: +o.w || 10, d: +o.d || 10, h: +o.h || 10, color: o.color || '#B8C0CC', movable: o.movable !== false, x0: +o.x, y0: +o.y, model: o.model || null, modelPose: o.modelPose || null, label: o.label }));
     }
+    // every part of each mission model, measured (tools/part-boxes.py): the physics builds its colliders from these
+    await Promise.all(this.obstacles.filter((o) => o.model).map(async (o) => {
+      const name = o.model.split('/').pop().replace(/\.[^.]+$/, '');
+      try { const r = await fetch(`models/parts/${name}.json`, { cache: 'no-cache' }); o.parts = r.ok ? await r.json() : null; } catch { o.parts = null; }
+    }));
     this.season = cfg;
     this.allObstacles = this.obstacles;
     this.obstacles = this.allObstacles.filter((o) => !this.hiddenIds.has(o.id));
