@@ -350,12 +350,14 @@ export class AttachmentBuilder {
     if (!tpl) return;
     const own = this.D.snaps[f].s.filter((c) => c.k === 'cyl' && !c.gp);
     const mesh = tpl.clone();
-    mesh.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.7; o.material.depthWrite = false; } });
+    // the part in hand is drawn over everything (it is often half inside the robot) and lit green where it fits
+    mesh.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
     mesh.matrixAutoUpdate = false; mesh.visible = false;
     this.three.ld.add(mesh);
     this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
-    this.message(`${shortName(this.D.parts.parts[f].d)}: move it onto a hole, axle or pin.`);
+    this.message(`${shortName(this.D.parts.parts[f].d)}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`);
+    this._guide();
   }
 
   _dropGhost() {
@@ -400,17 +402,28 @@ export class AttachmentBuilder {
         const a = this._project(shown(it, c.o)), b = this._project(shown(it, add(c.o, scl(c.d, c.len))));
         if (a.z > 1 || b.z > 1) continue;
         const [dist, frac] = segDist(m.x, m.y, a, b);
-        if (dist < 26) cands.push({ c, it, dist, z: Math.min(a.z, b.z), at: frac * c.len });
+        // the drive axle is where an attachment starts: it wins over robot holes about as near the pointer
+        const bias = it.role === 'drive' ? 14 : 0;
+        if (dist < 26) cands.push({ c, it, dist: dist - bias, z: Math.min(a.z, b.z), at: frac * c.len });
       }
     }
     cands.sort((p, q) => p.dist - q.dist || p.z - q.z);
     let found = null, near = null;
     for (const cand of cands.slice(0, 8)) {
       if (this.motor !== 0 && this._onDriveItem(cand.it)) continue;
-      for (let i = 0; i < g.own.length && !found; i++) {
-        const k = (g.k + i) % g.own.length;
+      // the way the part is held first; if it does not fit that way, the other turns and the flip (a beam goes onto
+      // the drive axle only square to it, which a child should not have to find with R and F)
+      const ways = [];
+      for (const fl of [g.flip, !g.flip]) for (let d = 0; d < 4; d++) ways.push([fl, (g.roll + d) % 4]);   // R keeps going round
+      for (const [flip, roll] of ways) {
+      if (found) break;
+      // on the drive axle a + hole grips and turns with it; a round hole only spins on it, so + holes are tried first
+      const ks = g.own.map((_, i) => (g.k + i) % g.own.length);
+      if (cand.it.role === 'drive') ks.sort((x, y) => gripsAxle(g.own[y]) - gripsAxle(g.own[x]));
+      for (const k of ks) {
+        if (found) break;
         if (g.own[k].g === cand.c.g) continue;
-        const opts = this.scene.placementsOnto(g.f, k, cand.c, g.flip, g.roll);
+        const opts = this.scene.placementsOnto(g.f, k, cand.c, flip, roll);
         if (!opts.length) continue;
         // the best fits, nearest the pointer first
         const good = opts.filter((o) => this.scene.check(o.q).ok).sort((p, q) => Math.round(q.eng) - Math.round(p.eng) || Math.abs(p.mid - cand.at) - Math.abs(q.mid - cand.at));
@@ -418,19 +431,22 @@ export class AttachmentBuilder {
         const byT = good.slice().sort((p, q) => p.t - q.t);
         const i0 = byT.indexOf(good[0]);
         const pick = byT[Math.max(0, Math.min(byT.length - 1, i0 + g.slide))];
-        found = { q: pick.q, c: cand.c, k, slides: byT.length };
+        found = { q: pick.q, c: cand.c, k, slides: byT.length, flip, roll, spins: cand.it.role === 'drive' && !gripsAxle(g.own[k]) };
+      }
       }
       if (found) break;
     }
     if (this.motor !== 0 && !found && cands.some((c) => this._onDriveItem(c.it))) this.message('Set "Try motor E" back to 0 to add parts to the moving arm.');
     const res = found || near;
     if (!res) {
-      g.q = null; g.ok = false; g.mesh.visible = false; this.marker.visible = false;
+      g.q = null; g.ok = false; g.mesh.visible = false;
+      this._guide();
       return;
     }
     g.q = res.q; g.ok = !!found; g.kUsed = found ? found.k : g.k;
+    if (found) { g.flip = found.flip; g.roll = found.roll; }   // R and F carry on from the way it fits
     g.mesh.matrix.copy(placementMatrix(res.q)); g.mesh.visible = true;
-    g.mesh.traverse((o) => { if (o.isMesh) { o.material.emissive && o.material.emissive.setHex(found ? 0x0E5A1E : 0x7A0A0A); } });
+    g.mesh.traverse((o) => { if (o.isMesh) { o.material.emissive && o.material.emissive.setHex(found ? 0x1FA347 : 0xC81E1E); } });
     // mark the connector it goes onto
     const c = res.c, mid = add(c.o, scl(c.d, c.len / 2));
     this.marker.position.set(...mid);
@@ -438,7 +454,20 @@ export class AttachmentBuilder {
     this.marker.scale.set(3, c.len + 2, 3);
     this.marker.material.color.setHex(found ? 0xFFB000 : 0xE8232A);
     this.marker.visible = true;
-    this.message(found ? `${shortName(this.D.parts.parts[g.f].d)}: click to place.${found.slides > 1 ? ' [ ] slides it along.' : ''}` : `It ${res.why} here: try R, F or Tab.`);
+    const name = shortName(this.D.parts.parts[g.f].d);
+    this.message(!found ? `It ${res.why} here: try R, F or Tab.`
+      : found.spins ? `${name}: click to place. Its round hole spins freely on the axle, so motor E will not turn it: start with a part that has a + hole (a bent liftarm, a cross block, the 2 liftarm) and build on that.`
+      : `${name}: click to place.${found.slides > 1 ? ' [ ] slides it along.' : ''}`);
+  }
+
+  /** Nothing under the pointer to snap onto: show where to start, the drive axle in the bracket. */
+  _guide() {
+    const L = 140, mid = DRIVE_AXLE.at;
+    this.marker.position.set(...mid);
+    this.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...DRIVE_AXLE.axis));
+    this.marker.scale.set(4, L + 4, 4);
+    this.marker.material.color.setHex(0xFFB000);
+    this.marker.visible = true;
   }
 
   _onDriveItem(it) { return this.meshes && this.meshes.some((m) => m.userData.item === it && m.parent === this.three.drive); }
@@ -469,6 +498,7 @@ export class AttachmentBuilder {
       this._push();
       this.parts.push(this.ghost.q);
       this._rebuild();
+      this.message(`Placed. Click to put another ${shortName(this.D.parts.parts[this.ghost.f].d)} on, or Esc to stop.`);
       return;
     }
     const it = this._raycast();
@@ -504,6 +534,9 @@ export class AttachmentBuilder {
     if (used) { e.preventDefault(); e.stopPropagation(); }
   }
 }
+
+/** A female connector with an axle (+) section: an axle in it turns it. */
+function gripsAxle(c) { return c.g === 'F' && (c.s || []).some((x) => x[0] === 'A') ? 1 : 0; }
 
 function tint(obj, hex, k) {
   obj.traverse((o) => {
