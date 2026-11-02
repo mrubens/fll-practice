@@ -145,6 +145,7 @@ Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the
 | `js/app.js` | Toolbar, project storage, builder UI, main loop |
 | `mat/season.json`, `mat/season.jpg` | Season field: mat image, mission models (collision boxes + model files), launch pose |
 | `models/*.mpd` | Self-contained LDraw models: the 15 BIOGLOW missions and the SPIKE driving bases |
+| `models/lego/` | The attachment builder's parts box: geometry (`parts.mpd`), palette and collision boxes (`parts.json`), connectors (`snaps.json`, `base.json`), from `tools/snaps.py` |
 | `artifact.html`, `serve.py` | Inlined-stylesheet copy for publishing as a claude.ai artifact; tiny no-cache dev server |
 
 ## Credits
@@ -153,4 +154,7 @@ The mission models, the driving bases and the robot attachments (the Driving Bas
 dozer blade) are LDraw reconstructions from the official building instructions by
 [fll-sim](https://github.com/martijas/fll-sim) (Martijas), whose measurements of the FIRST wireframe PDF also
 place the models on the mat. Part geometry is the [LDraw Parts Library](https://library.ldraw.org) (CC BY).
+Where LEGO parts connect (`models/lego/snaps.json`, `models/lego/base.json`, made by `tools/snaps.py`) comes from the
+[LDCad shadow library](https://github.com/RolandMelkert/LDCadShadowLibrary) by Roland Melkert and contributors
+(CC BY-SA 4.0), so those derived files are CC BY-SA 4.0 too.
 See `models/ATTRIBUTION.md` for the details. The `.llsp3` format and block shapes were verified against files written by the SPIKE App.

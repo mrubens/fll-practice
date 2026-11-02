@@ -11,6 +11,16 @@ The `.mpd` files in this folder are self-contained LDraw models (each one embeds
   and `resources/tools`), whose model files carry the note "Model data for simulation use". Model placement on the
   mat also comes from fll-sim's measurements of the FIRST wireframe PDF.
 - `LDConfig.ldr`: LDraw color definitions (LDraw library, CC BY 4.0).
+- **`lego/`, the attachment builder's parts** (made by `tools/snaps.py` from the LDraw library and the LDCad shadow
+  library):
+  - `lego/parts.mpd` and the collision boxes in `lego/parts.json`: part geometry from the
+    [LDraw Parts Library](https://library.ldraw.org), CC BY 4.0. The palette is the part list of the SPIKE Prime
+    sets 45678 and 45681.
+  - `lego/snaps.json` and `lego/base.json`: where parts connect (pin holes, axle holes, pins, axles, studs), extracted
+    from the `!LDCAD SNAP_*` meta of the [LDCad shadow library](https://github.com/RolandMelkert/LDCadShadowLibrary)
+    by Roland Melkert and contributors, licensed **CC BY-SA 4.0**
+    (https://creativecommons.org/licenses/by-sa/4.0/). These two files are adaptations of that library and are
+    shared under the same license (CC BY-SA 4.0); the rest of this project is not affected.
 
 LEGO® and SPIKE™ are trademarks of the LEGO Group; FIRST® LEGO® League is a trademark of FIRST. Neither
 sponsors or endorses this project.
