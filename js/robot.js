@@ -20,7 +20,7 @@ export const MODULE_STOPS = {
   sweeper: [-78, 90],    // one way it swings across the robot's front until it meets the bracket
   scoop: [-3, 100],      // from the plate flat on the mat up to the liftarms meeting the hub
   plow: [-4, 90],        // tilting down, the blade's back meets the motor under the bracket at once
-  basket: [0, 6],        // tipping, the basket's back meets the motor under the bracket at once
+  basket: [0, 42],       // tipping forward, its towers meet the motor under the bracket (pieces slide out from ~20)
 };
 const ACCEL = 3600;                       // deg/s^2 ramp
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
@@ -284,8 +284,9 @@ export class Robot {
       case 'plow':
         return { ...base, tx: px + Math.cos(out) * 4, ty: py + Math.sin(out) * 4, tipHeight: 1.5, down: true };
       case 'basket': {
-        const a = Math.max(0, angle) * DEG;      // tips forward as the motor turns
-        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * 9, ty: py + Math.sin(out) * Math.cos(a) * 9, tipHeight: a0.height - Math.sin(a) * 9, down: false, tilt: angle };
+        // the basket rides above the arm axle; its front lip (6 cm out, 20 degrees up from the axle) tips forward and down
+        const a = (20 - Math.max(0, angle)) * DEG;
+        return { ...base, tx: px + Math.cos(out) * Math.cos(a) * 6, ty: py + Math.sin(out) * Math.cos(a) * 6, tipHeight: a0.height + Math.sin(a) * 6, down: false, tilt: angle };
       }
       default: {
         const a = (angle + (a0.tipAngle || 0)) * DEG;

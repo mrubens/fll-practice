@@ -817,7 +817,7 @@ export class Physics {
     const root = new THREE.Object3D();
     const pivot = new THREE.Object3D();
     const moving = new THREE.Object3D();
-    pivot.position.set(a.fwd + (a.module === 'basket' ? 10 : 0), a.height, a.lat);   // the basket pivots about its front lip
+    pivot.position.set(a.fwd, a.height, a.lat);
     pivot.rotation.y = -a.angle * DEG;
     pivot.add(moving);
     root.add(pivot);
