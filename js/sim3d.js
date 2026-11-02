@@ -32,18 +32,37 @@ function flattenLDraw(group) {
   group.updateMatrixWorld(true);
   return flattenObjects([group]);
 }
+// Axles, pins and bushes sit inside other parts with their ends flush with the faces around them. Drawn level with
+// those faces the two colours fight for every pixel and shimmer as the view moves, so they are drawn a hair in front
+// (as on the real model, where the axle end shows in its hole).
+const INSERTED = new Set(['11214', '15462', '23948', '24316', '2780', '32002', '32054', '32062', '32073', '3673', '3705', '3706',
+  '3713', '3749', '39888', '42924', '43093', '44294', '4519', '50450', '57585', '60485', '61332', '65249', '65304', '6558',
+  '65826', '87083', '89678', '4274', '6562', '32556', '3737', '3708', '4459'].map((n) => n + '.dat'));
+const frontMaterials = new WeakMap();
+function frontMaterial(m) {
+  if (!frontMaterials.has(m)) { const f = m.clone(); f.polygonOffset = true; f.polygonOffsetFactor = m.polygonOffsetFactor; f.polygonOffsetUnits = (m.polygonOffsetUnits || 0) - 4; frontMaterials.set(m, f); }
+  return frontMaterials.get(m);
+}
 /** Merge the meshes under the given objects (matrixWorld must be current) into one mesh per material. */
 function flattenObjects(objects) {
   const byMaterial = new Map();
-  for (const root of objects) root.traverse((o) => {
+  const visit = (root, inserted) => root.traverse((o) => {
     if (!o.isMesh || !o.geometry.attributes.position) return;
     if (Array.isArray(o.material)) o.material = o.material[0];   // multi-material parts: keep the first (rare)
+    const mat = inserted ? frontMaterial(o.material) : o.material;
     const geo = o.geometry.clone();
     geo.applyMatrix4(o.matrixWorld);
     for (const name of Object.keys(geo.attributes)) if (name !== 'position' && name !== 'normal') geo.deleteAttribute(name);
-    if (geo.index) { const g2 = geo.toNonIndexed(); geo.dispose(); byMaterial.set(o.material, (byMaterial.get(o.material) || []).concat(g2)); }
-    else byMaterial.set(o.material, (byMaterial.get(o.material) || []).concat(geo));
+    if (geo.index) { const g2 = geo.toNonIndexed(); geo.dispose(); byMaterial.set(mat, (byMaterial.get(mat) || []).concat(g2)); }
+    else byMaterial.set(mat, (byMaterial.get(mat) || []).concat(geo));
   });
+  const isInserted = (o) => INSERTED.has(String(o.userData.fileName || o.name || '').split('/').pop().toLowerCase());
+  for (const root of objects) {
+    // a single part, or a whole model whose children are its parts
+    if (isInserted(root)) visit(root, true);
+    else if (root.children.some(isInserted)) for (const c of root.children) visit(c, isInserted(c));
+    else visit(root, false);
+  }
   const out = new THREE.Group();
   for (const [material, geos] of byMaterial) {
     const merged = mergeGeometries(geos, false);
