@@ -385,7 +385,7 @@ export class Physics {
   /** Joint limits for a piece: its range, collapsed to the start while locked, or pinned at the end once latched. */
   _jointLimits(pc, collapsed = false, latched = false) {
     if (!pc.joint) return;
-    const r = pc.def.range;
+    const r = pc.range || pc.def.range;
     if (pc.def.kind === 'hinge') {
       if (collapsed) pc.joint.setLimits(-r[0] * DEG, -r[0] * DEG);
       else if (latched) { const at = pc.def.latchAt ?? r[1]; pc.joint.setLimits(-at * DEG, -at * DEG); }
@@ -459,7 +459,7 @@ export class Physics {
       pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, true);
       pc.body.setRotation(rq, true);
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
-      pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false;
+      pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false; pc.range = null;
       if (pc.carried) {
         if (pc.carryJoint) this.world.removeImpulseJoint(pc.carryJoint, true);
         pc.carryJoint = null; pc.carried = false;
@@ -557,6 +557,14 @@ export class Physics {
         const slow = group.every((q) => { const w = q.body.angvel(); return Math.hypot(w.x, w.y, w.z) < (d.below ?? 0.05); });
         if (!pushed && slow) for (const q of group) { q.body.setAngvel({ x: 0, y: 0, z: 0 }, false); q.body.setLinvel({ x: 0, y: 0, z: 0 }, false); }
       }
+      if (pc.def.rangeWhen && pc.joint && pc.o) {
+        // a stop that is only there in some poses (the M05 root arm rests on the trunk's foot only while the extension
+        // is folded down): its narrower range applies while `when` holds and the piece is inside it
+        const rw = pc.def.rangeWhen, parent = pc.def.parent && this.pieces.find((q) => q.o === pc.o && q.name === pc.def.parent);
+        const rel = ((((pc.angle - (parent ? parent.angle : 0)) + 180) % 360) + 360) % 360 - 180;
+        const want = rw.when(this.pieceState(pc.o.id)) && rel >= rw.range[0] - 1 && rel <= rw.range[1] + 1 ? rw.range : null;
+        if (want !== (pc.range || null)) { pc.range = want; this._jointLimits(pc); }
+      }
       if (pc.def.prop && pc.joint && !pc.propped && pc.angle > pc.def.prop.after) {
         // a prop that swings under once the piece has been lifted far enough (the M15 canopy's L-liftarm)
         pc.propped = true;
@@ -575,11 +583,11 @@ export class Physics {
         const src = this.pieces.find((q) => q.o === pc.o && q.name === c.piece);
         if (src && src.joint) {
           const th = src.angle, phi = c.map(th);
-          pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 2e-3, c.d ?? 1e-4);
+          pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 1500, c.d ?? 80);   // acceleration-based: stiff enough to follow
           const slope = (c.map(th + 1) - c.map(th - 1)) / 2;
           const e = pc.angle - phi;
           if (Math.abs(e) > 1.5 && Math.abs(slope) > 0.1 && pc.touched >= 0 && time - pc.touched < 0.3) {
-            const rate = Math.max(-3, Math.min(3, (e / slope) * (c.gain ?? 6) * DEG));   // rad/s along the driver's axis
+            const rate = Math.max(-8, Math.min(8, (e / slope) * (c.gain ?? 20) * DEG));   // rad/s along the driver's axis
             const ax = new THREE.Vector3(...src.def.axis).applyQuaternion(src.q0).normalize();
             const w = src.body.angvel(), wv = new THREE.Vector3(w.x, w.y, w.z);
             const now = wv.dot(ax);
