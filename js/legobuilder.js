@@ -363,6 +363,7 @@ export class AttachmentBuilder {
   }
 
   _poseDrive() {
+    if (!this.three) return;
     const turn = (group, R, at) => {
       const t = sub(at, app(R, at));
       group.matrix.set(R[0], R[1], R[2], t[0], R[3], R[4], R[5], t[1], R[6], R[7], R[8], t[2], 0, 0, 0, 1);
