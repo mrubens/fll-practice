@@ -405,7 +405,6 @@ async function openFile(file) {
 const builder = $('#builder');
 const B$ = (id) => document.getElementById(id);
 const portOptions = (sel, allowNone) => (allowNone ? '<option value="">none</option>' : '') + PORT_LETTERS.map((p) => `<option value="${p}"${p === sel ? ' selected' : ''}>${p}</option>`).join('');
-let buildOpen = false;
 function fillBuilder(b) {
   B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
   B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
@@ -438,43 +437,29 @@ function applyBuildFromUi(b) {
 sim.renderer.domElement.addEventListener('pointerdown', () => sim.endChase(), { capture: true });
 builder.addEventListener('input', () => applyBuildFromUi(readBuilder()));
 builder.addEventListener('change', () => applyBuildFromUi(readBuilder()));
-builder.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => {
-  applyBuildFromUi(normalizeBuild({ ...PRESETS[btn.dataset.preset], preset: btn.dataset.preset }));
-  toast(`${PRESETS[btn.dataset.preset].name} loaded.`);
-}));
-let cameraBefore = null;
-function openBuilder() {
-  runtime.stop();
-  fillBuilder(robot.build);
-  builder.hidden = false;
-  document.body.classList.add('building');
-  buildOpen = true;
-  cameraBefore = { pos: sim.camera.position.clone(), target: sim.controls.target.clone(), follow: sim.follow };
-  sim.follow = false;
-  const r = robot;
-  sim.controls.target.set(r.x, 4, r.y);
-  sim.camera.position.set(r.x + 28, 26, r.y + 34);
-}
-function closeBuilder() {
-  builder.hidden = true;
-  document.body.classList.remove('building');
-  buildOpen = false;
-  if (cameraBefore) { sim.camera.position.copy(cameraBefore.pos); sim.controls.target.copy(cameraBefore.target); sim.follow = cameraBefore.follow; }
-  const issues = validateBuild(robot.build);
-  if (issues.length) toast(issues.join(' '), 'warn');
-}
-$('#btnRobot').addEventListener('click', () => (buildOpen ? closeBuilder() : openBuilder()));
-$('#builderDone').addEventListener('click', closeBuilder);
-// the attachment builder: build an attachment from real LEGO parts (legobuilder.js); it is saved with the project
+// The robot builder is the LEGO builder (legobuilder.js): the attachment across the top (a built-in one, none, or the
+// child's own build from real LEGO parts, saved with the project), the ports and sensors in a panel on the right.
 const legoBuilder = new AttachmentBuilder({
+  side: builder,
   onApply: (meta) => {
     store.lastCustom = { module: 'custom', ...meta };
     applyBuildFromUi(normalizeBuild({ ...robot.build, preset: null, name: 'Custom robot', attachment: store.lastCustom }));
     toast(meta.ldr ? 'Your attachment is on the robot. Motor E turns it: press Q and E over the 3D view to try it.' : 'The attachment is empty.');
   },
+  onModule: (module) => applyBuildFromUi(normalizeBuild({ ...robot.build, preset: null, name: 'Custom robot', attachment: { module } })),
 });
-B$('bLego').addEventListener('click', () => legoBuilder.open(robot.build.attachment.module === 'custom' ? robot.build.attachment.ldr : (store.lastCustom || {}).ldr));
-B$('bModule').addEventListener('change', () => { if (B$('bModule').value === 'custom' && !(store.lastCustom && store.lastCustom.ldr)) legoBuilder.open(''); });
+builder.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => {
+  applyBuildFromUi(normalizeBuild({ ...PRESETS[btn.dataset.preset], preset: btn.dataset.preset }));
+  legoBuilder.setModule(robot.build.attachment.module);
+  toast(`${PRESETS[btn.dataset.preset].name} loaded.`);
+}));
+function openBuilder() {
+  runtime.stop();
+  fillBuilder(robot.build);
+  const a = robot.build.attachment;
+  legoBuilder.open({ module: a.module, ldr: a.module === 'custom' ? a.ldr : (store.lastCustom || {}).ldr });
+}
+$('#btnRobot').addEventListener('click', openBuilder);
 window.legoBuilder = legoBuilder;   // for tests, like window.spikeApp
 
 // ---------- workspace tools ----------

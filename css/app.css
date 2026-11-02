@@ -323,8 +323,19 @@ body.building #hubPanel { display: none; }
 .lego-builder[hidden] { display: none; }
 .lb-head { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
 .lb-head h3 { margin: 0; font-size: 16px; }
-.lb-sub { color: var(--muted); font-size: 12px; flex: 1; min-width: 200px; }
-.lb-tools { display: flex; gap: 6px; flex-wrap: wrap; }
+.lb-tools { display: flex; gap: 6px; flex-wrap: wrap; margin-left: auto; }
+.lb-tools [hidden] { display: none; }
+.lb-presets { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.lb-presets > span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 800; margin-right: 4px; }
+.lb-preset { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 700; color: var(--fg); cursor: pointer; }
+.lb-preset:hover { background: var(--bg); }
+.lb-preset.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lb-side { width: 270px; flex: 0 0 auto; overflow: auto; background: var(--panel); border-left: 1px solid var(--line); }
+.lb-side .builder { border-top: 0; max-height: none; overflow: visible; }
+.lb-side .builder-head { flex-direction: column; align-items: stretch; }
+.lb-side .builder-presets { flex-direction: column; }
+.lb-side .builder-grid { grid-template-columns: 1fr; }
+.builder fieldset[hidden], .lb-motor[hidden] { display: none; }
 .lb-body { flex: 1; display: flex; min-height: 0; }
 .lb-palette { width: 248px; flex: 0 0 auto; overflow: auto; background: var(--panel); border-right: 1px solid var(--line); padding: 6px 8px 12px; }
 .lb-palette details { border-bottom: 1px solid var(--line); padding: 4px 0; }
@@ -352,4 +363,5 @@ body.building #hubPanel { display: none; }
   .lb-palette { width: auto; max-height: 34%; border-right: 0; border-bottom: 1px solid var(--line); }
   .lb-grid { grid-template-columns: repeat(auto-fill, minmax(64px, 1fr)); }
   .lb-keys { display: none; }
+  .lb-side { width: auto; max-height: 30%; border-left: 0; border-top: 1px solid var(--line); }
 }

@@ -61,9 +61,26 @@ const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr withou
 
 const shortName = (d) => d.replace(/^~?Technic\s+/i, '').replace(/\s+/g, ' ').trim();
 
+// The attachments that come with the app: their physics is tuned for the missions, and the builder shows their parts.
+export const BUILT_IN = [
+  { module: 'none', label: 'None' },
+  { module: 'arm', label: 'Arm', file: 'arm-moving', note: 'the Driving Base 2 arm from the FIRST robot guide: lifts up and down' },
+  { module: 'plow', label: 'Dozer blade', file: 'dozer-moving', note: 'tilts up and down to push things' },
+  { module: 'basket', label: 'Basket', file: 'basket-moving', note: 'carries pieces and tips to dump them' },
+  { module: 'sweeper', label: 'Sweeper', file: 'sweeper-moving', note: 'swings sideways on the motor\'s axle' },
+  { module: 'scoop', label: 'Side scoop', file: 'scoop-moving', note: 'a long plate out to the left that slides under things and lifts them' },
+  { module: 'custom', label: 'My own' },
+];
+
 export class AttachmentBuilder {
-  constructor({ onApply }) {
+  /** onApply(meta): a custom build is done; onModule(module): a built-in attachment (or none) was chosen; side: an
+   * element shown in a panel on the right (the robot's ports and sensors). */
+  constructor({ onApply, onModule, side }) {
     this.onApply = onApply;
+    this.onModule = onModule;
+    this.side = side;
+    this.mode = 'custom';
+    this.customParts = [];
     this.root = null;
     this.parts = [];          // placements
     this.history = [];
@@ -71,7 +88,9 @@ export class AttachmentBuilder {
     this.motor = 0;
   }
 
-  async open(ldr) {
+  /** Open on the robot's attachment: {module, ldr} (ldr: the custom build, kept for "My own"), or an .ldr string. */
+  async open(opts) {
+    if (typeof opts === 'string' || !opts) opts = { module: 'custom', ldr: opts || '' };
     if (!this.root) this._dom();
     this.root.hidden = false;
     document.body.classList.add('lego-building');
@@ -80,11 +99,51 @@ export class AttachmentBuilder {
     this.tpl = await partTemplates(this.D);
     if (!this.three) await this._three();
     this._palette();
-    this.parts = parseLdr(ldr || '').filter((q) => this.D.parts.parts[q.f]);
+    this.customParts = parseLdr(opts.ldr || '').filter((q) => this.D.parts.parts[q.f]);
     this.history = [];
-    this._rebuild();
+    this.setModule(BUILT_IN.some((b) => b.module === opts.module) ? opts.module : 'custom');
     this._resize();
     this._loop();
+  }
+
+  /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` passes the choice to the app. */
+  setModule(module, tell = false) {
+    if (!this.three || !this.D) { this.mode = module; return; }
+    if (this.mode === 'custom' && module !== 'custom') this.customParts = this.parts;
+    this._dropGhost();
+    this.mode = module;
+    this.selected = null;
+    this.parts = module === 'custom' ? this.customParts : [];
+    this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.module === module));
+    this.root.querySelectorAll('[data-custom]').forEach((b) => { b.hidden = module !== 'custom'; });
+    this._showBuiltIn(module);
+    // the sweeper swings on the motor's own axle, not the bracket's: the preview here cannot turn it
+    const still = module === 'none' || module === 'sweeper';
+    this.root.querySelector('.lb-motor').hidden = still;
+    if (still && this.motor) { this.motor = 0; this.slider.value = 0; this.sliderOut.textContent = '0°'; this._poseDrive(); }
+    this._rebuild();
+    if (tell && module !== 'custom' && this.onModule) this.onModule(module);
+  }
+
+  /** The parts of a built-in attachment, on the drive axle (their files have their origin on it). */
+  _showBuiltIn(module) {
+    const { drive } = this.three;
+    if (this.builtIn) { drive.remove(this.builtIn); this.builtIn = null; }
+    const b = BUILT_IN.find((x) => x.module === module);
+    if (!b || !b.file) return;
+    const gen = (this.builtInGen = (this.builtInGen || 0) + 1);
+    loadRaw(`models/attach/${b.file}.mpd`).then((g) => {
+      if (!g || gen !== this.builtInGen || this.mode !== module) return;
+      const f = flatten(g);
+      f.matrixAutoUpdate = false; f.matrix.makeTranslation(...DRIVE_AXLE.at);
+      drive.add(f); this.builtIn = f;
+    });
+  }
+
+  /** Done: a custom build goes on the robot (a built-in one is on it already). */
+  done() {
+    if (this.mode === 'custom') this._apply();
+    else this.close();
   }
 
   close() {
@@ -103,16 +162,17 @@ export class AttachmentBuilder {
     r.setAttribute('aria-label', 'Attachment builder');
     r.innerHTML = `
       <div class="lb-head">
-        <h3>Attachment builder</h3>
-        <span class="lb-sub">Real LEGO parts snap where they really connect. The axle in the bracket is turned by motor E.</span>
+        <h3>Robot builder</h3>
+        <div class="lb-presets" role="group" aria-label="Attachment">
+          <span>Attachment</span>
+          ${BUILT_IN.map((b) => `<button type="button" class="lb-preset" data-module="${b.module}"${b.note ? ` title="${b.note}"` : ''}>${b.label}</button>`).join('')}
+        </div>
         <div class="lb-tools">
-          <button type="button" class="tb" data-act="undo" title="Undo (Ctrl+Z)">Undo</button>
-          <button type="button" class="tb" data-act="clear">Clear</button>
-          <button type="button" class="tb" data-act="example" title="Load the Driving Base 2 arm to start from">Example arm</button>
-          <button type="button" class="tb" data-act="load">Open .ldr</button>
-          <button type="button" class="tb" data-act="save">Save .ldr</button>
-          <button type="button" class="tb primary" data-act="apply">Put it on the robot</button>
-          <button type="button" class="tb" data-act="close">Close</button>
+          <button type="button" class="tb" data-act="undo" data-custom title="Undo (Ctrl+Z)">Undo</button>
+          <button type="button" class="tb" data-act="clear" data-custom>Clear</button>
+          <button type="button" class="tb" data-act="load" data-custom>Open .ldr</button>
+          <button type="button" class="tb" data-act="save" data-custom>Save .ldr</button>
+          <button type="button" class="tb primary" data-act="done">Done</button>
         </div>
       </div>
       <div class="lb-body">
@@ -122,12 +182,15 @@ export class AttachmentBuilder {
           <div class="lb-msg" aria-live="polite"></div>
           <div class="lb-motor"><label>Try motor E <input type="range" min="-120" max="120" value="0" step="1"></label><output>0°</output></div>
         </div>
+        <aside class="lb-side"></aside>
       </div>
       <div class="lb-status" aria-live="polite"></div>
       <input type="file" accept=".ldr,.mpd,.dat,text/plain" hidden>`;
     document.body.appendChild(r);
     this.root = r;
     this.view = r.querySelector('.lb-view');
+    if (this.side) { r.querySelector('.lb-side').appendChild(this.side); this.side.hidden = false; } else r.querySelector('.lb-side').remove();
+    r.querySelector('.lb-presets').addEventListener('click', (e) => { const b = e.target.closest('.lb-preset'); if (b) this.setModule(b.dataset.module, true); });
     this.msgEl = r.querySelector('.lb-msg');
     this.statusEl = r.querySelector('.lb-status');
     const slider = r.querySelector('.lb-motor input'), out = r.querySelector('.lb-motor output');
@@ -149,11 +212,9 @@ export class AttachmentBuilder {
       const act = b.dataset.act;
       if (act === 'undo') this.undo();
       else if (act === 'clear') { if (this.parts.length) { this._push(); this.parts = []; this._rebuild(); } }
-      else if (act === 'example') { this._push(); this.parts = parseLdr(EXAMPLE_ARM); this._rebuild(); this.message('The Driving Base 2 arm from the FIRST robot guide. Change it, or clear it and build your own.'); }
       else if (act === 'load') file.click();
       else if (act === 'save') this._download();
-      else if (act === 'apply') this._apply();
-      else if (act === 'close') this.close();
+      else if (act === 'done') this.done();
     });
     this._keys = (e) => this._key(e);
     window.addEventListener('keydown', this._keys, true);
@@ -313,6 +374,9 @@ export class AttachmentBuilder {
     const moving = count('drive'), fixed = count('base'), swinging = count('free');
     const hinges = an.joints.length;
     const n = this.parts.length;
+    const b = BUILT_IN.find((x) => x.module === this.mode);
+    if (this.mode === 'none') { this.status('No attachment. Pick a part on the left to build your own.'); return; }
+    if (this.mode !== 'custom') { this.status(`${b.label}: ${b.note}. Motor E turns it. Pick a part on the left to build your own${this.mode === 'arm' ? ', starting from this arm' : ''}.`); return; }
     if (!n) { this.status('Empty: pick a part on the left and snap it onto the axle in the bracket (motor E turns it) or onto the robot.'); return; }
     const bits = [`${n} part${n === 1 ? '' : 's'}`];
     if (moving) bits.push(`${moving} turn${moving === 1 ? 's' : ''} with motor E`);
@@ -344,6 +408,15 @@ export class AttachmentBuilder {
 
   // ---------------- placing parts ----------------
   pick(f) {
+    let note = '';
+    if (this.mode !== 'custom') {
+      // building starts from the arm's own parts, or from the child's last build
+      const from = this.mode === 'arm' ? parseLdr(EXAMPLE_ARM) : null;
+      const was = BUILT_IN.find((x) => x.module === this.mode).label;
+      if (from) { this.customParts = from; this.history = []; }
+      this.setModule('custom');
+      note = from ? 'Building your own, starting from the arm. ' : `Building your own (the ${was.toLowerCase()} is built in and stays as it is). `;
+    }
     this._dropGhost();
     this.selected = null;
     const tpl = this.tpl.get(f);
@@ -356,7 +429,7 @@ export class AttachmentBuilder {
     this.three.ld.add(mesh);
     this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
-    this.message(`${shortName(this.D.parts.parts[f].d)}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`);
+    this.message(`${note}${shortName(this.D.parts.parts[f].d)}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`);
     this._guide();
   }
 
@@ -515,7 +588,7 @@ export class AttachmentBuilder {
     const g = this.ghost;
     let used = true;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') this.undo();
-    else if (k === 'Escape') { if (g) this._dropGhost(); else this.close(); }
+    else if (k === 'Escape') { if (g) this._dropGhost(); else this.done(); }
     else if (g && (k === 'r' || k === 'R')) { g.roll = (g.roll + (e.shiftKey ? 3 : 1)) % 4; this._snap(); }
     else if (g && (k === 'f' || k === 'F')) { g.flip = !g.flip; g.slide = 0; this._snap(); }
     else if (g && k === 'Tab') { g.k = ((g.kUsed ?? g.k) + (e.shiftKey ? g.own.length - 1 : 1)) % g.own.length; g.slide = 0; this._snap(); }

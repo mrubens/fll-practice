@@ -88,12 +88,11 @@
     </div>
     <section id="builder" class="builder" hidden aria-label="Robot builder">
       <div class="builder-head">
-        <h3>Robot builder</h3>
+        <h3>Robot</h3>
         <div class="builder-presets">
-          <button type="button" class="tb" data-preset="guided-mission">Guided Mission robot</button>
-          <button type="button" class="tb" data-preset="training-camp">Training Camp preset</button>
+          <button type="button" class="tb" data-preset="guided-mission" title="Driving Base, color sensor on B, the arm on motor E">Guided Mission robot</button>
+          <button type="button" class="tb" data-preset="training-camp" title="Driving Base, color sensor on E, no attachment">Training Camp robot</button>
         </div>
-        <button type="button" id="builderDone" class="tb primary">Done</button>
       </div>
       <div class="builder-grid">
         <fieldset><legend>Drive</legend>
@@ -106,13 +105,14 @@
           <label>Distance sensor port <select id="bDistPort"></select></label>
           <label>Distance sensor mount <select id="bDistMount"></select></label>
         </fieldset>
-        <fieldset><legend>Attachment</legend>
+        <!-- the attachment is chosen across the top of the builder; this keeps the robot's current module for the app -->
+        <fieldset hidden><legend>Attachment</legend>
           <label>Module <select id="bModule"></select></label>
           <p class="hint info" id="bAttachInfo"></p>
           <button type="button" id="bLego" class="tb" hidden>Open the attachment builder</button>
-          <p class="hint" id="bIssues"></p>
         </fieldset>
       </div>
+      <p class="hint" id="bIssues"></p>
     </section>
 </main>
 <div id="toasts" aria-live="polite"></div>
