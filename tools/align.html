@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model Aligner</title>
+<style>
+  :root { --bg: #E9ECF1; --panel: #fff; --fg: #1E2430; --muted: #5B6474; --line: #D6DBE4; --accent: #E5338E; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--fg); font: 14px system-ui, -apple-system, sans-serif; }
+  body { display: flex; }
+  #view { flex: 1; position: relative; overflow: hidden; }
+  #view canvas { display: block; }
+  aside { width: 300px; background: var(--panel); border-left: 1px solid var(--line); display: flex; flex-direction: column; }
+  aside h1 { font-size: 16px; margin: 14px 14px 4px; }
+  aside p { margin: 0 14px 10px; color: var(--muted); font-size: 12.5px; line-height: 1.45; }
+  #list { flex: 1; overflow: auto; border-top: 1px solid var(--line); }
+  .row { padding: 7px 14px; cursor: pointer; border-bottom: 1px solid #F0F2F5; display: flex; justify-content: space-between; gap: 8px; }
+  .row:hover { background: #F6F7F9; }
+  .row.sel { background: #FDE7F2; }
+  .row.moved b::after { content: " •"; color: var(--accent); }
+  .row small { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .controls { border-top: 1px solid var(--line); padding: 10px 14px; display: grid; gap: 8px; }
+  .controls label { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .controls input[type=number] { width: 90px; font: inherit; padding: 3px 6px; }
+  .btns { display: flex; gap: 8px; }
+  button { font: inherit; padding: 7px 12px; border-radius: 8px; border: 1px solid var(--line); background: #fff; cursor: pointer; }
+  button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
+  #status { font-size: 12px; color: var(--muted); min-height: 16px; }
+  .hud { position: absolute; left: 10px; top: 10px; background: rgba(255,255,255,.92); border-radius: 8px; padding: 6px 10px; font-size: 12px; color: var(--muted); }
+</style>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.180.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.180.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="view"><div class="hud" id="hud">Loading…</div></div>
+<aside>
+  <h1>Model Aligner</h1>
+  <p>Only the bottom of each model is drawn, so you can see it against the printed outline. Click a model (or pick it below), drag it to move, Q/E to rotate (Shift for 15°), arrow keys to nudge (Shift for 1 cm). Mouse wheel zooms, right-drag pans, double-click zooms to the selection.</p>
+  <div id="list"></div>
+  <div class="controls">
+    <label>x (cm) <input id="px" type="number" step="0.1"></label>
+    <label>y (cm) <input id="py" type="number" step="0.1"></label>
+    <label>heading (°) <input id="ph" type="number" step="0.5"></label>
+    <label>Cut height <input id="cut" type="range" min="0.4" max="30" step="0.2" value="1.6"></label>
+    <label><span>Show whole models</span> <input id="whole" type="checkbox"></label>
+    <div class="btns"><button class="primary" id="save">Save to season.json</button><button id="copy">Copy JSON</button></div>
+    <div id="status"></div>
+  </div>
+</aside>
+<script type="module">
+import * as THREE from 'three';
+import { loadLDrawModel } from '../js/sim3d.js';
+
+const DEG = Math.PI / 180, LDU = 0.04, TW = 236, TH = 114;
+const $ = (id) => document.getElementById(id);
+const view = $('view');
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.outputColorSpace = THREE.SRGBColorSpace;
+view.appendChild(renderer.domElement);
+const scene = new THREE.Scene(); scene.background = new THREE.Color(0x30343C);
+scene.add(new THREE.HemisphereLight(0xffffff, 0x8899aa, 1.3));
+const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(20, 100, 30); scene.add(sun);
+const cam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 1000);
+cam.up.set(0, 0, -1); cam.position.set(0, 300, 0); cam.lookAt(0, 0, 0);
+let zoom = 1, center = new THREE.Vector2(0, 0);
+const cut = new THREE.Plane(new THREE.Vector3(0, -1, 0), 1.6);
+renderer.clippingPlanes = [cut];
+
+const season = await (await fetch('../mat/season.json', { cache: 'no-store' })).json();
+const tex = await new THREE.TextureLoader().loadAsync('../' + (season.matHi || season.mat));
+tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+const mat = new THREE.Mesh(new THREE.PlaneGeometry(TW, TH), new THREE.MeshBasicMaterial({ map: tex }));
+mat.rotation.x = -Math.PI / 2; mat.position.y = -0.05; scene.add(mat);
+
+// models: obstacles that share one pose (M01's two parts) move together
+const items = [];
+const groups = new Map();
+for (const o of season.obstacles) {
+  if (!o.model || !o.modelPose) continue;
+  const key = JSON.stringify(o.modelPose);
+  if (!groups.has(key)) groups.set(key, { ids: [], pose: { ...o.modelPose }, orig: { ...o.modelPose }, holders: [] });
+  groups.get(key).ids.push(o.id);
+  items.push({ o, g: groups.get(key) });
+}
+const G = [...groups.values()];
+const hud = $('hud');
+let loaded = 0;
+for (const it of items) {
+  loadLDrawModel('../' + it.o.model).then((m) => {
+    if (m) {
+      const inner = new THREE.Group(); m.rotation.x = Math.PI; m.scale.setScalar(LDU); inner.add(m);
+      const holder = new THREE.Group(); holder.add(inner); holder.userData.g = it.g;
+      m.traverse((x) => { if (x.isMesh) { x.material = x.material.clone(); x.material.side = THREE.DoubleSide; x.material.transparent = true; x.material.opacity = 0.45; x.material.depthWrite = false; x.userData.g = it.g; } });
+      it.g.holders.push(holder); scene.add(holder); place(it.g);
+    }
+    hud.textContent = `Loaded ${++loaded} / ${items.length}`;
+    if (loaded === items.length) hud.textContent = 'Click a model to select it';
+  });
+}
+function place(g) {
+  for (const h of g.holders) { h.position.set(g.pose.x, 0, g.pose.y); h.rotation.y = g.pose.heading * DEG; }
+}
+
+// selection + highlight
+let sel = null;
+function tint(g, on) { for (const h of g.holders) h.traverse((x) => { if (x.isMesh) { if (x.material.emissive) x.material.emissive.setHex(on ? 0x0b6b2e : 0); if (!$('whole').checked) x.material.opacity = on ? 0.85 : 0.45; } }); }
+function select(g) {
+  if (sel) tint(sel, false);
+  sel = g; if (g) tint(g, true);
+  renderList(); fillInputs();
+}
+function fillInputs() {
+  for (const k of ['px', 'py', 'ph']) $(k).disabled = !sel;
+  if (!sel) { $('px').value = $('py').value = $('ph').value = ''; return; }
+  $('px').value = sel.pose.x.toFixed(2); $('py').value = sel.pose.y.toFixed(2); $('ph').value = sel.pose.heading.toFixed(1);
+}
+function moved(g) { return g.pose.x !== g.orig.x || g.pose.y !== g.orig.y || g.pose.heading !== g.orig.heading; }
+function renderList() {
+  $('list').innerHTML = '';
+  for (const g of G) {
+    const r = document.createElement('div');
+    r.className = 'row' + (g === sel ? ' sel' : '') + (moved(g) ? ' moved' : '');
+    r.innerHTML = `<b>${g.ids.join(' + ')}</b><small>${g.pose.x.toFixed(1)}, ${g.pose.y.toFixed(1)}, ${g.pose.heading.toFixed(1)}°</small>`;
+    r.onclick = () => { select(g); focus(g); };
+    $('list').appendChild(r);
+  }
+}
+renderList(); fillInputs();
+for (const k of ['px', 'py', 'ph']) $(k).addEventListener('change', () => {
+  if (!sel) return;
+  sel.pose.x = +$('px').value; sel.pose.y = +$('py').value; sel.pose.heading = +$('ph').value;
+  place(sel); renderList();
+});
+$('cut').addEventListener('input', () => { cut.constant = +$('cut').value; });
+$('whole').addEventListener('change', () => { const w = $('whole').checked; renderer.clippingPlanes = w ? [] : [cut]; for (const g of G) for (const h of g.holders) h.traverse((x) => { if (x.isMesh) { x.material.opacity = w ? 1 : (g === sel ? 0.85 : 0.45); x.material.depthWrite = w; } }); });
+
+// camera
+function resize() {
+  const w = view.clientWidth, h = view.clientHeight; renderer.setSize(w, h);
+  const span = TW / zoom / 2 + 4, aspect = w / h;
+  let hw = span, hh = span / aspect; if (hh < (TH / zoom) / 2 + 4) { hh = TH / zoom / 2 + 4; hw = hh * aspect; }
+  cam.top = hh; cam.bottom = -hh; cam.left = -hw; cam.right = hw;
+  cam.position.set(center.x, 300, center.y); cam.lookAt(center.x, 0, center.y); cam.updateProjectionMatrix();
+}
+function focus(g) { center.set(g.pose.x, g.pose.y); zoom = Math.max(zoom, 4); resize(); }
+addEventListener('resize', resize); resize();
+
+// mouse
+const ray = new THREE.Raycaster();
+function toMat(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  const v = new THREE.Vector2(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(v, cam);
+  const p = new THREE.Vector3(); ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 1, 0), 0), p);
+  return { v, p };
+}
+let drag = null;
+renderer.domElement.addEventListener('contextmenu', (e) => e.preventDefault());
+renderer.domElement.addEventListener('pointerdown', (e) => {
+  const { v, p } = toMat(e);
+  if (e.button === 2) { drag = { pan: true, x: e.clientX, y: e.clientY, c: center.clone() }; return; }
+  ray.setFromCamera(v, cam);
+  const meshes = []; for (const g of G) for (const h of g.holders) h.traverse((x) => { if (x.isMesh) meshes.push(x); });
+  const hit = ray.intersectObjects(meshes, false).find((h) => $('whole').checked || h.point.y <= cut.constant);
+  if (hit) { select(hit.object.userData.g); drag = { g: sel, dx: sel.pose.x - p.x, dy: sel.pose.y - p.z }; }
+  else if (sel && e.shiftKey) { drag = { g: sel, dx: sel.pose.x - p.x, dy: sel.pose.y - p.z }; }
+  else { drag = { pan: true, x: e.clientX, y: e.clientY, c: center.clone() }; }
+  renderer.domElement.setPointerCapture(e.pointerId);
+});
+renderer.domElement.addEventListener('pointermove', (e) => {
+  const { p } = toMat(e);
+  hud.textContent = `mat x ${p.x.toFixed(1)}  y ${p.z.toFixed(1)} cm` + (sel ? `   ·   ${sel.ids[0]}` : '');
+  if (!drag) return;
+  if (drag.pan) {
+    const r = renderer.domElement.getBoundingClientRect(); const cmPerPx = (cam.right - cam.left) / r.width;
+    center.set(drag.c.x - (e.clientX - drag.x) * cmPerPx, drag.c.y - (e.clientY - drag.y) * cmPerPx); resize(); return;
+  }
+  drag.g.pose.x = +(p.x + drag.dx).toFixed(2); drag.g.pose.y = +(p.z + drag.dy).toFixed(2); place(drag.g); fillInputs();
+});
+addEventListener('pointerup', () => { if (drag && drag.g) renderList(); drag = null; });
+renderer.domElement.addEventListener('wheel', (e) => {
+  e.preventDefault();
+  const { p } = toMat(e); const f = Math.exp(-e.deltaY * 0.0015);
+  const nz = Math.min(20, Math.max(1, zoom * f)); const k = 1 - zoom / nz;
+  center.set(center.x + (p.x - center.x) * k, center.y + (p.z - center.y) * k); zoom = nz; resize();
+}, { passive: false });
+renderer.domElement.addEventListener('dblclick', () => { if (sel) focus(sel); });
+addEventListener('keydown', (e) => {
+  if (!sel || e.target.tagName === 'INPUT') return;
+  const step = e.shiftKey ? 1 : 0.1, rot = e.shiftKey ? 15 : 1;
+  const k = e.key.toLowerCase();
+  if (k === 'q') sel.pose.heading += rot; else if (k === 'e') sel.pose.heading -= rot;
+  else if (e.key === 'ArrowLeft') sel.pose.x -= step; else if (e.key === 'ArrowRight') sel.pose.x += step;
+  else if (e.key === 'ArrowUp') sel.pose.y -= step; else if (e.key === 'ArrowDown') sel.pose.y += step;
+  else if (e.key === 'Escape') return select(null);
+  else return;
+  e.preventDefault();
+  sel.pose.x = +sel.pose.x.toFixed(2); sel.pose.y = +sel.pose.y.toFixed(2);
+  sel.pose.heading = +((((sel.pose.heading + 180) % 360) + 360) % 360 - 180).toFixed(2);
+  place(sel); fillInputs(); renderList();
+});
+
+// save
+function poses() { const out = {}; for (const g of G) for (const id of g.ids) out[id] = { ...g.pose }; return out; }
+$('copy').onclick = async () => { await navigator.clipboard.writeText(JSON.stringify(poses(), null, 2)); $('status').textContent = 'Copied.'; };
+$('save').onclick = async () => {
+  try {
+    const r = await fetch('/align-save', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(poses()) });
+    if (!r.ok) throw new Error(await r.text());
+    for (const g of G) g.orig = { ...g.pose };
+    renderList(); $('status').textContent = 'Saved to mat/season.json at ' + new Date().toLocaleTimeString() + '.';
+  } catch (err) { $('status').textContent = 'Save failed (' + err.message + '). Use Copy JSON instead.'; }
+};
+
+(function loop() { renderer.render(scene, cam); requestAnimationFrame(loop); })();
+</script>
+</body>
+</html>
