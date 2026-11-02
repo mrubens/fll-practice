@@ -761,9 +761,12 @@ export class Physics {
     this.robotBody = body;
     const ACT = R.ActiveCollisionTypes.DEFAULT | R.ActiveCollisionTypes.KINEMATIC_FIXED;
     const fp = geom.footprint;
+    // the body reaches from just off the mat to the top of the hub (7.2 cm on the Driving Base, measured from its model):
+    // anything taller let pieces rest in mid-air above the robot (a seed lifted off by the arm stayed hovering there)
+    const top = 7.2, bottom = 0.4, round = 0.8, half = (top - bottom) / 2;
     const bodyDesc = fp
-      ? R.ColliderDesc.roundCuboid(((fp.x1 - fp.x0) / 2 - 0.8) * S, 4.5 * S, ((fp.z1 - fp.z0) / 2 - 0.8) * S, 0.8 * S).setTranslation(((fp.x0 + fp.x1) / 2) * S, 5 * S, ((fp.z0 + fp.z1) / 2) * S)
-      : R.ColliderDesc.cylinder(4.5 * S, geom.radius * S).setTranslation(0, 5 * S, 0);
+      ? R.ColliderDesc.roundCuboid(((fp.x1 - fp.x0) / 2 - round) * S, (half - round) * S, ((fp.z1 - fp.z0) / 2 - round) * S, round * S).setTranslation(((fp.x0 + fp.x1) / 2) * S, (bottom + half) * S, ((fp.z0 + fp.z1) / 2) * S)
+      : R.ColliderDesc.cylinder(half * S, geom.radius * S).setTranslation(0, (bottom + half) * S, 0);
     this.bodyCollider = this.world.createCollider(bodyDesc.setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT), body);
 
     // Attachment: a tiny scene graph mirroring the 3D view. Parts that move with the motor ride on their own
