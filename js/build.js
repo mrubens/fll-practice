@@ -10,6 +10,7 @@ export const MODULES = {
   plow: { label: 'dozer blade (tilts up and down)', motor: true },
   basket: { label: 'basket (carries pieces, tips to dump)', motor: true },
   sweeper: { label: 'sweeper (swings sideways on the motor\'s axle)', motor: true },
+  scoop: { label: 'side scoop (a long plate out to the left that slides under things and lifts them)', motor: true },
   // Hidden from the builder until it is rebuilt as a real, pinned-together LEGO assembly like the others.
   lift: { label: 'forklift (slides up)', motor: true, hidden: true },
 };
@@ -91,11 +92,29 @@ export function geometryFor(build) {
       if (m === 'arm') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
       if (m === 'plow') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
       if (m === 'basket') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 6.4, height: 5.2 + lift, drop: 0 };
+      if (m === 'scoop') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 18.0, tipAngle: -15.5, height: 5.2 + lift, drop: 0 };
       if (m === 'sweeper') return { module: m, mount: 'front', fwd: 6.4, lat: -3.2, angle: 0, length: 12.8, height: 5.6 + lift, drop: 0 };
       return { module: m, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 };
     })(),
   };
 }
+
+/**
+ * The side scoop's parts as boxes in the frame of the arm axle at rest (x forward, y up, z right; cm), with `pitch` in
+ * degrees nose up (models/attach/scoop-moving.mpd): two 4 x 6 bent liftarms on the motor E axle, forward and down
+ * to an axle across their tips; two cross blocks hanging from it hold a 15-long beam that reaches out to the left;
+ * at its end a Technic brick on a 2x2 plate sits on a 2x14 plate lying on the mat, the scoop. The physics and the
+ * placeholder drawing both use these.
+ */
+export const SCOOP_PARTS = [
+  ...[-1.6, 1.6].flatMap((z) => [{ size: [4.8, 0.8, 0.8], at: [1.2, -1.6, z], pitch: -53.13 }, { size: [3.2, 0.8, 0.8], at: [3.6, -3.2, z] }]),
+  { size: [0.5, 0.5, 4], at: [4.8, -3.2, 0] },              // the axle across the liftarm tips
+  { size: [0.8, 1.6, 2.4], at: [4.8, -3.6, 0] },            // two cross blocks hanging from it
+  { size: [0.8, 0.8, 12], at: [5.6, -4.0, -4.8] },          // the 15-long beam, holes facing forward, out to the left
+  { size: [0.8, 1.13, 1.6], at: [6.4, -3.995, -10.0] },     // Technic brick 1x2 pinned to its end
+  { size: [1.6, 0.32, 1.6], at: [6.8, -4.72, -10.0] },      // the 2x2 plate under it
+  { size: [11.2, 0.45, 1.6], at: [11.6, -4.95, -10.0] },    // the 2x14 plate: the scoop
+];
 
 export function portsOf(build) {
   const p = build.ports;

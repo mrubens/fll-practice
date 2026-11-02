@@ -1,0 +1,23 @@
+0 Side scoop: moving part (origin at the arm axle)
+0 Name: scoop-moving.ldr
+0 Author: FLL Practice
+0 Two 4 x 6 bent liftarms on the motor E axle reach forward and down; an axle across their tips carries two cross
+0 blocks, which hold a 15-long beam reaching out to the left. At its end a Technic brick on a 2 x 2 plate stands on a
+0 2 x 14 plate lying on the mat: the scoop. It slides under the M12 cane's claw to lift it over, and its tip hooks
+0 the support tie.
+1 14 0 0 0 -1 0 0 0 -1 0 0 0 1 44294.dat
+1 0 60 0 0 0 0 1 1 0 0 0 1 0 32270.dat
+1 71 -60 0 0 0 0 -1 0 1 0 1 0 0 3713.dat
+1 0 -40 0 0 0 -1 0 -0.6 0 0.8 -0.8 0 -0.6 6629.dat
+1 0 40 0 0 0 -1 0 -0.6 0 0.8 -0.8 0 -0.6 6629.dat
+1 72 0 80 -120 1 0 0 0 1 0 0 0 1 32073.dat
+1 71 -20 80 -120 1 0 0 0 1 0 0 0 1 6536.dat
+1 71 20 80 -120 1 0 0 0 1 0 0 0 1 6536.dat
+1 0 -20 100 -130 0 0 1 0 1 0 -1 0 0 2780.dat
+1 0 20 100 -130 0 0 1 0 1 0 -1 0 0 2780.dat
+1 71 120 100 -140 0 0 1 1 0 0 0 1 0 32278.dat
+1 0 240 100 -150 0 0 1 0 1 0 -1 0 0 2780.dat
+1 0 260 100 -150 0 0 1 0 1 0 -1 0 0 2780.dat
+1 0 250 90 -160 1 0 0 0 1 0 0 0 1 32000.dat
+1 0 250 114 -170 1 0 0 0 1 0 0 0 1 3022.dat
+1 72 250 122 -290 0 0 1 0 1 0 -1 0 0 91988.dat

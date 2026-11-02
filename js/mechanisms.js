@@ -260,7 +260,8 @@ export const MECHANISMS = {
   'M12 Forest Elder': {
     hidden: (p) => p.i >= 87 && p.i <= 109,      // the chain: drawn as a live chain (tether)
     pieces: {
-      cane: { kind: 'hinge', axis: [-1, 0, 0], anchor: [1.2, 0.88, -4.0], start: 111.6, range: [0, 111.6], mass: 0.012, damp: 0.1, friction: 0.6,
+      // an axle in a pin hole: next to no friction, so once lifted past balance (23.5) it falls onto the trunk
+      cane: { kind: 'hinge', axis: [-1, 0, 0], anchor: [1.2, 0.88, -4.0], start: 111.6, range: [0, 111.6], mass: 0.012, damp: 0.1, drag: 2, friction: 0.6,
         parts: (p) => p.i >= 59 && p.i <= 70 },
       tie: { kind: 'loose', anchor: [0, 4.64, 2.4], mass: 0.012, friction: 0.6, contact: true,
         tether: { from: [0, 7.0, 1.2], to: [0, 4.4, 0.24], length: 11.7 },

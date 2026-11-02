@@ -4,6 +4,7 @@
 // boxes are dynamic bodies that get shoved. Frames: sim x east / y south / heading clockwise  <->  Rapier x east / z south / y up.
 import * as THREE from 'three';
 import { LIFT } from './robot.js';
+import { SCOOP_PARTS } from './build.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
@@ -740,7 +741,7 @@ export class Physics {
     pivot.add(moving);
     root.add(pivot);
     this.armRoot = root; this.armPivot = pivot; this.armMoving = moving;
-    const hasMoving = ['arm', 'sweeper', 'basket', 'lift', 'plow'].includes(a.module);
+    const hasMoving = ['arm', 'sweeper', 'basket', 'lift', 'plow', 'scoop'].includes(a.module);
     const armBody = hasMoving ? this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading))) : null;
     this.armBody = armBody;
     root.position.set(0, 0, 0); root.rotation.set(0, 0, 0); root.updateMatrixWorld(true);
@@ -763,6 +764,9 @@ export class Physics {
       for (const z of [-1.6, 1.6]) { part(moving, [3.4, 0.8, 0.8], [1.23, 1.03, z], 40); part(moving, [6.6, 0.8, 0.8], [4.5, -0.4, z], -50); }
       part(moving, [1.6, 1.6, 8.6], [6.56, -2.85, 0]);
       part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);
+    } else if (a.module === 'scoop') {
+      for (const p of SCOOP_PARTS) part(moving, p.size, p.at, p.pitch || 0);
+      part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);    // the bracket on the hub
     } else if (a.module === 'sweeper') {
       part(moving, [12, 0.8, 0.8], [6.4, 0, 0]);        // the 15-long beam on edge, running forward from the axle
       part(moving, [0.8, 2.4, 0.8], [0.8, 0, 0]);       // the cross block on the axle
@@ -801,7 +805,7 @@ export class Physics {
   /** Pose the attachment graph for a robot pose and motor angle (degrees); returns the moving frame's world pose (cm). */
   syncAttachment(x, y, heading, angle) {
     const mv = this.armMoving;
-    if (this.module === 'arm' || this.module === 'plow') mv.rotation.set(0, 0, angle * DEG);
+    if (this.module === 'arm' || this.module === 'plow' || this.module === 'scoop') mv.rotation.set(0, 0, angle * DEG);
     else if (this.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, angle) * DEG);
     else if (this.module === 'sweeper') mv.rotation.set(0, angle * DEG, 0);
     else if (this.module === 'lift') mv.position.y = Math.max(LIFT.low, Math.min(LIFT.high, LIFT.low + (angle / 360) * LIFT.cmPerRotation)) - this.armPivot.position.y;

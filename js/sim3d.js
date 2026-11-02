@@ -8,6 +8,7 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
+import { SCOOP_PARTS } from './build.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 
 const DEG = Math.PI / 180;
@@ -579,6 +580,9 @@ export class Sim3D {
       }
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.6, 8.6), armMat), [6.56, -2.85, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
+    } else if (a.module === 'scoop') {
+      for (const p of SCOOP_PARTS) { const m = new THREE.Mesh(new THREE.BoxGeometry(...p.size), armMat); m.rotation.z = (p.pitch || 0) * DEG; add(this.armMoving, m, p.at); }
+      add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     } else if (a.module === 'sweeper') {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(12, 0.8, 0.8), armMat), [6.4, 0, 0]);
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(0.8, 2.4, 0.8), armMat), [0.8, 0, 0]);
@@ -595,7 +599,7 @@ export class Sim3D {
       add(this.armMoving, new THREE.Mesh(new THREE.BoxGeometry(4, 0.8, 5.6), armMat), [4, -3.2, 0]);
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
-    if (['arm', 'plow', 'basket', 'sweeper'].includes(a.module)) this.legoTool(a.module, body, prim);
+    if (['arm', 'plow', 'basket', 'sweeper', 'scoop'].includes(a.module)) this.legoTool(a.module, body, prim);
     else if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd, a.height - geom.lift, a.lat);   // body already rides at geom.lift
@@ -657,7 +661,7 @@ export class Sim3D {
     const gen = this.robotBuildGen;
     if (this.robotLego) this.robotPending++;
     const M = () => new THREE.Matrix4().set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
-    const files = { arm: ['arm-fixed', 'arm-moving'], plow: ['arm-fixed', 'dozer-moving'], basket: ['arm-fixed', 'basket-moving'], sweeper: [null, 'sweeper-moving'] }[module];
+    const files = { arm: ['arm-fixed', 'arm-moving'], plow: ['arm-fixed', 'dozer-moving'], basket: ['arm-fixed', 'basket-moving'], sweeper: [null, 'sweeper-moving'], scoop: ['arm-fixed', 'scoop-moving'] }[module];
     Promise.all(files.map((f) => (f ? loadLDrawModel(`models/attach/${f}.mpd`) : null))).then(([fixed, moving]) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
       if (gen !== this.robotBuildGen || (files[0] && !fixed) || !moving || !this.armPivot.parent) { done(); return; }
@@ -1075,7 +1079,7 @@ export class Sim3D {
     const arm = r.arm();
     if (arm) {
       const mv = this.armMoving;
-      if (arm.module === 'arm' || arm.module === 'plow') mv.rotation.set(0, 0, arm.angle * DEG);
+      if (arm.module === 'arm' || arm.module === 'plow' || arm.module === 'scoop') mv.rotation.set(0, 0, arm.angle * DEG);
       else if (arm.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, arm.angle) * DEG);
       else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
       else if (arm.module === 'lift') mv.position.y = arm.liftHeight - this.armPivot.position.y;

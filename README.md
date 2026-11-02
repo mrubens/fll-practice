@@ -85,6 +85,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
   hub flat), drawn from its real bricks. **Robot builder** sets the hub ports, the color and distance sensor mounts,
   and an attachment: arm, sweeper, forklift, plow or basket, each built from the medium motor and Technic liftarms.
+  The side scoop (the Driving Base 2 arm's axle with a 15-long beam reaching out to the left and a 2x14 plate lying on
+  the mat) is built for M12: park beside the cane facing north, sweep the plate under its claw with a spin, lift
+  until it tips onto the trunk; the plate's tip also hooks the support tie out of its slot and drags it to the post.
   Attachments always mount on the front with their motor on port E, like the Guided Mission robot. Presets: the Guided Mission robot and the plain Training Camp base.
 - **Save for the real robot.** Projects autosave in the browser (My projects). **Save .llsp3** writes a file
   the SPIKE App opens unchanged (verified against the SPIKE web app, including My Blocks). The robot build
