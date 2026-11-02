@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
 import { LD_TO_ROBOT, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
+import { MODULE_STOPS } from './robot.js';
 
 const DEG = Math.PI / 180;
 const P = [0, 0, -1, 0, -1, 0, -1, 0, 0];                 // LDraw axes -> robot axes (a proper rotation, its own inverse)
@@ -66,8 +67,9 @@ export const BUILT_IN = [
   { module: 'none', label: 'None' },
   { module: 'arm', label: 'Arm', file: 'arm-moving', note: 'the Driving Base 2 arm from the FIRST robot guide: lifts up and down' },
   { module: 'plow', label: 'Dozer blade', file: 'dozer-moving', note: 'tilts up and down to push things' },
-  { module: 'basket', label: 'Basket', file: 'basket-moving', note: 'carries pieces and tips to dump them' },
-  { module: 'sweeper', label: 'Sweeper', file: 'sweeper-moving', note: 'swings sideways on the motor\'s axle' },
+  { module: 'basket', label: 'Basket', file: 'basket-moving', note: 'carries pieces and tips to dump them', sign: -1 },
+  // the sweeper turns on the motor's own (upright) axle, beside the bracket
+  { module: 'sweeper', label: 'Sweeper', file: 'sweeper-moving', note: 'swings sideways on the motor\'s axle', at: [80, -140, -160], axis: [0, -1, 0] },
   { module: 'scoop', label: 'Side scoop', file: 'scoop-moving', note: 'a long plate out to the left that slides under things and lifts them' },
   { module: 'custom', label: 'My own' },
 ];
@@ -117,17 +119,14 @@ export class AttachmentBuilder {
     this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.module === module));
     this.root.querySelectorAll('[data-custom]').forEach((b) => { b.hidden = module !== 'custom'; });
     this._showBuiltIn(module);
-    // the sweeper swings on the motor's own axle, not the bracket's: the preview here cannot turn it
-    const still = module === 'none' || module === 'sweeper';
-    this.root.querySelector('.lb-motor').hidden = still;
-    if (still && this.motor) { this.motor = 0; this.slider.value = 0; this.sliderOut.textContent = '0°'; this._poseDrive(); }
     this._rebuild();
+    this.setMotor(0);
     if (tell && module !== 'custom' && this.onModule) this.onModule(module);
   }
 
   /** The parts of a built-in attachment, on the drive axle (their files have their origin on it). */
   _showBuiltIn(module) {
-    const { drive } = this.three;
+    const { bmove: drive } = this.three;
     if (this.builtIn) { drive.remove(this.builtIn); this.builtIn = null; }
     const b = BUILT_IN.find((x) => x.module === module);
     if (!b || !b.file) return;
@@ -135,7 +134,7 @@ export class AttachmentBuilder {
     loadRaw(`models/attach/${b.file}.mpd`).then((g) => {
       if (!g || gen !== this.builtInGen || this.mode !== module) return;
       const f = flatten(g);
-      f.matrixAutoUpdate = false; f.matrix.makeTranslation(...DRIVE_AXLE.at);
+      f.matrixAutoUpdate = false; f.matrix.makeTranslation(...(b.at || DRIVE_AXLE.at));
       drive.add(f); this.builtIn = f;
     });
   }
@@ -178,7 +177,7 @@ export class AttachmentBuilder {
       <div class="lb-body">
         <div class="lb-palette" role="list"></div>
         <div class="lb-view">
-          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · <b>Esc</b> put it down · click a placed part, then <b>Delete</b></div>
+          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · <b>Esc</b> put it down · click a placed part, then <b>Delete</b> · <b>Q E</b> turn motor E</div>
           <div class="lb-msg" aria-live="polite"></div>
           <div class="lb-motor"><label>Try motor E <input type="range" min="-120" max="120" value="0" step="1"></label><output>0°</output></div>
         </div>
@@ -194,7 +193,7 @@ export class AttachmentBuilder {
     this.msgEl = r.querySelector('.lb-msg');
     this.statusEl = r.querySelector('.lb-status');
     const slider = r.querySelector('.lb-motor input'), out = r.querySelector('.lb-motor output');
-    slider.addEventListener('input', () => { this.motor = Number(slider.value); out.textContent = `${this.motor}°`; this._poseDrive(); });
+    slider.addEventListener('input', () => this.setMotor(Number(slider.value)));
     this.slider = slider; this.sliderOut = out;
     const file = r.querySelector('input[type=file]');
     file.addEventListener('change', async () => {
@@ -295,7 +294,8 @@ export class AttachmentBuilder {
     controls.enableDamping = true;
     const ld = new THREE.Group(); ld.matrixAutoUpdate = false; ld.matrix.copy(LD_TO_ROBOT); scene.add(ld);
     const drive = new THREE.Group(); drive.matrixAutoUpdate = false; ld.add(drive);
-    this.three = { renderer, scene, camera, controls, ld, drive };
+    const bmove = new THREE.Group(); bmove.matrixAutoUpdate = false; ld.add(bmove);   // a built-in attachment's moving part
+    this.three = { renderer, scene, camera, controls, ld, drive, bmove };
     // the robot as context
     for (const url of ['models/driving-base.mpd', 'models/attach/arm-fixed.mpd']) {
       loadRaw(url).then((g) => { if (g) { const f = flatten(g); f.userData.context = true; ld.add(f); } });
@@ -340,6 +340,7 @@ export class AttachmentBuilder {
     for (const m of this.meshes || []) m.parent && m.parent.remove(m);
     this.meshes = [];
     this.an = this.scene.analyze();
+    this.stopsCache = null;
     const bodyOf = new Map();
     this.an.bodies.forEach((b, i) => b.items.forEach((it) => bodyOf.set(it, i)));
     // bodies hinged to the drive move with it in the preview
@@ -362,10 +363,31 @@ export class AttachmentBuilder {
   }
 
   _poseDrive() {
-    const R = driveRot(this.motor), at = DRIVE_AXLE.at;
-    const t = sub(at, app(R, at));
-    this.three.drive.matrix.set(R[0], R[1], R[2], t[0], R[3], R[4], R[5], t[1], R[6], R[7], R[8], t[2], 0, 0, 0, 1);
-    this.three.drive.matrixWorldNeedsUpdate = true;
+    const turn = (group, R, at) => {
+      const t = sub(at, app(R, at));
+      group.matrix.set(R[0], R[1], R[2], t[0], R[3], R[4], R[5], t[1], R[6], R[7], R[8], t[2], 0, 0, 0, 1);
+      group.matrixWorldNeedsUpdate = true;
+    };
+    turn(this.three.drive, driveRot(this.motor), DRIVE_AXLE.at);
+    const b = BUILT_IN.find((x) => x.module === this.mode) || {};
+    turn(this.three.bmove, b.axis ? rotAxis(b.axis, this.motor * DEG) : driveRot((b.sign || 1) * this.motor), b.at || DRIVE_AXLE.at);
+  }
+
+  /** How far motor E can turn what is on it: a built-in attachment's stops, or where the child's build meets the robot. */
+  _stops() {
+    if (this.mode === 'none') return [-120, 120];
+    if (this.mode !== 'custom') return MODULE_STOPS[this.mode] || [-120, 120];
+    if (!this.stopsCache) this.stopsCache = this.parts.length ? motionOf(this.D, this.scene, this.an).stops.map((v) => Math.max(-120, Math.min(120, v))) : [-120, 120];
+    return this.stopsCache;
+  }
+
+  /** Turn motor E in the preview (the slider, or Q and E), only as far as the build lets it. */
+  setMotor(deg) {
+    const [lo, hi] = this._stops();
+    this.motor = Math.round(Math.max(lo, Math.min(hi, deg)));
+    if (this.slider) { this.slider.min = lo; this.slider.max = hi; this.slider.value = this.motor; this.sliderOut.textContent = `${this.motor}°`; }
+    this._poseDrive();
+    if (this.ghost) this._snap();
   }
 
   _summary() {
@@ -600,7 +622,9 @@ export class AttachmentBuilder {
       this.selected = null;
       this._rebuild();
       this.message('');
-    } else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdqeWASDQE'.includes(k)) || k.startsWith('Arrow'))) {
+    } else if (!e.ctrlKey && !e.metaKey && (k === 'q' || k === 'Q' || k === 'e' || k === 'E')) {
+      this.setMotor(this.motor + (k.toLowerCase() === 'q' ? 4 : -4));   // like driving: Q raises, E lowers
+    } else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdWASD'.includes(k)) || k.startsWith('Arrow'))) {
       e.stopPropagation();          // the robot does not drive about under the builder
       return;
     } else used = false;

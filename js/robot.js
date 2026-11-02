@@ -12,6 +12,16 @@ export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
 export const LIFT = { low: 1.5, high: 10.5, cmPerRotation: 3.77 };
 /** The arm's travel in motor degrees: a little below its rest pose (the mat stops it) up to where its elbows meet the hub. */
 export const ARM_STOPS = { low: -35, high: 100 };   // low: the arm can come down until it rests on the mat (the mat stalls it first)
+/** How far motor E turns each built-in attachment (degrees) before the build itself stops it: measured by turning
+ * each attachment's LEGO parts until they meet the Driving Base's (the arm and scoop reach the mat or their old
+ * stops first). */
+export const MODULE_STOPS = {
+  arm: [ARM_STOPS.low, ARM_STOPS.high],
+  sweeper: [-78, 90],    // one way it swings across the robot's front until it meets the bracket
+  scoop: [-3, 100],      // from the plate flat on the mat up to the liftarms meeting the hub
+  plow: [-4, 90],        // tilting down, the blade's back meets the motor under the bracket at once
+  basket: [0, 6],        // tipping, the basket's back meets the motor under the bracket at once
+};
 const ACCEL = 3600;                       // deg/s^2 ramp
 export const PORT_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
@@ -247,13 +257,9 @@ export class Robot {
   _attachmentStop(angle) {
     const module = this.geom.attachment.module;
     if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
-    if (module === 'sweeper') return angle < -90 ? -90 : angle > 90 ? 90 : null;
-    if (module === 'arm') return angle < ARM_STOPS.low ? ARM_STOPS.low : angle > ARM_STOPS.high ? ARM_STOPS.high : null;
-    if (module === 'custom') { const s = this.geom.attachment.stops || [-180, 180]; return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null; }   // where it meets the robot itself
-    if (module === 'scoop') return angle < -3 ? -3 : angle > 100 ? 100 : null;     // from the plate flat on the mat up to the liftarms meeting the hub
-    if (module === 'plow') return angle < -30 ? -30 : angle > 90 ? 90 : null;      // the blade tilts from dug in to raised
-    if (module === 'basket') return angle < 0 ? 0 : angle > 110 ? 110 : null;      // level to tipped right over
-    return null;
+    const s = module === 'custom' ? this.geom.attachment.stops || [-180, 180] : MODULE_STOPS[module];   // custom: where it meets the robot itself
+    if (!s) return null;
+    return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null;
   }
 
   arm() {
