@@ -47,12 +47,17 @@ const colliderTop = (c) => colliderExtent(c, 1);
 const colliderBottom = (c) => colliderExtent(c, -1);
 
 /** Up to 26 outermost corners (one per direction) of a piece's part boxes, relative to its anchor. */
+/** A measured box's rotation: its own (a liftarm leg, [.., qx, qy, qz, qw]) or the part's. */
+const boxQuat = (b, e) => (b.length >= 10 ? b.slice(6, 10) : e.q);
+
 function supportPoints(entries, anchor) {
   const pts = [];
   for (const e of entries) {
-    const q = new THREE.Quaternion(...e.q);
-    for (const b of e.b || [[...e.p, ...e.h]]) for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
-      pts.push(new THREE.Vector3(sx * b[3], sy * b[4], sz * b[5]).applyQuaternion(q).add(new THREE.Vector3(b[0] - anchor[0], b[1] - anchor[1], b[2] - anchor[2])));
+    for (const b of e.b || [[...e.p, ...e.h]]) {
+      const q = new THREE.Quaternion(...boxQuat(b, e));
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1])
+        pts.push(new THREE.Vector3(sx * b[3], sy * b[4], sz * b[5]).applyQuaternion(q).add(new THREE.Vector3(b[0] - anchor[0], b[1] - anchor[1], b[2] - anchor[2])));
+    }
   }
   const out = new Set();
   for (const dx of [-1, 0, 1]) for (const dy of [-1, 0, 1]) for (const dz of [-1, 0, 1]) {
@@ -74,7 +79,17 @@ export async function createPhysics(world) {
     console.warn('Physics unavailable (Rapier did not load); using the simple collision model.', err);
     return null;
   }
+  await loadAttachParts();
   return new Physics(R, world);
+}
+
+/** The moving half of each preset attachment, measured part by part (tools/part-boxes.py on models/attach/*.mpd). */
+const ATTACH_FILES = { arm: 'arm-moving', plow: 'dozer-moving', basket: 'basket-moving', sweeper: 'sweeper-moving', scoop: 'scoop-moving' };
+const ATTACH_PARTS = {};
+async function loadAttachParts() {
+  await Promise.all(Object.entries(ATTACH_FILES).map(async ([module, f]) => {
+    try { const r = await fetch(`models/parts/${f}.json`); if (r.ok) ATTACH_PARTS[module] = await r.json(); } catch { /* the hand-drawn boxes stand in */ }
+  }));
 }
 
 // Collision groups: bit 0 = everything shared (robot, walls, mat, loose equipment, practice boxes); each mission
@@ -338,7 +353,7 @@ export class Physics {
     let boxes = [];
     for (const e of entries) {
       const list = e.b || [[...e.p, ...e.h]];
-      for (const b of list) boxes.push({ c: b.slice(0, 3), h: b.slice(3, 6).map((v) => Math.max(0.05, v - shrink)), q: e.q });   // shrink: a loose fit (a leaf in its slot)
+      for (const b of list) boxes.push({ c: b.slice(0, 3), h: b.slice(3, 6).map((v) => Math.max(0.05, v - shrink)), q: boxQuat(b, e) });   // shrink: a loose fit (a leaf in its slot)
     }
     if (merge && boxes.length > 8) boxes = dropHidden(boxes);   // a moving piece: boxes buried inside others add nothing
     const vol = (b) => Math.max(1e-3, 8 * b.h[0] * b.h[1] * b.h[2]);
@@ -773,7 +788,35 @@ export class Physics {
       const collider = this.world.createCollider(desc, onArm ? armBody : body);
       this.robotParts.push({ collider, node, half: size.map((v) => v / 2), onArm: !!onArm });
     };
-    if (a.module === 'arm') {
+    // a part box in the attachment's own frame (the moving model is drawn turned a quarter turn about y): an axle-like
+    // part is a capsule, so things rest on the real thin axle and slide along it instead of snagging on a block
+    const realPart = (box, q) => {
+      const turn = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2);
+      const pos = new THREE.Vector3(box[0], box[1], box[2]).applyQuaternion(turn);
+      const rot = turn.clone().multiply(new THREE.Quaternion(...q));
+      const h = [box[3], box[4], box[5]];
+      const node = new THREE.Object3D();
+      node.position.copy(pos); node.quaternion.copy(rot);
+      moving.add(node); node.updateMatrixWorld(true);
+      const order = [0, 1, 2].sort((i, j) => h[i] - h[j]);
+      let desc, cr = rot.clone();
+      if (h[order[0]] < 0.4 && h[order[1]] - h[order[0]] < 0.06 && h[order[2]] > 2.5 * h[order[1]]) {
+        const r = (h[order[0]] + h[order[1]]) / 2;
+        desc = R.ColliderDesc.capsule(Math.max(0.01, h[order[2]] - r) * S, r * S);
+        const along = [0, 0, 0]; along[order[2]] = 1;
+        cr.multiply(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...along)));
+      } else desc = R.ColliderDesc.cuboid(Math.max(0.05, h[0]) * S, Math.max(0.05, h[1]) * S, Math.max(0.05, h[2]) * S);
+      desc.setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT).setTranslation(pos.x * S, pos.y * S, pos.z * S).setRotation({ x: cr.x, y: cr.y, z: cr.z, w: cr.w });
+      const collider = this.world.createCollider(desc, armBody);
+      this.robotParts.push({ collider, node, half: h, onArm: true });
+    };
+    const measured = armBody && ATTACH_PARTS[a.module];
+    if (measured) {
+      const boxes = [];
+      for (const e of measured) for (const b of e.b || [[...e.p, ...e.h]]) boxes.push({ c: b.slice(0, 3), h: b.slice(3, 6), q: boxQuat(b, e) });
+      for (const b of dropHidden(boxes)) if (Math.max(...b.h) > 0.25) realPart([...b.c, ...b.h], b.q);   // loose pins add nothing
+      if (a.module !== 'sweeper') part(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);   // the bracket on the hub
+    } else if (a.module === 'arm') {
       // The Driving Base 2 arm, in the frame of its axle: two double-bent liftarms (a short leg up to the elbow,
       // a long leg down to the tip), the 9-long cross bar with its angle connectors, and the bracket on the hub.
       for (const z of [-1.6, 1.6]) { part(moving, [3.4, 0.8, 0.8], [1.23, 1.03, z], 40); part(moving, [6.6, 0.8, 0.8], [4.5, -0.4, z], -50); }

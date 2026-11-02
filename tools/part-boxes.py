@@ -91,6 +91,82 @@ class Geometry:
         return out
 
 
+HOLE_PRIMS = ('connhole', 'beamhole', 'peghole', 'axlehole', 'axlehol', 'npeghol', 'beamhol')
+
+
+def hole_list(geo, name, cache={}):
+    """Technic holes of a file in its own frame (LDU): (centre, axis) pairs, from the hole primitives it is built from."""
+    key = geo.lookup(name)
+    if key is None:
+        return []
+    if (id(geo), key) in cache:
+        return cache[(id(geo), key)]
+    cache[(id(geo), key)] = []
+    out = []
+    for t in geo.files[key]:
+        if t[0] != '1' or len(t) < 15:
+            continue
+        sub = norm_name(' '.join(t[14:]))
+        pos = np.array([float(x) for x in t[2:5]])
+        m = np.array([float(x) for x in t[5:14]]).reshape(3, 3)
+        if os.path.basename(sub).startswith(HOLE_PRIMS):
+            a = m @ np.array([0.0, 1.0, 0.0])
+            n = np.linalg.norm(a)
+            if n > 0:
+                out.append((pos, a / n))
+        else:
+            for c, a in hole_list(geo, sub):
+                b = m @ a
+                nb = np.linalg.norm(b)
+                if nb > 0:
+                    out.append((m @ c + pos, b / nb))
+    cache[(id(geo), key)] = out
+    return out
+
+
+def hole_chain_boxes(tris, holes):
+    """A liftarm as boxes from each hole to the next (and a square at a lone hole), each turned along its own leg, so a
+    bent or angled liftarm is covered exactly, round its bends. Returns [(centre, half, axes)] or None."""
+    if len(holes) < 3:
+        return None
+    axes = np.array([a for _, a in holes])
+    # the direction most holes run along
+    n0 = max(axes, key=lambda a: np.sum(np.abs(axes @ a) > 0.9))
+    sel = [(c, a) for c, a in holes if abs(a @ n0) > 0.9]
+    if len(sel) < 3:
+        return None
+    pts = []
+    for c, _ in sel:
+        q = c - (c @ n0) * n0
+        if all(np.linalg.norm(q - r) > 6 for r in pts):
+            pts.append(q)
+    if len(pts) < 3:
+        return None
+    t = tris.reshape(-1, 3) @ n0
+    tmin, tmax = t.min(), t.max()
+    if tmax - tmin > 24:            # not a beam (thicker than a liftarm)
+        return None
+    tc, th = (tmin + tmax) / 2, (tmax - tmin) / 2
+    # join the holes along the part: a minimum spanning tree (a bend's holes can sit far apart) plus every short gap
+    # (so a frame keeps its closed outline)
+    n = len(pts)
+    dist = np.array([[np.linalg.norm(pts[i] - pts[j]) for j in range(n)] for i in range(n)])
+    edges, seen = set(), {0}
+    while len(seen) < n:
+        i, j = min(((i, j) for i in seen for j in range(n) if j not in seen), key=lambda e: dist[e])
+        if dist[i, j] > 60:
+            return None                 # holes in separate clusters: not a single liftarm
+        edges.add((min(i, j), max(i, j))); seen.add(j)
+    edges |= {(i, j) for i in range(n) for j in range(i + 1, n) if dist[i, j] <= 22}
+    boxes = []
+    for i, j in sorted(edges):
+        d = dist[i, j]
+        u = (pts[j] - pts[i]) / d
+        w = np.cross(n0, u)
+        boxes.append(((pts[i] + pts[j]) / 2 + tc * n0, np.array([d / 2 + 10, 10, th]), np.column_stack([u, w, n0])))
+    return boxes if 1 < len(boxes) <= 30 else None
+
+
 def sample_points(tris, step):
     """Points spread over every triangle no more than `step` apart."""
     if not len(tris):
@@ -207,7 +283,13 @@ def measure(path):
             continue
         if key not in shapes:
             tr = geo.tris(name)
-            shapes[key] = part_boxes(tr)[0] if len(tr) else None
+            if not len(tr):
+                shapes[key] = None
+            else:
+                plain, fill = part_boxes(tr)
+                chain = hole_chain_boxes(tr, hole_list(geo, name)) if len(plain) > 1 else None
+                eye = np.eye(3)
+                shapes[key] = chain or [(c, h, eye) for c, h in plain]
         boxes = shapes[key]
         if not boxes:
             continue
@@ -220,20 +302,25 @@ def measure(path):
             rot[:, 2] *= -1               # a mirrored part: a box is symmetric, so flip one axis back
         q = quat_from_matrix(rot.tolist())
 
-        def place(c, h):
+        def place(c, h, A):
             centre = F @ (m @ c + pos) * LDU
-            half = np.abs(h * scale) * LDU
-            return centre, half
+            cols = m @ A
+            sc = np.linalg.norm(cols, axis=0); sc[sc == 0] = 1
+            W = F @ (cols / sc)                 # the box axes in the upright frame
+            if np.linalg.det(W) < 0:
+                W[:, 2] *= -1
+            return centre, np.abs(h * sc) * LDU, W
 
-        placed = [place(c, h) for c, h in boxes]
+        placed = [place(c, h, A) for c, h, A in boxes]
+        own_axes = any(not np.allclose(A, np.eye(3)) for _, _, A in boxes)
         # the whole part's box and its axis-aligned extent
-        allc = np.array([c for c, _ in placed]); allh = np.array([h for _, h in placed])
+        allc = np.array([c for c, _, _ in placed])
         corners = []
-        for c, h in placed:
+        for c, h, W in placed:
             for sx in (-1, 1):
                 for sy in (-1, 1):
                     for sz in (-1, 1):
-                        corners.append(c + rot @ (h * [sx, sy, sz]))
+                        corners.append(c + W @ (h * [sx, sy, sz]))
         corners = np.array(corners)
         alo, ahi = corners.min(0), corners.max(0)
         # one box around everything, in the part's axes
@@ -244,7 +331,9 @@ def measure(path):
                  'p': [round(float(v), 3) for v in pc], 'h': [round(float(v), 3) for v in (lhi - llo) / 2], 'q': [round(v, 5) for v in q],
                  'a': [round(float(v), 3) for v in (alo + ahi) / 2], 's': [round(float(v), 3) for v in (ahi - alo)]}
         if len(placed) > 1:
-            entry['b'] = [[round(float(v), 3) for v in list(c) + list(h)] for c, h in placed]
+            # [cx, cy, cz, hx, hy, hz] in the part's axes, or with its own rotation [.., qx, qy, qz, qw] (a hole-chain box)
+            entry['b'] = [[round(float(v), 3) for v in list(c) + list(h)] + ([round(v, 5) for v in quat_from_matrix(W.tolist())] if own_axes else [])
+                          for c, h, W in placed]
         out.append(entry)
     return out
 
