@@ -377,7 +377,10 @@ export class Physics {
         const dot = rel.x * ax.x + rel.y * ax.y + rel.z * ax.z;
         pc.angle = (2 * Math.atan2(dot, rel.w)) / DEG;
       } else if (pc.axisW && pc.def.kind === 'slider') {
-        pc.ext = pos.clone().sub(pc.anchor).dot(pc.axisW);
+        const ext = pos.clone().sub(pc.anchor).dot(pc.axisW);
+        const dt = time - (pc.extTime ?? time);
+        pc.vel = dt > 0 ? (ext - pc.ext) / dt : 0;    // cm/s along the slide
+        pc.ext = ext; pc.extTime = time;
       }
       const moved = Math.hypot(pos.x - pc.start.x, pos.z - pc.start.z);
       const relq = pc.q0.clone().invert().multiply(q);
@@ -389,7 +392,7 @@ export class Physics {
         const c = new THREE.Vector3(sh.at[0] + sx * sh.box[0] / 2, sh.at[1] + sy * sh.box[1] / 2, sh.at[2] + sz * sh.box[2] / 2).applyQuaternion(q).add(pos);
         if (c.y < bottom) bottom = c.y;
       }
-      pc.state = { angle: pc.angle, ext: pc.ext, height: pc.def.kind === 'lift' ? pc.height : pos.y - pc.start.y, pos: [pos.x, pos.y, pos.z], x: pos.x, y: pos.z, moved, rotated, bottom,
+      pc.state = { angle: pc.angle, ext: pc.ext, vel: pc.vel || 0, height: pc.def.kind === 'lift' ? pc.height : pos.y - pc.start.y, pos: [pos.x, pos.y, pos.z], x: pos.x, y: pos.z, moved, rotated, bottom,
         touched: pc.touched >= 0 && time - pc.touched < 0.3, everTouched: pc.touched >= 0, released: pc.released, latched: pc.latched, q: [q.x, q.y, q.z, q.w] };
     }
   }

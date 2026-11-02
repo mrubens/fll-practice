@@ -63,10 +63,11 @@ export const MISSIONS = [
   { id: 'M06', name: 'Leafcutter Frenzy', models: ['M06-07 Leafcutter Frenzy / Humongous Fungus'],
     text: 'Guide the ant back to its nest, but move too quickly and you may scatter the leaves it collected.',
     tasks: [
-      { id: 'frag1', label: 'Ant touching the nest, leaf fragment contained within the nest', points: 10,
+      { id: 'frag1', label: 'Ant touching the nest, green leaf fragment contained within the nest', points: 10,
         met: (c) => antHome(c) && fragIn(c, 'frag1') },
-      { id: 'frag2', label: 'Second leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag2') },
-      { id: 'frag3', label: 'Third leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag3') },
+      { id: 'frag2', label: 'Ant touching the nest, orange leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag2') },
+      { id: 'frag3', label: 'Ant touching the nest, yellow leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag3') },
+      { id: 'frag4', label: 'Ant touching the nest, white leaf fragment contained', points: 10, met: (c) => antHome(c) && fragIn(c, 'frag4') },
     ] },
   { id: 'M07', name: 'Humongous Fungus', models: ['M06-07 Leafcutter Frenzy / Humongous Fungus'], noEquipment: true,
     text: 'Form a new connection between the mycelium and a neighboring tree root.',
@@ -143,8 +144,7 @@ export const MISSIONS = [
 function antHome(c) {
   const m = 'M06-07 Leafcutter Frenzy / Humongous Fungus';
   const a = c.p(m).ant;
-  const l = c.local(m, a.pos);
-  return l[2] < -8.3 && l[0] > -10 && l[0] < -3;    // the cart has been pushed back along the nest's left side to the entrance
+  return !!a && a.ext > -0.4;    // the rack is pushed all the way in, so the ant touches the nest
 }
 function fragIn(c, name) {
   const m = 'M06-07 Leafcutter Frenzy / Humongous Fungus';

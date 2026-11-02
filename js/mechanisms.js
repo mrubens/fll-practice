@@ -35,6 +35,9 @@ export function inHome(x, y) {
   return !!inLaunchArea(x, y) || Math.abs(x) > FIELD.homeStripX;
 }
 
+// M06: a leaf launches when the rack is pushed in faster than about 15 cm/s while the gears are engaged.
+const launched = (s) => !!s.ant && s.ant.ext > -3.5 && Math.abs(s.ant.vel || 0) > 15;
+
 export const MECHANISMS = {
   // ---- Training camp objects (boards.js): loose LEGO bricks the robot can push, lift or knock over ----
   'Training marker': { pieces: { marker: { kind: 'loose', anchor: [0, 4.8, 0], whole: true, mass: 0.03, friction: 0.8, shape: [{ box: [3.2, 9.6, 3.2], at: [0, 0, 0] }], parts: () => true } } },
@@ -111,21 +114,27 @@ export const MECHANISMS = {
         shape: [{ box: [9, 2.4, 5], at: [-1.2, 0, 0] }], parts: (p) => p.c[1] > 5.2 && (p.color === '4' || (p.c[0] < -1.2) || ['14', '10', '353', '15', '84'].includes(p.color)) },
     },
   },
-  // ---- M06/M07: the ant cart rolls to the nest; the mycelium lattice slides out ----
+  // ---- M06 (official build book 6 and the missions video): the ant rides on a white gear rack that starts pulled out
+  // of the nest's front wall; push it in until it stops. Its last few centimetres turn the gears and cams under the
+  // four upright leaves: push too fast and a leaf launches ("too fast, or you might launch a leaf!", step 69).
+  // The LDraw model has the rack pushed in, so the piece starts shifted out.
   'M06-07 Leafcutter Frenzy / Humongous Fungus': {
     base: [{ box: [11, 9, 8], at: [1.5, 4.5, -5.5] }],
     pieces: {
-      // the ant cart sits at the nest's left side; it has to be pushed forward along the side to the nest entrance
-      ant: { kind: 'loose', anchor: [-6.1, 0, -4.6], planar: true, mass: 0.05, friction: 0.3, impactor: true,
-        shape: [{ box: [3, 3, 4], at: [0, 1.5, 0] }], parts: (p) => p.c[0] < -4.8 && p.c[1] < 3 && p.c[2] < -2 && p.c[2] > -7.2 },
+      ant: { kind: 'slider', axis: [1, 0, 0], anchor: [-6.1, 0.6, -4.6], shift: [-6, 0, 0], range: [-6, 0], damp: 1.2, gravity: false, mass: 0.05, friction: 0.5,
+        shape: [{ box: [11.2, 0.8, 1.6], at: [4.8, 0, 0] }, { box: [3, 3.2, 3.2], at: [-0.2, 1.8, 0] }],
+        parts: (p) => (['91988', '4510', '32028', '3743', '3039', '3623', '14719', '2654a', '41740'].some((f) => p.file.startsWith(f)) && p.c[2] < -2.8 && p.c[2] > -6.4 && p.c[1] < 1.6)
+          || (p.file.startsWith('3023b') && p.c[0] < -5 && p.c[1] < 1) || (p.c[0] < -4.5 && p.c[1] >= 1.6 && p.c[1] < 4.8 && p.c[2] > -7 && p.c[2] < -2.4) },
       mycelium: { kind: 'slider', axis: [1, 0, 0], anchor: [2, 13, 2], range: [0, 8], damp: 1.2, gravity: false, mass: 0.05,
         shape: [{ box: [12, 2.4, 4], at: [0, 0, 0] }], parts: (p) => p.c[1] > 9.8 && p.color === '15' },
-      frag1: { kind: 'loose', anchor: [-0.8, 9.0, -6.6], locked: true, releaseWhen: (s) => s._impact > 45, kick: [0.5, 1.2, -1.4], mass: 0.01,
-        shape: [{ box: [1.6, 4, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] < 0.4 },
-      frag2: { kind: 'loose', anchor: [1.4, 8.8, -6.6], locked: true, releaseWhen: (s) => s._impact > 45, kick: [0, 1.2, -1.6], mass: 0.01,
-        shape: [{ box: [1.6, 4, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] >= 0.4 && p.c[0] < 2.2 },
-      frag3: { kind: 'loose', anchor: [3.4, 8.6, -6.6], locked: true, releaseWhen: (s) => s._impact > 45, kick: [-0.5, 1.2, -1.4], mass: 0.01,
-        shape: [{ box: [1.6, 4, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] >= 2.2 },
+      frag1: { kind: 'loose', anchor: [-1.2, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [0.4, 1.4, -1.2], mass: 0.01,
+        shape: [{ box: [1.6, 5, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] > -9 && p.c[0] <= 0 },
+      frag2: { kind: 'loose', anchor: [0.4, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [0, 1.5, -1.4], mass: 0.01,
+        shape: [{ box: [1.6, 5, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] > 0 && p.c[0] <= 1.5 },
+      frag3: { kind: 'loose', anchor: [2.8, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [-0.3, 1.5, -1.3], mass: 0.01,
+        shape: [{ box: [1.6, 5, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] > 1.5 && p.c[0] <= 3.8 },
+      frag4: { kind: 'loose', anchor: [4.4, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [-0.5, 1.4, -1.2], mass: 0.01,
+        shape: [{ box: [1.6, 5, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] > 3.8 && p.c[0] <= 9 },
     },
   },
   // ---- M08/M09: the vine drops when touched, the platform lifts, the camera trap flips out, the seed falls ----
