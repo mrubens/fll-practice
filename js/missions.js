@@ -73,7 +73,7 @@ export const MISSIONS = [
     text: 'Form a new connection between the mycelium and a neighboring tree root.',
     tasks: [
       { id: 'mycelium', label: 'The mycelium is completely extended', points: 20,
-        met: (c) => c.p('M06-07 Leafcutter Frenzy / Humongous Fungus').mycelium.ext > 7 },
+        met: (c) => { const p = c.p('M06-07 Leafcutter Frenzy / Humongous Fungus').mycelium; return !!p && p.angle > 165; } },
       { id: 'bonus', label: 'Bonus: connection with the opposing team’s plant root (not possible here: no opposing team)', points: 0, met: () => false },
     ] },
   { id: 'M08', name: 'Tangled', models: ['M08-09 Tangled / Research Platform'],

@@ -180,7 +180,9 @@ export class Physics {
     const groups = modelGroup(o.id);
     const colliders = [];
     for (const b of def.base || []) {
-      colliders.push(this.world.createCollider(R.ColliderDesc.cuboid((b.box[0] / 2) * S, (b.box[1] / 2) * S, (b.box[2] / 2) * S).setTranslation(b.at[0] * S, b.at[1] * S, b.at[2] * S).setFriction(0.7).setCollisionGroups(groups), base));
+      const cd = R.ColliderDesc.cuboid((b.box[0] / 2) * S, (b.box[1] / 2) * S, (b.box[2] / 2) * S).setTranslation(b.at[0] * S, b.at[1] * S, b.at[2] * S).setFriction(0.7).setCollisionGroups(groups);
+      if (b.rot) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(b.rot[0] * DEG, b.rot[1] * DEG, b.rot[2] * DEG)); cd.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
+      colliders.push(this.world.createCollider(cd, base));
     }
     this.obstacleBodies.push({ o, body: base, colliders });
     o.angle = 0;
@@ -229,7 +231,8 @@ export class Physics {
     const j = this.world.createImpulseJoint(data, base, pc.body, true);
     pc.joint = j;
     this._jointLimits(pc, collapsed);
-    if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 4e-6);
+    if (pc.def.spring) j.configureMotorPosition(-pc.def.spring.target * DEG, pc.def.spring.k, pc.def.spring.d);   // driven towards an angle (mirrored like the limits)
+    else if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 4e-6);
   }
   _sliderJoint(pc, base, collapsed = false) {
     const { R } = this;

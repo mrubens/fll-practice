@@ -11,7 +11,8 @@
 //   loose   a free body (gravity, friction) that can be lifted, pushed or carried
 //   lift    a vertical slider whose height is driven by another piece (`drivenBy`, `ratio`), e.g. the drone on its string
 // Options: locked (fixed until `releaseWhen(state)` is true), latch (locks when it reaches the end of its range),
-// damp (viscous resistance so a lever stays where it was pushed), planar (stays flat on the mat), mass (kg).
+// damp (viscous resistance so a lever stays where it was pushed), planar (stays flat on the mat), mass (kg),
+// spring ({ target, k, d }: driven towards an extension or angle once free). Base boxes and shapes take `rot` (Euler deg).
 
 const DEG = Math.PI / 180;
 const near = (p, x, y, z, r) => Math.hypot(p.c[0] - x, p.c[1] - y, p.c[2] - z) < r;
@@ -118,15 +119,28 @@ export const MECHANISMS = {
   // of the nest's front wall; push it in until it stops. Its last few centimetres turn the gears and cams under the
   // four upright leaves: push too fast and a leaf launches ("too fast, or you might launch a leaf!", step 69).
   // The LDraw model has the rack pushed in, so the piece starts shifted out.
+  // M07 (same book, steps 70-91, and the missions video): the web trap stands on its own tower at the nest's right,
+  // turned 45 degrees. It is folded over towards the field, hanging from a tan pin at the top of a white 15L liftarm
+  // that runs steeply down through the tower to a red handle on the mat. Pull the handle outward and the trap flips
+  // up and back over the wall (towards the other table's M05 root), where it stays. The trap and the handle are the
+  // m07-trap / m07-handle subassemblies of the model; everything moves in the tower's plane (s = (-x + z) / sqrt 2).
   'M06-07 Leafcutter Frenzy / Humongous Fungus': {
-    base: [{ box: [11, 9, 8], at: [1.5, 4.5, -5.5] }],
+    base: [{ box: [11, 9, 8], at: [1.5, 4.5, -5.5] }, { box: [4, 12.4, 3.2], at: [5.47, 6.2, 0.41], rot: [0, -45, 0] }],
     pieces: {
       ant: { kind: 'slider', axis: [1, 0, 0], anchor: [-6.1, 0.6, -4.6], shift: [-6, 0, 0], range: [-6, 0], damp: 1.2, gravity: false, mass: 0.05, friction: 0.5,
         shape: [{ box: [11.2, 0.8, 1.6], at: [4.8, 0, 0] }, { box: [3, 3.2, 3.2], at: [-0.2, 1.8, 0] }],
         parts: (p) => (['91988', '4510', '32028', '3743', '3039', '3623', '14719', '2654a', '41740'].some((f) => p.file.startsWith(f)) && p.c[2] < -2.8 && p.c[2] > -6.4 && p.c[1] < 1.6)
           || (p.file.startsWith('3023b') && p.c[0] < -5 && p.c[1] < 1) || (p.c[0] < -4.5 && p.c[1] >= 1.6 && p.c[1] < 4.8 && p.c[2] > -7 && p.c[2] < -2.4) },
-      mycelium: { kind: 'slider', axis: [1, 0, 0], anchor: [2, 13, 2], range: [0, 8], damp: 1.2, gravity: false, mass: 0.05,
-        shape: [{ box: [12, 2.4, 4], at: [0, 0, 0] }], parts: (p) => p.c[1] > 9.8 && p.color === '15' },
+      // the handle: the 15L liftarm with the red bar at its foot; it slides outward (away from the tower) along the mat
+      handle: { kind: 'slider', axis: [-0.7071, 0, 0.7071], anchor: [2.98, 0.64, 2.9], range: [0, 1.2], damp: 1.2, gravity: false, mass: 0.03, friction: 0.6,
+        shape: [{ box: [5.6, 1.2, 1.2], at: [0, 0, 0], rot: [0, -45, 0] }, { box: [0.8, 12, 0.8], at: [1.48, 5.19, -1.48], rot: [-29.74, -40.97, -20.54] }],
+        parts: (p) => p.file === 'm07-handle.ldr' },
+      // the web trap: pivots on the tan pin at the bar's top; released by the pull, it swings 175 degrees over the top
+      // and latches out (completely extended)
+      mycelium: { kind: 'hinge', axis: [-0.7071, 0, -0.7071], anchor: [5.95, 11.03, -0.06], range: [0, 175], locked: true, releaseWhen: (s) => s.handle.ext > 0.8,
+        spring: { target: 175, k: 150, d: 18 }, latch: true, gravity: false, mass: 0.05, friction: 0.5,
+        shape: [{ box: [7.2, 1.4, 5.4], at: [-5.97, -4.78, 5.97], rot: [0, -45, 0] }, { box: [4, 8, 1], at: [-2.07, -2.73, 2.07], rot: [123.4, 28.83, 36.18] }],
+        parts: (p) => p.file === 'm07-trap.ldr' },
       frag1: { kind: 'loose', anchor: [-1.2, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [0.4, 1.4, -1.2], mass: 0.01,
         shape: [{ box: [1.6, 5, 0.8], at: [0, 0, 0] }], parts: (p) => p.c[2] < -5.5 && p.c[1] > 5 && p.c[0] > -9 && p.c[0] <= 0 },
       frag2: { kind: 'loose', anchor: [0.4, 8.6, -6.6], locked: true, releaseWhen: launched, kick: [0, 1.5, -1.4], mass: 0.01,
