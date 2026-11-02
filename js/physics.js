@@ -480,6 +480,8 @@ export class Physics {
       pc.body.setRotation(rq, true);
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
       pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false; pc.range = null;
+      if (pc.easing && pc.joint) pc.joint.configureMotorVelocity(0, (pc.def.damp || 0) * 4e-6);
+      pc.easing = false;
       if (pc.carried) {
         if (pc.carryJoint) this.world.removeImpulseJoint(pc.carryJoint, true);
         pc.carryJoint = null; pc.carried = false;
@@ -580,11 +582,19 @@ export class Physics {
       }
       if (pc.def.rangeWhen && pc.joint && pc.o) {
         // a stop that is only there in some poses (the M05 root arm rests on the trunk's foot only while the extension
-        // is folded down): its narrower range applies while `when` holds and the piece is inside it
+        // is folded down): its narrower range applies while `when` holds. A piece caught outside it (the extension fell
+        // back with the arm hanging forward) is not snapped in: it cannot swing further out and is eased back, as the
+        // trunk's foot would push it.
         const rw = pc.def.rangeWhen, parent = pc.def.parent && this.pieces.find((q) => q.o === pc.o && q.name === pc.def.parent);
         const rel = ((((pc.angle - (parent ? parent.angle : 0)) + 180) % 360) + 360) % 360 - 180;
-        const want = rw.when(this.pieceState(pc.o.id)) && rel >= rw.range[0] - 1 && rel <= rw.range[1] + 1 ? rw.range : null;
+        let want = null, ease = false;
+        if (rw.when(this.pieceState(pc.o.id))) {
+          if (pc.range === rw.range || (rel >= rw.range[0] - 1 && rel <= rw.range[1] + 1)) want = rw.range;
+          else { ease = true; want = [rw.range[0], Math.max(rw.range[1], Math.min(rel + 1, pc.range ? pc.range[1] : 180))]; }
+        }
         if (want !== (pc.range || null)) { pc.range = want; this._jointLimits(pc); }
+        if (ease && !pc.easing) { pc.easing = true; pc.joint.configureMotorPosition(-rw.range[1] * DEG, 3000, 120); }
+        else if (!ease && pc.easing) { pc.easing = false; pc.joint.configureMotorVelocity(0, (pc.def.damp || 0) * 4e-6); }
       }
       if (pc.def.prop && pc.joint && !pc.propped && pc.angle > pc.def.prop.after) {
         // a prop that swings under once the piece has been lifted far enough (the M15 canopy's L-liftarm)
