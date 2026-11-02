@@ -268,7 +268,8 @@ export const MECHANISMS = {
   // on the red axle at the tree's foot; it starts lying on the mat along the tree's -z (north), propped half a
   // centimetre up by its green knob. Lift its far end up and over (past 88 degrees) and it falls onto the trunk.
   // The red support tie stands in the slot between the red wall panels on the tree's +z side, tied to the trunk
-  // by an 11.7 cm chain: lift it out (0.7 cm frees it), carry it to the post and drop it around the upright.
+  // by an 11.7 cm chain: lift it out (0.7 cm frees it), carry it to the post and drop it around the upright. The root
+  // hanging on the curved bar is a seed for M14.
   'M12 Forest Elder': {
     hidden: (p) => p.i >= 87 && p.i <= 109,      // the chain: drawn as a live chain (tether)
     pieces: {
@@ -278,6 +279,11 @@ export const MECHANISMS = {
       tie: { kind: 'loose', anchor: [0, 4.64, 2.4], mass: 0.012, friction: 0.6, contact: true,
         tether: { from: [0, 7.0, 1.2], to: [0, 4.4, 0.24], length: 11.7 },
         parts: (p) => p.i >= 71 && p.i <= 86 },
+      // the "root" (book step 23: tan cone on a green round plate, a red #1 connector on top) hangs by its connector on
+      // the tip of the brown curved bar, its tip on the mat; it is one of the seeds teams carry to M14 (missions video
+      // 474 s). Lift it about a centimetre along the bar and it comes off.
+      seed: { kind: 'slider', axis: [-0.383, 0.924, 0], anchor: [-7.52, 3.8, 0.56], range: [0, 1.2], freeAt: 1.0, mass: 0.004, damp: 0.1, contact: true,
+        parts: (p) => p.i >= 110 && p.i <= 116 },
     },
   },
   'M12 Forest Elder post': { base: [{ box: [7, 4, 2.6], at: [6, 2, 8.8] }], pieces: {} },
@@ -351,7 +357,7 @@ export const MECHANISMS = {
 export const EQUIPMENT_PIECES = [
   { id: 'keystone', label: 'Keystone species', color: 0xE34A9A, box: [3.2, 6, 1.6], mass: 0.02 },   // a bag-20 brick stack, about 2x4 studs and 6 cm tall
 ];
-export const FIELD_SEEDS = [['M02 Exploding Seeds', 'seed1'], ['M02 Exploding Seeds', 'seed2'], ['M02 Exploding Seeds', 'seed3'], ['M08-09 Tangled / Research Platform', 'seed'], ['M11 Window to the Past', 'seed']];
+export const FIELD_SEEDS = [['M02 Exploding Seeds', 'seed1'], ['M02 Exploding Seeds', 'seed2'], ['M02 Exploding Seeds', 'seed3'], ['M08-09 Tangled / Research Platform', 'seed'], ['M11 Window to the Past', 'seed'], ['M12 Forest Elder', 'seed']];
 
 /** A measured part (models/parts/*.json entry) as the part predicates see it: { i, color, c, s, file }. */
 export function partInfo(e) { return { i: e.i, color: String(e.c), c: e.a, s: e.s, file: e.f }; }
