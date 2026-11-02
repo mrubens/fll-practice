@@ -117,7 +117,7 @@ export const MISSIONS = [
     text: 'Build and deliver a keystone species to this newly protected habitat.',
     tasks: [
       { id: 'keystone', label: 'Your keystone species is on the restoration platform, and the young trees are raised', points: 30,
-        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock city (M13-15)'); if (!k || !d.bar) return false; const l = c.local('Dock city (M13-15)', k.pos); return d.bar.ext > 1.7 && l[0] > -5.5 && l[0] < 5.5 && l[2] > -6 && l[2] < 4 && l[1] > 4.5; } },
+        met: (c) => { const k = c.eq('keystone'); const d = c.p('Dock city (M13-15)'); if (!k || !d.platform) return false; const l = c.local('Dock city (M13-15)', k.pos); return d.platform.ext < 0.3 && Math.abs(l[0]) < 5 && Math.abs(l[2]) < 3.5 && l[1] > 4.5; } },
     ] },
   { id: 'M14', name: 'Seeds of Renewal', models: ['Dock mine (M13-15)'],
     text: 'Place the seeds your team has collected in the soil and watch them take root.',

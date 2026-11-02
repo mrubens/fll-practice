@@ -182,16 +182,27 @@ export const MECHANISMS = {
     },
   },
   'M12 Forest Elder post': { base: [{ box: [7, 4, 2.6], at: [6, 2, 8.8] }], pieces: {} },
-  // ---- M13: push the front bar in and the young trees rise; the keystone species must be on the platform ----
+  // ---- M13 (official build book 11 and the missions video): the restoration platform rides in two slots inside a
+  // frame of liftarms; the four young trees are pinned to it and, while it is up, lean in across it toward the far end (book step 36). Set the
+  // keystone species on the platform (or press it down) and it sinks, standing the trees up. The LDraw model is
+  // built with the platform down and the trees up, so the pieces start shifted up and turned out.
   'Dock city (M13-15)': {
-    base: [{ box: [14, 6, 6], at: [0, 3, 0] }],
+    base: [{ box: [12, 0.8, 8.8], at: [0, 0.4, 0] }, { box: [0.8, 5.6, 8.8], at: [5.6, 3.6, 0] }, { box: [0.8, 5.6, 8.8], at: [-5.6, 3.6, 0] },
+      { box: [7.2, 0.8, 0.8], at: [0, 2, 4] }, { box: [7.2, 0.8, 0.8], at: [0, 2, -4] }, { box: [12, 0.8, 0.8], at: [0, 5.2, 4.8] }, { box: [12, 0.8, 0.8], at: [0, 5.2, -4.8] }],
     pieces: {
-      bar: { kind: 'slider', axis: [0, 0, -1], anchor: [0, 3.2, 5.8], range: [0, 2.6], damp: 1.5, gravity: false, mass: 0.05,
-        shape: [{ box: [13, 6, 1.6], at: [0, 1, 0] }], parts: (p) => p.c[2] > 4.3 && p.c[1] > 1.8 && p.c[1] < 4.6 },
-      trees: { kind: 'lift', anchor: [0, 0, 0], drivenBy: { piece: 'bar', ratio: 1.3 },
-        shape: [], parts: (p) => p.c[1] > 4.2 && ['2', '4', '10', '14', '27', '70'].includes(p.color) },
+      platform: { kind: 'slider', axis: [0, 1, 0], anchor: [0, 4.4, 0], shift: [0, 1.6, 0], range: [0, 1.6], spring: { target: 1.6, k: 20, d: 0.6 }, gravity: false, mass: 0.03, friction: 0.8,
+        shape: [{ box: [8.8, 0.8, 5.6], at: [0, 0, 0] }, { box: [8.8, 0.8, 4], at: [0, -2.4, 0] }, { box: [0.8, 0.6, 1.8], at: [0, -1.6, 3.4] }, { box: [0.8, 0.6, 1.8], at: [0, -1.6, -3.4] }],
+        parts: (p) => Math.abs(p.c[0]) < 5 && p.c[1] > 1.5 && p.c[1] < 5 && Math.abs(p.c[2]) < 4.2 && !p.file.startsWith('40490') && !(p.file.startsWith('61332') && Math.abs(p.c[2]) > 4.3) },
+      tree1: { kind: 'follow', drivenBy: { piece: 'platform', travel: 1.6 }, axis: [0, 0, 1], angle: 50, anchor: [3.2, 4.4, 4], shift: [0, 1.6, 0], mass: 0.01,
+        shape: [{ box: [0.8, 5.6, 0.8], at: [0, 2.4, 0] }], parts: (p) => p.c[1] > 5.6 && p.c[0] > 0 && p.c[0] < 5 && p.c[2] > 0 },
+      tree2: { kind: 'follow', drivenBy: { piece: 'platform', travel: 1.6 }, axis: [0, 0, 1], angle: 50, anchor: [3.2, 4.4, -3.2], shift: [0, 1.6, 0], mass: 0.01,
+        shape: [{ box: [0.8, 5.6, 0.8], at: [0, 2.4, 0] }], parts: (p) => p.c[1] > 5.6 && p.c[0] > 0 && p.c[0] < 5 && p.c[2] < 0 },
+      tree3: { kind: 'follow', drivenBy: { piece: 'platform', travel: 1.6 }, axis: [0, 0, -1], angle: 50, anchor: [-3.2, 4.4, 3.2], shift: [0, 1.6, 0], mass: 0.01,
+        shape: [{ box: [0.8, 5.6, 0.8], at: [0, 2.4, 0] }], parts: (p) => p.c[1] > 5.6 && p.c[0] < 0 && p.c[0] > -5 && p.c[2] > 0 },
+      tree4: { kind: 'follow', drivenBy: { piece: 'platform', travel: 1.6 }, axis: [0, 0, -1], angle: 50, anchor: [-3.2, 4.4, -4], shift: [0, 1.6, 0], mass: 0.01,
+        shape: [{ box: [0.8, 5.6, 0.8], at: [0, 2.4, 0] }], parts: (p) => p.c[1] > 5.6 && p.c[0] < 0 && p.c[0] > -5 && p.c[2] < 0 },
     },
-    platformZone: { x: [-5, 5], z: [-4, 3], y: 5 },
+    platformZone: { x: [-4.4, 4.4], z: [-2.8, 2.8], y: 4.5 },
   },
   // ---- M14: seeds carried from home must end up inside the replantation station ----
   'Dock mine (M13-15)': {

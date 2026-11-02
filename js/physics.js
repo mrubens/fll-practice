@@ -189,13 +189,15 @@ export class Physics {
       const startW = pd.shift ? toWorld(pd.anchor.map((v, i) => v + pd.shift[i])) : anchorW.clone();   // a piece may start away from its anchor (a drawer pulled out)
       const locked = !!pd.locked;
       let desc;
-      if (pd.kind === 'lift') desc = R.RigidBodyDesc.kinematicPositionBased();
+      if (pd.kind === 'lift' || pd.kind === 'follow') desc = R.RigidBodyDesc.kinematicPositionBased();
       else desc = R.RigidBodyDesc.dynamic().setLinearDamping(pd.kind === 'loose' ? 1.5 : 0.8).setAngularDamping(pd.kind === 'loose' ? 1.5 : 0.8).setGravityScale(pd.gravity === false ? 0 : 1);
       // A locked piece is a dynamic body with every degree of freedom switched off (a body born fixed cannot be
       // jointed later), released by switching them back on.
       if (locked) desc.enabledTranslations(false, false, false).enabledRotations(false, false, false);
       else if (pd.planar && pd.kind === 'loose') desc.enabledTranslations(true, false, true).enabledRotations(false, true, false);
-      desc.setTranslation(startW.x * S, startW.y * S, startW.z * S).setRotation(rq).setCcdEnabled(true).setCanSleep(false);
+      // a follower starts turned to where its driver starts (the young trees lean out while the platform is up)
+      const q0 = pd.kind === 'follow' ? frame.q.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pd.axis).normalize(), pd.angle * DEG)) : frame.q;
+      desc.setTranslation(startW.x * S, startW.y * S, startW.z * S).setRotation({ x: q0.x, y: q0.y, z: q0.z, w: q0.w }).setCcdEnabled(true).setCanSleep(false);
       const body = this.world.createRigidBody(desc);
       const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
       const cols = shapes.map((sh, i) => this.world.createCollider(
@@ -236,7 +238,8 @@ export class Physics {
     const j = this.world.createImpulseJoint(data, base, pc.body, true);
     pc.joint = j;
     this._jointLimits(pc, collapsed);
-    if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 0.003);
+    if (pc.def.spring) j.configureMotorPosition(pc.def.spring.target * S, pc.def.spring.k, pc.def.spring.d);   // pushed back towards its rest
+    else if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 0.003);
   }
   /** Joint limits for a piece: its range, collapsed to the start while locked, or pinned at the end once latched. */
   _jointLimits(pc, collapsed = false, latched = false) {
@@ -336,6 +339,18 @@ export class Physics {
       if (pc.def.latch && pc.joint && !pc.latched) {
         const atEnd = pc.def.kind === 'hinge' ? Math.abs(pc.angle) >= Math.max(Math.abs(pc.def.range[0]), Math.abs(pc.def.range[1])) - 3 : pc.ext >= pc.def.range[1] - 0.3;
         if (atEnd) { pc.latched = true; this._jointLimits(pc, false, true); }
+      }
+      if (pc.def.kind === 'follow') {
+        // kinematic: rides on its driver (a slider) and turns with how far the driver has travelled
+        const d = pc.def.drivenBy;
+        const src = this.pieces.find((q) => q.o === pc.o && q.name === d.piece);
+        const e = src ? src.ext : d.travel;
+        const t = Math.max(0, Math.min(1, e / d.travel));
+        const p = pc.anchor.clone().add(new THREE.Vector3(0, e, 0));
+        const q = pc.q0.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pc.def.axis).normalize(), pc.def.angle * t * DEG));
+        pc.angle = pc.def.angle * t;
+        pc.body.setNextKinematicTranslation({ x: p.x * S, y: p.y * S, z: p.z * S });
+        pc.body.setNextKinematicRotation({ x: q.x, y: q.y, z: q.z, w: q.w });
       }
       if (pc.def.kind === 'lift' && pc.def.drivenBy) {
         const d = pc.def.drivenBy;

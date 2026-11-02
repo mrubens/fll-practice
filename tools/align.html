@@ -77,12 +77,11 @@ tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = renderer.capabilities.ge
 const mat = new THREE.Mesh(new THREE.PlaneGeometry(TW, TH), new THREE.MeshBasicMaterial({ map: tex }));
 mat.rotation.x = -Math.PI / 2; mat.position.y = -0.05; scene.add(mat);
 
-// models: obstacles that share one pose (M01's two parts) move together
 const items = [];
 const groups = new Map();
 for (const o of season.obstacles) {
   if (!o.model || !o.modelPose) continue;
-  const key = JSON.stringify(o.modelPose);
+  const key = o.id;   // every model moves on its own
   if (!groups.has(key)) groups.set(key, { ids: [], pose: { ...o.modelPose }, orig: { ...o.modelPose }, holders: [] });
   groups.get(key).ids.push(o.id);
   items.push({ o, g: groups.get(key) });
@@ -217,6 +216,7 @@ $('save').onclick = async () => {
   } catch (err) { $('status').textContent = 'Save failed (' + err.message + '). Use Copy JSON instead.'; }
 };
 
+window.aligner = { G, place, select, focus, setZoom: (z) => { zoom = z; resize(); }, toMat: (cx, cy) => toMat({ clientX: cx, clientY: cy }).p };   // for scripted checks
 (function loop() { renderer.render(scene, cam); requestAnimationFrame(loop); })();
 </script>
 </body>
