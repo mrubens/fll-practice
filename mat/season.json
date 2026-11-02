@@ -18,8 +18,8 @@
   "obstacles": [
     {
       "id": "M01 Drone Survey",
-      "x": -11.5,
-      "y": 51,
+      "x": -10.31,
+      "y": 51.27,
       "w": 6.8,
       "d": 6.8,
       "h": 12.0,
@@ -27,15 +27,15 @@
       "movable": false,
       "model": "models/m01.mpd",
       "modelPose": {
-        "x": -12,
-        "y": 42.2,
-        "heading": 3.5
+        "x": -10.81,
+        "y": 42.47,
+        "heading": 0
       }
     },
     {
       "id": "M02 Exploding Seeds",
-      "x": -37.1,
-      "y": 3.7,
+      "x": -36.7,
+      "y": 2.64,
       "w": 6.2,
       "d": 6.2,
       "h": 15.0,
@@ -43,15 +43,15 @@
       "movable": false,
       "model": "models/m02.mpd",
       "modelPose": {
-        "x": -37.1,
-        "y": 3.7,
-        "heading": 45.5
+        "x": -36.7,
+        "y": 2.64,
+        "heading": -45.5
       }
     },
     {
       "id": "M03 Flip the Rock",
-      "x": -91.8,
-      "y": -9.0,
+      "x": -92.7,
+      "y": -9.66,
       "w": 13.2,
       "d": 6.6,
       "h": 8.0,
@@ -59,15 +59,15 @@
       "movable": false,
       "model": "models/m03.mpd",
       "modelPose": {
-        "x": -91.8,
-        "y": -9.0,
-        "heading": 176.5
+        "x": -92.7,
+        "y": -9.66,
+        "heading": 181
       }
     },
     {
       "id": "M04 Lucky Leaves",
-      "x": -89.7,
-      "y": -46.6,
+      "x": -90.6,
+      "y": -47.57,
       "w": 13.2,
       "d": 13.2,
       "h": 9.0,
@@ -75,15 +75,15 @@
       "movable": false,
       "model": "models/m04.mpd",
       "modelPose": {
-        "x": -89.7,
-        "y": -46.6,
+        "x": -90.6,
+        "y": -47.57,
         "heading": -134.5
       }
     },
     {
       "id": "M05 Reaching Roots",
-      "x": -60.4,
-      "y": -53.7,
+      "x": -60.11,
+      "y": -54.96,
       "w": 4.2,
       "d": 8.8,
       "h": 17.0,
@@ -91,15 +91,15 @@
       "movable": false,
       "model": "models/m05.mpd",
       "modelPose": {
-        "x": -60.4,
-        "y": -53.7,
-        "heading": 174.5
+        "x": -60.11,
+        "y": -54.96,
+        "heading": 0
       }
     },
     {
       "id": "M06-07 Leafcutter Frenzy / Humongous Fungus",
-      "x": 54.3,
-      "y": -46.0,
+      "x": 56.32,
+      "y": -45.77,
       "w": 15.5,
       "d": 12.4,
       "h": 11.0,
@@ -107,15 +107,15 @@
       "movable": false,
       "model": "models/m06-07.mpd",
       "modelPose": {
-        "x": 54.3,
-        "y": -46.0,
-        "heading": 356.0
+        "x": 56.32,
+        "y": -45.77,
+        "heading": 45
       }
     },
     {
       "id": "M08-09 Tangled / Research Platform",
-      "x": -46.3,
-      "y": -47.8,
+      "x": -42.62,
+      "y": -50.32,
       "w": 15.3,
       "d": 12.8,
       "h": 26.0,
@@ -123,15 +123,15 @@
       "movable": false,
       "model": "models/m08-09.mpd",
       "modelPose": {
-        "x": -46.3,
-        "y": -47.8,
-        "heading": -28.0
+        "x": -42.62,
+        "y": -50.32,
+        "heading": 0
       }
     },
     {
       "id": "M10 Fragile Microhabitat A",
-      "x": -26.1,
-      "y": -45.3,
+      "x": -23.26,
+      "y": -51.95,
       "w": 4.2,
       "d": 4.7,
       "h": 5.0,
@@ -139,15 +139,15 @@
       "movable": false,
       "model": "models/m10a.mpd",
       "modelPose": {
-        "x": -26.1,
-        "y": -45.3,
-        "heading": 61.5
+        "x": -23.26,
+        "y": -51.95,
+        "heading": -120
       }
     },
     {
       "id": "M10 Fragile Microhabitat B",
-      "x": 7.4,
-      "y": -16.4,
+      "x": 11.57,
+      "y": -23.65,
       "w": 3.6,
       "d": 3.6,
       "h": 5.0,
@@ -155,15 +155,15 @@
       "movable": false,
       "model": "models/m10b.mpd",
       "modelPose": {
-        "x": 7.4,
-        "y": -16.4,
-        "heading": 218.0
+        "x": 11.57,
+        "y": -23.65,
+        "heading": 46.5
       }
     },
     {
       "id": "M11 Window to the Past",
-      "x": 42.7,
-      "y": -0.8,
+      "x": 39.3,
+      "y": -1.17,
       "w": 9.0,
       "d": 9.0,
       "h": 11.0,
@@ -171,15 +171,15 @@
       "movable": false,
       "model": "models/m11.mpd",
       "modelPose": {
-        "x": 42.7,
-        "y": -0.8,
-        "heading": -42.0
+        "x": 39.3,
+        "y": -1.17,
+        "heading": -44.5
       }
     },
     {
       "id": "M12 Forest Elder",
-      "x": 89.8,
-      "y": -22.0,
+      "x": 94.54,
+      "y": -19.22,
       "w": 6.6,
       "d": 6.6,
       "h": 26.0,
@@ -187,15 +187,15 @@
       "movable": false,
       "model": "models/m12.mpd",
       "modelPose": {
-        "x": 89.8,
-        "y": -22.0,
-        "heading": 184.0
+        "x": 94.54,
+        "y": -19.22,
+        "heading": 1.5
       }
     },
     {
       "id": "M12 Forest Elder post",
-      "x": 93.4,
-      "y": 3.3,
+      "x": 85.72,
+      "y": 7.43,
       "w": 2.5,
       "d": 6.0,
       "h": 9.0,
@@ -203,15 +203,15 @@
       "movable": false,
       "model": "models/m12-post.mpd",
       "modelPose": {
-        "x": 93.4,
-        "y": 3.3,
-        "heading": -104.0
+        "x": 85.72,
+        "y": 7.43,
+        "heading": 90
       }
     },
     {
       "id": "Dock farm (M13-15)",
-      "x": 0.9,
-      "y": -7.8,
+      "x": 0.05,
+      "y": -9.55,
       "w": 16.4,
       "d": 11.7,
       "h": 4.0,
@@ -219,14 +219,14 @@
       "movable": false,
       "model": "models/m15.mpd",
       "modelPose": {
-        "x": 0.2,
-        "y": -5.7,
-        "heading": -0.5
+        "x": -0.65,
+        "y": -7.45,
+        "heading": -90
       }
     },
     {
       "id": "Dock city (M13-15)",
-      "x": 27.8,
+      "x": 27.88,
       "y": 47.8,
       "w": 20.4,
       "d": 13.0,
@@ -235,15 +235,15 @@
       "movable": false,
       "model": "models/m13.mpd",
       "modelPose": {
-        "x": 28.1,
+        "x": 28.18,
         "y": 47.7,
-        "heading": 0.5
+        "heading": 90
       }
     },
     {
       "id": "Dock mine (M13-15)",
-      "x": 88.5,
-      "y": -46.1,
+      "x": 89.37,
+      "y": -46.98,
       "w": 9.5,
       "d": 13.5,
       "h": 4.0,
@@ -251,15 +251,15 @@
       "movable": false,
       "model": "models/m14.mpd",
       "modelPose": {
-        "x": 88.5,
-        "y": -46.1,
-        "heading": -134.5
+        "x": 89.37,
+        "y": -46.98,
+        "heading": 45.5
       }
     },
     {
       "id": "M01 Drone stand",
-      "x": 3.9,
-      "y": 34.7,
+      "x": 5.09,
+      "y": 34.97,
       "w": 8,
       "d": 8,
       "h": 10,
@@ -268,9 +268,9 @@
       "label": "",
       "model": "models/m01-stand.mpd",
       "modelPose": {
-        "x": -12,
-        "y": 42.2,
-        "heading": 3.5
+        "x": -10.81,
+        "y": 42.47,
+        "heading": 0
       }
     }
   ]
