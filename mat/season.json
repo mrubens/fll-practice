@@ -141,13 +141,13 @@
       "modelPose": {
         "x": -23.26,
         "y": -51.95,
-        "heading": -120
+        "heading": 240
       }
     },
     {
       "id": "M10 Fragile Microhabitat B",
-      "x": 11.57,
-      "y": -23.65,
+      "x": 10.91,
+      "y": -22.24,
       "w": 3.6,
       "d": 3.6,
       "h": 5.0,
@@ -155,9 +155,9 @@
       "movable": false,
       "model": "models/m10b.mpd",
       "modelPose": {
-        "x": 11.57,
-        "y": -23.65,
-        "heading": 46.5
+        "x": 10.91,
+        "y": -22.24,
+        "heading": 45
       }
     },
     {
@@ -210,8 +210,8 @@
     },
     {
       "id": "Dock farm (M13-15)",
-      "x": 0.05,
-      "y": -9.55,
+      "x": 1.71,
+      "y": -7.67,
       "w": 16.4,
       "d": 11.7,
       "h": 4.0,
@@ -219,9 +219,9 @@
       "movable": false,
       "model": "models/m15.mpd",
       "modelPose": {
-        "x": -0.65,
-        "y": -7.45,
-        "heading": -90
+        "x": 1.01,
+        "y": -5.57,
+        "heading": 90
       }
     },
     {
