@@ -10,6 +10,7 @@ import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
 import { SCOOP_PARTS } from './build.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
+import { drawCustom, poseCustom } from './legodraw.js';
 
 const DEG = Math.PI / 180;
 const LDU = 0.04; // 1 LDraw unit = 0.4 mm = 0.04 cm
@@ -600,6 +601,7 @@ export class Sim3D {
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
     if (['arm', 'plow', 'basket', 'sweeper', 'scoop'].includes(a.module)) this.legoTool(a.module, body, prim);
+    else if (a.module === 'custom') drawCustom(this, body, a);
     else if (a.module !== 'none') this.legoAttachment(a.module, prim);
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd, a.height - geom.lift, a.lat);   // body already rides at geom.lift
@@ -1077,12 +1079,14 @@ export class Sim3D {
     this.wheels[1].rotation.z = -r.motors[cfg.left].angle * DEG;
     if (this.matrixDirty) { this.drawMatrix(); this.matrixDirty = false; }
     const arm = r.arm();
+    poseCustom(this);
     if (arm) {
       const mv = this.armMoving;
       if (arm.module === 'arm' || arm.module === 'plow' || arm.module === 'scoop') mv.rotation.set(0, 0, arm.angle * DEG);
       else if (arm.module === 'basket') mv.rotation.set(0, 0, -Math.max(0, arm.angle) * DEG);
       else if (arm.module === 'sweeper') mv.rotation.set(0, arm.angle * DEG, 0);
       else if (arm.module === 'lift') mv.position.y = arm.liftHeight - this.armPivot.position.y;
+      else if (arm.module === 'custom') mv.rotation.set(0, 0, arm.angle * DEG);
     }
     for (const m of this.obstacleMeshes) {
       const o = m.userData.obstacle;

@@ -4,6 +4,7 @@ import { START_POSE } from './world.js';
 import { COLOR_BY_CODE } from './spec.js';
 import { textColumns, charMatrix } from './matrixfont.js';
 import { defaultBuild, normalizeBuild, geometryFor, portsOf } from './build.js';
+import { loadLego, legoReady } from './lego.js';
 
 export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
 // The forklift: a 12-tooth gear on the motor driving a gear rack. 12 teeth at LEGO's 3.14 mm pitch is 3.8 cm per
@@ -29,6 +30,8 @@ export class Robot {
   /** Apply a robot build (see build.js): ports and geometry derive from it. */
   applyBuild(build) {
     this.build = normalizeBuild(build);
+    // a custom attachment needs the LEGO parts data for its physics and drawing: build again once it is here
+    if (this.build.attachment.module === 'custom' && !legoReady()) loadLego().then(() => { if (this.build.attachment.module === 'custom') this.applyBuild(this.build); }).catch(() => {});
     this.geom = geometryFor(this.build);
     this.config = portsOf(this.build);
     if (this.config.attachment && this.motors[this.config.attachment]) Object.assign(this.motors[this.config.attachment], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment starts at rest
@@ -246,6 +249,7 @@ export class Robot {
     if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
     if (module === 'sweeper') return angle < -90 ? -90 : angle > 90 ? 90 : null;
     if (module === 'arm') return angle < ARM_STOPS.low ? ARM_STOPS.low : angle > ARM_STOPS.high ? ARM_STOPS.high : null;
+    if (module === 'custom') { const s = this.geom.attachment.stops || [-180, 180]; return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null; }   // where it meets the robot itself
     if (module === 'scoop') return angle < -3 ? -3 : angle > 100 ? 100 : null;     // from the plate flat on the mat up to the liftarms meeting the hub
     if (module === 'plow') return angle < -30 ? -30 : angle > 90 ? 90 : null;      // the blade tilts from dug in to raised
     if (module === 'basket') return angle < 0 ? 0 : angle > 110 ? 110 : null;      // level to tipped right over

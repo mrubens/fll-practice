@@ -10,6 +10,7 @@ export const MODULES = {
   plow: { label: 'dozer blade (tilts up and down)', motor: true },
   basket: { label: 'basket (carries pieces, tips to dump)', motor: true },
   sweeper: { label: 'sweeper (swings sideways on the motor\'s axle)', motor: true },
+  custom: { label: 'my own attachment (built from LEGO parts in the attachment builder)', motor: true },
   scoop: { label: 'side scoop (a long plate out to the left that slides under things and lifts them)', motor: true },
   // Hidden from the builder until it is rebuilt as a real, pinned-together LEGO assembly like the others.
   lift: { label: 'forklift (slides up)', motor: true, hidden: true },
@@ -39,6 +40,12 @@ export function normalizeBuild(b) {
   const base = PRESETS['training-camp'];
   const ports = Object.assign({}, base.ports, src.ports || {});
   const attachment = Object.assign({}, base.attachment, src.attachment || {});
+  // a custom attachment keeps its parts (an .ldr in the Driving Base's frame) and what the builder measured of it
+  if (attachment.module === 'custom') {
+    attachment.ldr = String(attachment.ldr || '').slice(0, 300000);
+    attachment.length = Number(attachment.length) || 0; attachment.tipAngle = Number(attachment.tipAngle) || 0;
+    attachment.stops = Array.isArray(attachment.stops) && attachment.stops.length === 2 ? attachment.stops.map(Number) : [-180, 180];
+  } else { delete attachment.ldr; delete attachment.length; delete attachment.tipAngle; delete attachment.stops; }
   if (!MODULES[attachment.module] || MODULES[attachment.module].hidden) attachment.module = 'none';
   // Attachments always go on the front and their motor is always on port E, like the Guided Mission robot:
   // one less thing for kids to decide. Whatever else was on E moves to its usual port.
@@ -92,6 +99,7 @@ export function geometryFor(build) {
       if (m === 'arm') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
       if (m === 'plow') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
       if (m === 'basket') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 6.4, height: 5.2 + lift, drop: 0 };
+      if (m === 'custom') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: build.attachment.length || 1, tipAngle: build.attachment.tipAngle || 0, height: 5.2 + lift, drop: 0, ldr: build.attachment.ldr || '', stops: build.attachment.stops };
       if (m === 'scoop') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 18.0, tipAngle: -15.5, height: 5.2 + lift, drop: 0 };
       if (m === 'sweeper') return { module: m, mount: 'front', fwd: 6.4, lat: -3.2, angle: 0, length: 12.8, height: 5.6 + lift, drop: 0 };
       return { module: m, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 };

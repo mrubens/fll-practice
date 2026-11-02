@@ -53,6 +53,16 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
   shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
+- **Build your own attachment.** In the robot builder pick "my own attachment" and the attachment builder opens:
+  a parts box with every Technic part of the SPIKE Prime sets (beams, frames, pins, axles, connectors, bushes, gears)
+  and the Driving Base with its arm bracket, whose axle motor E turns. Parts snap only where real LEGO connects (a pin
+  into a pin hole, an axle into an axle hole or through a round hole, from the LDCad shadow library's connector
+  data): click a part, point at a hole, axle or pin and click to place it; R turns it about the axle, F flips it,
+  Tab uses another of its holes or pins, [ and ] slide it along. "Try motor E" turns the drive in the preview. The
+  simulator works out what the build is made of: parts locked onto the drive axle turn with motor E, parts locked
+  to the robot stay put, and anything hung on a single pin line swings on a hinge, held by friction pins (black,
+  blue) and loose on smooth ones (grey, tan). It is saved with the project and as an `.ldr` that LDCad or Studio
+  open in the Driving Base's frame.
 - **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
   keystone species can be dumped onto the restoration platform, and seeds collected from the field (the seed pod,
   the research platform and M11's tree) can be carried to the replantation station.
@@ -138,6 +148,7 @@ Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the
 | `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
 | `js/world.js`, `js/physics.js`, `js/mechanisms.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier layer (kinematic robot, collide-and-slide, arm stall) and the per-model mechanisms (pieces, joints, which LEGO parts move) |
 | `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
+| `js/lego.js`, `js/legobuilder.js`, `js/lego3d.js`, `js/legophysics.js`, `js/legodraw.js` | The attachment builder: connector matching and what a build is made of (bodies, hinges, friction), its UI, part drawing, physics and drawing on the robot |
 | `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Missions with rulebook wording and points read from the physical state, the referee (match rules, tokens, end-of-match freeze), mission card |
 | `js/hub.js` | Hub strip UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |

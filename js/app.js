@@ -15,6 +15,7 @@ import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
 import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
+import { AttachmentBuilder } from './legobuilder.js';
 
 const B = window.Blockly;
 const $ = (sel) => document.querySelector(sel);
@@ -413,13 +414,15 @@ function fillBuilder(b) {
   const motor = MODULES[b.attachment.module].motor;
   B$('bAttachInfo').textContent = b.attachment.module === 'none' ? '' : motor ? 'Mounted on the front. Its motor is on port E. Press Q and E over the 3D view to try it.' : 'Mounted on the front. No motor.';
   B$('bIssues').textContent = validateBuild(b).join(' ');
+  B$('bLego').hidden = b.attachment.module !== 'custom';
+  if (b.attachment.module === 'custom') B$('bAttachInfo').textContent = b.attachment.ldr ? 'Built from LEGO parts on the arm bracket. Its motor is on port E. Press Q and E over the 3D view to try it.' : 'Nothing built yet: open the attachment builder.';
 }
 function readBuilder() {
   return normalizeBuild({
     preset: null, name: 'Custom robot',
     ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value },
     distanceMount: B$('bDistMount').value,
-    attachment: { module: B$('bModule').value },
+    attachment: B$('bModule').value === 'custom' ? { ...(store.lastCustom || {}), module: 'custom' } : { module: B$('bModule').value },
   });
 }
 function applyBuildFromUi(b) {
@@ -462,6 +465,17 @@ function closeBuilder() {
 }
 $('#btnRobot').addEventListener('click', () => (buildOpen ? closeBuilder() : openBuilder()));
 $('#builderDone').addEventListener('click', closeBuilder);
+// the attachment builder: build an attachment from real LEGO parts (legobuilder.js); it is saved with the project
+const legoBuilder = new AttachmentBuilder({
+  onApply: (meta) => {
+    store.lastCustom = { module: 'custom', ...meta };
+    applyBuildFromUi(normalizeBuild({ ...robot.build, preset: null, name: 'Custom robot', attachment: store.lastCustom }));
+    toast(meta.ldr ? 'Your attachment is on the robot. Motor E turns it: press Q and E over the 3D view to try it.' : 'The attachment is empty.');
+  },
+});
+B$('bLego').addEventListener('click', () => legoBuilder.open(robot.build.attachment.module === 'custom' ? robot.build.attachment.ldr : (store.lastCustom || {}).ldr));
+B$('bModule').addEventListener('change', () => { if (B$('bModule').value === 'custom' && !(store.lastCustom && store.lastCustom.ldr)) legoBuilder.open(''); });
+window.legoBuilder = legoBuilder;   // for tests, like window.spikeApp
 
 // ---------- workspace tools ----------
 $('#btnFit').addEventListener('click', () => workspace.zoomToFit());
@@ -768,7 +782,7 @@ async function frame(now) {
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
   }
   hub.update(now);
-  if (!replay.active) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be
+  if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
   frameBusy = false;
   requestAnimationFrame(frame);
 }
