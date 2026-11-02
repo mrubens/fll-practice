@@ -958,6 +958,9 @@ export class Sim3D {
     const t = pn.tether;
     const a = new THREE.Vector3(...t.from).applyQuaternion(pn.holder.quaternion).add(pn.holder.position);
     const b = new THREE.Vector3(...t.to).applyQuaternion(pn.node.quaternion).add(pn.node.position);
+    const key = a.toArray().concat(b.toArray()).map((v) => v.toFixed(3)).join();
+    if (key === pn.tetherKey) return;      // ends where they were: keep the tube
+    pn.tetherKey = key;
     const slack = Math.max(0, t.length - a.distanceTo(b));
     // a chain sags; a springy hose (M02) arches up and out from where it is plugged in
     const mid = a.clone().lerp(b, 0.5);
@@ -1077,7 +1080,7 @@ export class Sim3D {
     const cfg = r.config;
     this.wheels[0].rotation.z = -r.motors[cfg.right].angle * DEG;  // z = +1 side is the robot's right (y down => z right)
     this.wheels[1].rotation.z = -r.motors[cfg.left].angle * DEG;
-    if (this.matrixDirty) { this.drawMatrix(); this.matrixDirty = false; }
+    if (this.matrixDirty) { this.drawMatrix(); this.matrixDirty = false; this.frameForced = true; }
     const arm = r.arm();
     poseCustom(this);
     if (arm) {
@@ -1103,6 +1106,26 @@ export class Sim3D {
       this.camera.position.add(delta);
     }
     this.controls.update();
+    // draw only when something on screen changed (the camera, the robot, a piece, an effect, a model loading in):
+    // a still scene of LEGO models at full detail costs the GPU a lot sixty times a second
+    if (!this.sceneChanged()) return;
     this.renderer.render(this.scene, this.camera);
+  }
+
+  /** A cheap fingerprint of everything that moves on screen; true when it differs from the last frame drawn. */
+  sceneChanged() {
+    const c = this.camera, r = this.robot, ph = this.world.physics, size = this.renderer.domElement;
+    let sig = c.matrixWorld.elements.join() + '|' + c.projectionMatrix.elements[0] + c.projectionMatrix.elements[5] + '|' + size.width + 'x' + size.height;
+    sig += '|' + r.x + ',' + r.y + ',' + r.heading + ',' + Object.values(r.motors).map((m) => m.angle).join();
+    if (ph) for (const pc of ph.pieces) if (pc.state) sig += '|' + pc.state.pos.join() + pc.state.q.join();
+    for (const o of this.world.obstacles) sig += '|' + o.x + ',' + o.y + ',' + (o.angle || 0) + (o.touched !== undefined && r.time - o.touched < 0.3 ? 't' : '');
+    sig += '|' + this.scene.children.length + ',' + this.renderer.info.memory.textures + ',' + (r.hub.centerColor || '') + ',' + this.quality;
+    const now = performance.now();
+    // effects, outlines and camera moves animate on their own; anything else that changes without moving (a part shown
+    // or hidden, the ruler) is caught by a refresh a few times a second
+    const busy = this.effects.length || this.shimmers.length || this.fly || this.chase || this.frameForced || now - (this.lastDrawn || 0) > 400;
+    if (!busy && sig === this.lastSig) return false;
+    this.lastSig = sig; this.lastDrawn = now; this.frameForced = false;
+    return true;
   }
 }

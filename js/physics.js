@@ -237,7 +237,33 @@ export class Physics {
     }
     this.colliderToObstacle = new Map(this.obstacleBodies.filter((ob) => ob.collider).map((ob) => [ob.collider.handle, ob.o]));
     for (const ob of this.obstacleBodies) for (const c of ob.colliders || []) this.colliderToObstacle.set(c.handle, ob.o);
+    this.settlePieces();
     this.readPieces(0);
+  }
+
+  /** Let every mission piece come to rest once (a leaf onto its cam, a seed onto the mat), take that as its start pose,
+   * and put it to sleep: a resting field costs nothing to simulate, and a reset puts the pieces back asleep. */
+  settlePieces(seconds = 1.5) {
+    const key = (pc) => pc.o.id + '/' + pc.name + (pc.o.parts ? '' : '/boxes');   // a build before the part shapes arrived settles differently
+    const pieces = this.pieces.filter((pc) => !pc.equipment && pc.o && pc.body.bodyType() === 0);
+    this.settled ||= new Map();
+    if (!pieces.every((pc) => this.settled.has(key(pc)))) {
+      // first time this field is built: run the mechanisms until everything has come to rest
+      const dt = this.world.timestep;
+      this.world.timestep = 1 / 200;
+      this.readPieces(0);
+      for (let i = 0; i < seconds * 200; i++) { this.updateMechanisms(-1); this.world.step(); this.readPieces(0); }
+      this.world.timestep = dt;
+      for (const pc of pieces) { const t = pc.body.translation(), r = pc.body.rotation(); this.settled.set(key(pc), { t: { ...t }, r: { x: r.x, y: r.y, z: r.z, w: r.w } }); }
+    }
+    for (const pc of pieces) {
+      const p = this.settled.get(key(pc));
+      pc.body.setTranslation(p.t, false); pc.body.setRotation(p.r, false);
+      pc.body.setLinvel({ x: 0, y: 0, z: 0 }, false); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
+      pc.start = new THREE.Vector3(p.t.x / S, p.t.y / S, p.t.z / S);
+      pc.qStart = new THREE.Quaternion(p.r.x, p.r.y, p.r.z, p.r.w);
+      pc.body.sleep();
+    }
   }
 
   // ---------------- mission mechanisms ----------------
@@ -263,7 +289,7 @@ export class Physics {
     for (const n of Object.keys(def.pieces || {})) own[n] = [];
     // soft parts (plants, flexible hoses, string) are drawn but bend out of the way, so they get no colliders
     if (o.parts) for (const e of o.parts) { const info = partInfo(e); const who = pieceOfPart(def, info); if (who && !(who === 'base' && def.soft && def.soft(info))) own[who].push(e); }
-    if (o.parts) colliders.push(...this._partColliders(own.base, base, [0, 0, 0], groups, 0, 0.7));
+    if (o.parts) colliders.push(...this._partColliders(own.base, base, [0, 0, 0], groups, 0, 0.7, true));   // parts buried inside others (pins in holes) dropped
     for (const c of colliders) this.colliderTop.set(c.handle, colliderTop(c));
     for (const b of (o.parts ? def.baseExtra : def.base) || []) {
       const cd = R.ColliderDesc.cuboid((b.box[0] / 2) * S, (b.box[1] / 2) * S, (b.box[2] / 2) * S).setTranslation(b.at[0] * S, b.at[1] * S, b.at[2] * S).setFriction(0.7).setCollisionGroups(groups);
@@ -477,9 +503,10 @@ export class Physics {
     for (const pc of this.pieces) {
       const qs = pc.qStart || pc.q0;
       const rq = { x: qs.x, y: qs.y, z: qs.z, w: qs.w };
-      pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, true);
-      pc.body.setRotation(rq, true);
-      pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+      pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, false);
+      pc.body.setRotation(rq, false);
+      pc.body.setLinvel({ x: 0, y: 0, z: 0 }, false); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
+      pc.lastDrive = undefined; pc.lastPhi = undefined;
       pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false; pc.range = null;
       if (pc.easing && pc.joint) pc.joint.configureMotorVelocity(0, (pc.def.damp || 0) * 4e-6);
       pc.easing = false;
@@ -510,6 +537,7 @@ export class Physics {
         this._jointLimits(pc, false);
       }
     }
+    for (const pc of this.pieces) if (!pc.equipment && pc.body.bodyType() === 0) pc.body.sleep();   // back at rest: asleep until touched
     this.readPieces(0);
   }
 
@@ -545,7 +573,7 @@ export class Physics {
       if (pc.def.pushedBy && pc.joint && !pc.freed) {
         // threaded behind another piece on the same bar: it is shoved along when that one comes up against it
         const d = this.pieces.find((q) => q.o === pc.o && q.name === pc.def.pushedBy);
-        if (d && !d.freed && d.ext > pc.ext) {
+        if (d && !d.freed && d.ext > pc.ext + 0.005) {
           const p = pc.anchor.clone().addScaledVector(pc.axisW, d.ext);
           pc.body.setTranslation({ x: p.x * S, y: p.y * S, z: p.z * S }, true);
           pc.body.setLinvel(d.body.linvel(), true);
@@ -565,11 +593,12 @@ export class Physics {
           if (pc.def.kind === 'hinge') {
             const w = pc.body.angvel(), wv = new THREE.Vector3(w.x, w.y, w.z), along = wv.dot(pc.axisW);
             const cut = Math.sign(along) * Math.min(Math.abs(along), drag * dt);
-            if (cut) { wv.addScaledVector(pc.axisW, -cut); pc.body.setAngvel({ x: wv.x, y: wv.y, z: wv.z }, false); }
+            // leave a piece at rest alone, so it can fall asleep
+            if (Math.abs(along) > 1e-3) { wv.addScaledVector(pc.axisW, -cut); pc.body.setAngvel({ x: wv.x, y: wv.y, z: wv.z }, false); }
           } else {
             const v = pc.body.linvel(), vv = new THREE.Vector3(v.x, v.y, v.z), along = vv.dot(pc.axisW);
             const cut = Math.sign(along) * Math.min(Math.abs(along), drag * S * dt);
-            if (cut) { vv.addScaledVector(pc.axisW, -cut); pc.body.setLinvel({ x: vv.x, y: vv.y, z: vv.z }, false); }
+            if (Math.abs(along) > 1e-5) { vv.addScaledVector(pc.axisW, -cut); pc.body.setLinvel({ x: vv.x, y: vv.y, z: vv.z }, false); }
           }
         }
       }
@@ -615,7 +644,7 @@ export class Physics {
         const src = this.pieces.find((q) => q.o === pc.o && q.name === c.piece);
         if (src && src.joint) {
           const th = src.angle, phi = c.map(th);
-          pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 1500, c.d ?? 80);   // acceleration-based: stiff enough to follow
+          if (pc.lastPhi === undefined || Math.abs(phi - pc.lastPhi) > 0.05) { pc.lastPhi = phi; pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 1500, c.d ?? 80); }   // acceleration-based: stiff enough to follow
           const slope = (c.map(th + 1) - c.map(th - 1)) / 2;
           const e = pc.angle - phi;
           if (Math.abs(e) > 1.5 && Math.abs(slope) > 0.1 && pc.touched >= 0 && time - pc.touched < 0.3) {
@@ -634,7 +663,12 @@ export class Physics {
         // kinematic: turns on its own axle in step with its driver (ratio in radians per cm the driver slides)
         const d = pc.def.drivenBy;
         const src = this.pieces.find((q) => q.o === pc.o && q.name === d.piece);
-        if (src) {
+        // a kinematic body never sleeps and keeps waking what rests on it (the M06 leaves on the cams), so a gear whose
+        // driver is still is made fixed until it turns again
+        if (src && src.ext === pc.lastDrive && pc.body.bodyType() !== 1) pc.body.setBodyType(1, false);
+        if (src && src.ext !== pc.lastDrive) {
+          if (pc.body.bodyType() !== 2) this._unfreeze(pc);
+          pc.lastDrive = src.ext;
           const a = src.ext * d.ratio;
           const q = pc.q0.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pc.def.axis).normalize(), a));
           pc.angle = a / DEG;
@@ -647,6 +681,9 @@ export class Physics {
         const d = pc.def.drivenBy;
         const src = this.pieces.find((q) => q.o === pc.o && q.name === d.piece);
         const e = src ? src.ext : d.travel;
+        if (e === pc.lastDrive) { if (pc.body.bodyType() !== 1) pc.body.setBodyType(1, false); continue; }
+        if (pc.body.bodyType() !== 2) this._unfreeze(pc);
+        pc.lastDrive = e;
         const t = Math.max(0, Math.min(1, e / d.travel));
         const p = pc.anchor.clone().add(new THREE.Vector3(0, e, 0));
         const q = pc.q0.clone().multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(...pc.def.axis).normalize(), pc.def.angle * t * DEG));
@@ -1050,9 +1087,22 @@ export class Physics {
     pc.carried = true;
   }
 
+  /** A fixed gear or follower starts moving again: kinematic, and what rests on it woken (a sleeping leaf on a turning
+   * cam is not woken by Rapier and gets cut into and flung). */
+  _unfreeze(pc) {
+    pc.body.setBodyType(2, true);
+    for (const q of this.pieces) if (q.o === pc.o && q.body.bodyType() === 0) q.body.wakeUp();
+  }
+
   /** Let loose pieces settle while no program runs (gravity keeps working between runs). */
   idleStep(dt) {
     if (!this.robotBody) return;
+    // nothing moving and the robot where it was: the world is at rest, so there is nothing to step
+    const rt = this.robotBody.translation(), rr = this.robotBody.rotation();
+    const sig = [rt.x, rt.z, rr.y, rr.w, this.robot ? this.attachmentAngle(this.robot) : 0].join();
+    const awake = this.pieces.some((pc) => pc.body.bodyType() === 0 && !pc.body.isSleeping());
+    if (!awake && sig === this.idleSig) { this.idleAcc = 0; return; }
+    this.idleSig = sig;
     const t = this.robot ? this.robot.time : 0;
     this.idleAcc = Math.min(0.05, (this.idleAcc || 0) + dt);
     const STEP = 1 / 200;                 // joint limits need small, fixed steps or they bounce

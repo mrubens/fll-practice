@@ -181,10 +181,10 @@ export const MECHANISMS = {
         parts: (p) => p.file === 'm07-trap.ldr' },
       // the four leaf fragments stand in their slots in the roof, each foot resting on a cam: the slot lets a leaf only go
       // up and down, and one thrown up past the top of its slot (push the ant in too fast) flies out
-      frag1: { kind: 'slider', axis: [0, 1, 0], anchor: [-0.86, 6.0, -6.59], range: [-1.5, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 154 && p.i <= 157 },
-      frag2: { kind: 'slider', axis: [0, 1, 0], anchor: [0.74, 6.0, -6.59], range: [-1.5, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 158 && p.i <= 161 },
-      frag3: { kind: 'slider', axis: [0, 1, 0], anchor: [3.14, 6.0, -6.59], range: [-1.5, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 162 && p.i <= 165 },
-      frag4: { kind: 'slider', axis: [0, 1, 0], anchor: [4.74, 6.0, -6.59], range: [-1.5, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 166 && p.i <= 169 },
+      frag1: { kind: 'slider', axis: [0, 1, 0], anchor: [-0.86, 6.0, -6.59], range: [-3, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 154 && p.i <= 157 },
+      frag2: { kind: 'slider', axis: [0, 1, 0], anchor: [0.74, 6.0, -6.59], range: [-3, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 158 && p.i <= 161 },
+      frag3: { kind: 'slider', axis: [0, 1, 0], anchor: [3.14, 6.0, -6.59], range: [-3, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 162 && p.i <= 165 },
+      frag4: { kind: 'slider', axis: [0, 1, 0], anchor: [4.74, 6.0, -6.59], range: [-3, 3.6], freeAt: 3.3, mass: 0.004, damp: 6, collidesWith: ['camshaft'], parts: (p) => p.i >= 166 && p.i <= 169 },
     },
   },
   // ---- M08/M09: the vine drops when touched, the platform lifts, the camera trap flips out, the seed falls ----
