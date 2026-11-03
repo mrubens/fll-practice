@@ -319,6 +319,7 @@ body.building #hubPanel { display: none; }
 .lb-preset { border: 1px solid var(--line); background: var(--panel); border-radius: 999px; padding: 5px 11px; font: inherit; font-size: 12px; font-weight: 700; color: var(--fg); cursor: pointer; }
 .lb-preset:hover { background: var(--bg); }
 .lb-preset.on { background: var(--accent); border-color: var(--accent); color: #fff; }
+.lb-preset[hidden] { display: none; }
 .lb-preset:disabled { opacity: .4; cursor: not-allowed; }
 .lb-robots { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
 .lb-robots > span, .lb-presets > span { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); font-weight: 800; margin-right: 4px; }

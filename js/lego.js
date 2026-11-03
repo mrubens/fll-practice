@@ -528,7 +528,10 @@ export class Scene {
           if (!c) continue;
           const v = gearAxis(B.it.q), vb = cross(v, sub(c, B.it.q.p)), n2 = dot(vb, vb);
           if (n2 < 1e-6) continue;
-          const wj = scl(v, dot(cross(bi.w, sub(c, A.it.q.p)), vb) / n2);
+          // which way it turns comes from where the teeth touch; how fast, from the teeth (pitch radii)
+          const sg = Math.sign(dot(cross(bi.w, sub(c, A.it.q.p)), vb) / n2) || 1;
+          const wa = Math.abs(dot(bi.w, gearAxis(A.it.q))) || len(bi.w);
+          const wj = scl(v, sg * wa * GEARS[A.it.q.f].r / GEARS[B.it.q.f].r);
           const bj = bodies[B.i];
           if (bj.role === 'base') { gearJam = true; continue; }
           if (bj.w) { if (len(sub(bj.w, wj)) > 1e-3 * (1 + len(wj))) gearJam = true; continue; }

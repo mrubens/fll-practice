@@ -3,7 +3,8 @@
 0 Author: FLL Sim (scripted from the official building instructions); rearranged for fll-practice
 0 !LICENSE Model data for simulation use
 0 // the color sensors (B left, F right) are parts the robot builder places; the wheels are models/src/advanced-wheels.ldr;
-0 // the 28-tooth gears on the tool motors D and C are the drives (js/lego.js CHASSIS_DRIVES), drawn turning
+0 // the 28-tooth gears on the tool motors D and C are the drives (js/lego.js CHASSIS_DRIVES), drawn turning;
+0 // the back frame's side holes over motor C's gear are left free for a tool's output axle
 
 0 // front: 9L beam
 1 0 0 -48.7646 -140 0 0 1 1 0 0 0 1 0 40490.dat
@@ -379,9 +380,7 @@
 0 // rear: red pin with stop bush (tool lock)
 1 4 -40 -169.7646 250 0 0 1 0 1 0 -1 0 0 32054.dat
 0 // rear: 4L axle into the side frame
-1 72 120 -169.7646 190 -1 0 0 0 1 0 0 0 -1 3705.dat
 0 // rear: 4L axle into the side frame
-1 72 -120 -169.7646 190 -1 0 0 0 1 0 0 0 -1 3705.dat
 0 // rear
 0 STEP
 0 // front: magenta 11x7 frame (tool mount)

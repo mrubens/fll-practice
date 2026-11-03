@@ -132,6 +132,24 @@ export const BUILT_IN = [
   { module: 'custom', label: 'My own' },
 ];
 
+// Ready-made tools for a chassis without the arm bracket: real builds the child can use as they are or change ("My
+// own" from there). The Advanced Driving Base's back lift arm: a 12-long axle across the back frame's side holes, over
+// motor C's 28-tooth gear, carries a 20-tooth gear meshing with it (28:20, so the arm turns 1.4 times as far as the
+// motor, the other way); a 2-long liftarm locked on the axle's left end and a 9-long beam pinned to it reach out behind
+// the robot.
+export const TOOL_PRESETS = {
+  advanced: [
+    { id: 'back-lift', label: 'Back lift arm', note: 'motor C: a beam behind the robot that lifts and lowers (a 20-tooth gear meshing with the 28-tooth gear)',
+      ldr: `1 0 -40 -169.76 191 -1 0 0 0 0 1 0 1 0 3708.dat
+1 0 -20 -169.76 191 0 0 1 0 -1 0 1 0 0 18575.dat
+1 15 -160 -169.76 271 0 -1 0 -1 0 0 0 0 -1 40490.dat
+1 72 -140 -169.76 191 0 1 0 -1 0 0 0 0 1 60483.dat
+1 71 -150 -169.76 211 -1 0 0 0 -1 0 0 0 1 3673.dat
+` },
+  ],
+};
+const ldrKey = (parts) => parts.map((q) => q.f + ' ' + q.p.map((v) => Math.round(v)).join(',')).sort().join('|');
+
 export class AttachmentBuilder {
   /**
    * onChange(build): the robot changed (sensors, ports, attachment); normalize(build) makes a build whole (build.js);
@@ -203,12 +221,18 @@ export class AttachmentBuilder {
     const attach = !!ch.attachments;
     this.root.querySelectorAll('.lb-preset').forEach((b) => {
       const m = b.dataset.module;
+      if (b.dataset.tool) { b.hidden = b.dataset.chassis !== chassis; return; }
+      b.hidden = !attach && m !== 'none' && m !== 'custom';      // the bracket's attachments only show on the Driving Base
       b.disabled = !attach && m !== 'none' && !(m === 'custom' && ch.custom);
       b.title = b.disabled ? `Made for the Driving Base's arm bracket` : m === 'custom' && ch.tools.length ? 'Build tools on the front and back frames: a gear meshing with a tool motor\'s 28-tooth gear turns with it' : (BUILT_IN.find((x) => x.module === m) || {}).note || '';
     });
     const sub = this.root.querySelector('.lb-presets > span');
     if (sub) sub.innerHTML = ch.tools.length ? 'Attachment <small>tool motors D and C</small>' : 'Attachment <small>motor E</small>';
     this._sliders();
+    const keys = this.root.querySelector('.lb-keys b:last-child');
+    if (keys) keys.textContent = ch.tools.length ? 'Q E / Z X' : 'Q E';
+    const tail = keys && keys.nextSibling;
+    if (tail && tail.nodeType === 3) tail.textContent = ch.tools.length ? ' turn motors D / C' : ' turn motor E';
   }
 
   /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` puts the choice on the robot. */
@@ -225,7 +249,7 @@ export class AttachmentBuilder {
     this._dropGhost();
     this.mode = module;
     this.selected = null;
-    this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.module === module));
+    this._presetMarks();
     this.root.querySelectorAll('[data-custom]').forEach((b) => { b.hidden = module !== 'custom'; });
     this._showBuiltIn(module);
     this._rebuild();
@@ -290,6 +314,26 @@ export class AttachmentBuilder {
     this.message(`${p.name}.`);
   }
 
+  /** A ready-made tool (TOOL_PRESETS): its parts become the child's own build, to use or change. */
+  useTool(id) {
+    const t = (TOOL_PRESETS[this.build.chassis] || []).find((x) => x.id === id);
+    if (!t) return;
+    this._push();
+    if (this.mode !== 'custom') this.setModule('custom');
+    this.parts = parseLdr(t.ldr).filter((q) => this.D.parts.parts[q.f]);
+    this.selected = null;
+    this._rebuild(true);
+    this.message(`${t.label}: ${t.note}. Change it as you like.`);
+  }
+
+  /** Which button in the attachment row is the robot's: a built-in, a ready-made tool (when the build is it), or My own. */
+  _presetMarks() {
+    if (!this.root) return;
+    const key = this.mode === 'custom' ? ldrKey(this.parts) : null;
+    const tool = key && (TOOL_PRESETS[this.build && this.build.chassis] || []).find((t) => ldrKey(parseLdr(t.ldr)) === key);
+    this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.tool ? !!tool && tool.id === b.dataset.tool : b.dataset.module === this.mode && !(this.mode === 'custom' && tool)));
+  }
+
   /** The parts of a built-in attachment, on the drive axle (their files have their origin on it). */
   _showBuiltIn(module) {
     const { bmove: drive } = this.three;
@@ -337,7 +381,9 @@ export class AttachmentBuilder {
       <div class="lb-sub">
         <div class="lb-presets" role="group" aria-label="Attachment">
           <span>Attachment <small>motor E</small></span>
-          ${BUILT_IN.map((b) => `<button type="button" class="lb-preset" data-module="${b.module}"${b.note ? ` title="${b.note}"` : ''}>${b.label}</button>`).join('')}
+          ${BUILT_IN.filter((b) => b.module !== 'custom').map((b) => `<button type="button" class="lb-preset" data-module="${b.module}"${b.note ? ` title="${b.note}"` : ''}>${b.label}</button>`).join('')}
+          ${Object.entries(TOOL_PRESETS).flatMap(([ch, list]) => list.map((t) => `<button type="button" class="lb-preset" data-tool="${t.id}" data-chassis="${ch}" title="${t.note}" hidden>${t.label}</button>`)).join('')}
+          <button type="button" class="lb-preset" data-module="custom">My own</button>
         </div>
         <div class="lb-tools">
           <button type="button" class="tb" data-act="clear" data-custom title="Take your attachment's parts off">Clear</button>
@@ -367,7 +413,11 @@ export class AttachmentBuilder {
     this.root = r;
     this.view = r.querySelector('.lb-view');
     this.sideEl = r.querySelector('.lb-side');
-    r.querySelector('.lb-presets').addEventListener('click', (e) => { const b = e.target.closest('.lb-preset'); if (b) this.setModule(b.dataset.module, true); });
+    r.querySelector('.lb-presets').addEventListener('click', (e) => {
+      const b = e.target.closest('.lb-preset');
+      if (!b) return;
+      if (b.dataset.tool) this.useTool(b.dataset.tool); else this.setModule(b.dataset.module, true);
+    });
     r.querySelector('.lb-robots').addEventListener('click', (e) => { const b = e.target.closest('.lb-robot'); if (b) this.usePreset(b.dataset.robot); });
     this.msgEl = r.querySelector('.lb-msg');
     this.statusEl = r.querySelector('.lb-status');
@@ -647,6 +697,7 @@ export class AttachmentBuilder {
     }
     this._poseDrive();
     this._summary();
+    this._presetMarks();
     this._selBar();
     if (changed) this._emit(); else this._sidePanel();
     if (this.ghost) this._snap();

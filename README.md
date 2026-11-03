@@ -57,7 +57,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   Driving Base) or the **Advanced Driving Base**: large motors on A (left) and E (right) with 88 mm wheels, two color
   sensors at the front on B and F, ball casters in front, and two tool motors, D at the front and C at the back, that
   programs can run. The built-in attachments are made for the Driving Base's arm bracket; on the Advanced Driving Base
-  "My own" builds tools on its front and back frames. Each tool motor turns a 28-tooth gear lying flat under its frame:
+  "My own" builds tools on its front and back frames, and "Back lift arm" is a ready-made one to use or change (a
+  12-long axle across the back frame with a 20-tooth gear meshing over motor C's 28-tooth gear, and a 9-long beam out
+  behind the robot). Each tool motor turns a 28-tooth gear lying flat under its frame:
   parts locked to it turn with it, and any gear placed so it meshes with it (side by side, or at a right angle like
   real bevel gears) turns at the ratio the teeth make, the other way round, and so on down a gear train. Gears locked
   against the robot or each other are flagged. The builder has a "Try motor" slider per tool motor and works out where
