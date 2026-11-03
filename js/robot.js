@@ -45,7 +45,7 @@ export class Robot {
     // build again once it is here
     if (this.geom.partsLdr && !legoReady()) { const b = this.build; loadLego().then(() => { if (this.build === b) this.applyBuild(b); }).catch(() => {}); }
     this.config = portsOf(this.build);
-    if (this.config.attachment && this.motors[this.config.attachment]) Object.assign(this.motors[this.config.attachment], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment starts at rest
+    for (const p of [this.config.attachment, ...(this.config.tools || [])]) if (p && this.motors[p]) Object.assign(this.motors[p], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment (or tool) starts at rest
     if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
     this.world.robot = this;
     if (this.world.physics && this.x !== undefined) this.world.physics.rebuildRobot(this);
@@ -318,7 +318,8 @@ export class Robot {
     const a = this.geom.attachment;
     const s = a && a.module === 'tools' && a.stops && a.stops[port];
     if (!s) return null;
-    return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null;
+    // a stop at a half turn means nothing was in the way that far round: it turns on freely that way
+    return angle < s[0] && s[0] > -180 ? s[0] : angle > s[1] && s[1] < 180 ? s[1] : null;
   }
 
   arm() {
