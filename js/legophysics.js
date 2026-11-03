@@ -5,13 +5,14 @@
 // was put and a push or a heavy load makes it slip; a free pin barely drags.
 import * as THREE from 'three';
 import { legoReady, buildOf, DRIVE_AXLE, LDU } from './lego.js';
+import { AXLE_FWD } from './build.js';
 
 const S = 0.01;                    // cm -> m, as in physics.js
 const DENSITY = 0.00045;           // kg per cm^3 of a part's box (a 15-long beam's box is 7.7 cm^3; the beam weighs 3.4 g)
 const SLIP = 0.6 * Math.PI / 180;  // how far a held joint gives before it slips (rad)
 const MOTOR_SIGN = 1;              // our joints take the axis as is, so Rapier's angle and ours agree (checked)
 
-const toRobot = (v, lift) => [-v[2] * LDU, -v[1] * LDU + lift, -v[0] * LDU];
+const toRobot = (v, lift) => [-v[2] * LDU + AXLE_FWD, -v[1] * LDU + lift, -v[0] * LDU];
 const P = new THREE.Matrix4().set(0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, 0, 0, 0, 0, 1);
 /** A box's rotation in the robot frame: its axes are the part's LDraw axes (R), seen from the robot (P R). */
 function boxQuat(R) {

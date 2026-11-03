@@ -2,12 +2,13 @@
 // the origin; each becomes a template mesh group that placed parts clone. Parts are placed in the Driving Base's LDraw
 // frame (see lego.js); LD_TO_ROBOT turns that frame into the robot's (x forward, y up, z right, cm).
 import * as THREE from 'three';
+import { AXLE_FWD } from './build.js';
 import { LDrawLoader } from 'three/addons/loaders/LDrawLoader.js';
 import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawConditionalLineMaterial.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LDU } from './lego.js';
 
-export const LD_TO_ROBOT = new THREE.Matrix4().set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+export const LD_TO_ROBOT = new THREE.Matrix4().set(0, 0, -LDU, AXLE_FWD, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
 
 let loader = null, materials = null;
 function ldraw() {

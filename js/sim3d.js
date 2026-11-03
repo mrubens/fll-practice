@@ -8,7 +8,8 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
-import { SCOOP_PARTS } from './build.js';
+import { SCOOP_PARTS, AXLE_FWD } from './build.js';
+import { LD_TO_ROBOT } from './lego3d.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 import { drawCustom, poseCustom } from './legodraw.js';
 
@@ -636,7 +637,8 @@ export class Sim3D {
         ghost = blueprintLines(d); ghost.userData.robot = true;
         g.add(ghost); this.shimmers.push(ghost);
       });
-      const shown = [body, caster].concat(this.wheels);
+      const shown = [body].concat(this.wheels);
+      caster.visible = false;                              // the model has its own ball caster
       shown.forEach((n) => { n.visible = false; });
       this.revealRobot = () => {
         if (gen !== this.robotBuildGen || --this.robotPending > 0) return;
@@ -649,10 +651,10 @@ export class Sim3D {
       loadLDrawModel(modelUrl).then((group) => {
         if (gen !== this.robotBuildGen || this.robotGroup !== g) return;
         if (group) {
-          // Model frame: origin at the axle midpoint on the table, forward -z, left +x, y down.
-          // Ours: x forward, y up, z right.  our = (-z_l, -y_l, -x_l), scaled to cm.
+          // Model frame: origin at the middle of the frame on the table, forward -z, left +x, y down; the drive
+          // axles at z = AXLE_Z. Ours: x forward, y up, z right, origin between the wheels (see build.js).
           group.matrixAutoUpdate = false;
-          group.matrix.set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+          group.matrix.copy(LD_TO_ROBOT);
           g.add(group);
           this.robotLDraw = group;
           this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
@@ -660,7 +662,7 @@ export class Sim3D {
           // up): row 1 toward the front, column 1 on the robot's left, as a driver standing behind it reads it
           const led = new THREE.Mesh(new THREE.PlaneGeometry(4.3, 4.1), new THREE.MeshBasicMaterial({ map: this.matrixTex, transparent: true, depthWrite: false, toneMapped: false }));
           led.matrixAutoUpdate = false;
-          led.matrix.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)).setPosition(0, 179 * LDU + 0.03, 0);
+          led.matrix.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)).setPosition(AXLE_FWD, 179 * LDU + 0.03, 0);
           g.add(led);
           for (const h of this.pendingHides || []) h();
           this.pendingHides = [];
@@ -678,14 +680,15 @@ export class Sim3D {
   legoTool(module, body, primitives) {
     const gen = this.robotBuildGen;
     if (this.robotLego) this.robotPending++;
-    const M = () => new THREE.Matrix4().set(0, 0, -LDU, 0, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+    // the fixed part is in the Driving Base's frame; the moving part's file has its origin on its own axle
+    const M = () => LD_TO_ROBOT.clone(), Mturn = () => LD_TO_ROBOT.clone().setPosition(0, 0, 0);
     const files = { arm: ['arm-fixed', 'arm-moving'], plow: ['arm-fixed', 'dozer-moving'], basket: ['arm-fixed', 'basket-moving'], sweeper: [null, 'sweeper-moving'], scoop: ['arm-fixed', 'scoop-moving'] }[module];
     Promise.all(files.map((f) => (f ? loadLDrawModel(`models/attach/${f}.mpd`) : null))).then(([fixed, moving]) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
       if (gen !== this.robotBuildGen || (files[0] && !fixed) || !moving || !this.armPivot.parent) { done(); return; }
       if (fixed) { fixed.matrixAutoUpdate = false; fixed.matrix.copy(M()); body.add(fixed); }
-      moving.matrixAutoUpdate = false; moving.matrix.copy(M()); this.armMoving.add(moving);
-      if (module === 'sweeper') this.hideBasePart('32062.dat', [6.4, 4, -3.2]);   // its 5-long axle replaces the base's 2-long one
+      moving.matrixAutoUpdate = false; moving.matrix.copy(Mturn()); this.armMoving.add(moving);
+      if (module === 'sweeper') this.hideBasePart('32062.dat', [6.4 + AXLE_FWD, 4, -3.2]);   // its 5-long axle replaces the base's 2-long one
       if (this.robotLDrawParts) this.robotLDrawParts = this.robotLDrawParts.filter((n) => n !== fixed);
       primitives.forEach((m) => { m.visible = false; });
       done();

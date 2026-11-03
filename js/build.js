@@ -1,6 +1,12 @@
 // Robot build: the Driving Base, its ports, the sensors placed on it (LEGO parts) and its attachment, from which the
 // robot's geometry is derived. Saved with the project and inside exported .llsp3 files.
 
+// The Driving Base's LDraw frame (models/src/driving-base.ldr: x left, y down, z back, LDU) has its origin at the
+// middle of the frame; the drive axles, which the robot turns about, run across at z = AXLE_Z. The robot's own frame
+// (cm: forward, up, right) has its origin between the wheels on the mat: forward = -(z - AXLE_Z) * 0.04.
+export const AXLE_Z = -40;
+export const AXLE_FWD = AXLE_Z * 0.04;     // -1.6: where the LDraw origin is, forward of the axles (cm)
+
 export const WHEELS = { '5.6': { diameter: 5.6, calibration: 17.5, label: 'Small (5.6 cm)' }, '8.8': { diameter: 8.8, calibration: 27.6, label: 'Large (8.8 cm)' } };
 export const MOUNTS = ['front', 'left', 'right', 'back'];
 export const MODULES = {
@@ -128,7 +134,7 @@ export function geometryFor(build) {
   const mountPoints = { front: [8, 0, 0], right: [1, 7.5, 90], back: [-8, 0, 180], left: [1, -7.5, -90] };
   const [af, al, aa] = mountPoints[build.attachment.mount];
   // LDraw (x left, y down, z back; LDU) -> robot (fwd, up, right; cm)
-  const toRobot = (v) => [-v[2] * 0.04, -v[1] * 0.04 + lift, -v[0] * 0.04];
+  const toRobot = (v) => [-v[2] * 0.04 + AXLE_FWD, -v[1] * 0.04 + lift, -v[0] * 0.04];
   const turn = (r, v) => [r[0] * v[0] + r[1] * v[1] + r[2] * v[2], r[3] * v[0] + r[4] * v[1] + r[5] * v[2], r[6] * v[0] + r[7] * v[1] + r[8] * v[2]];
   const sensors = sensorsOf(build).filter((x) => x.port).map((x) => {
     const lens = toRobot(turn(x.q.r, x.lens).map((v, k) => v + x.q.p[k]));
@@ -137,31 +143,32 @@ export function geometryFor(build) {
   });
   const bodyLdr = build.body && ldrParts(build.body.ldr).length ? build.body.ldr : '';
   // The LEGO Driving Base (small wheels, 11.2 cm track, flat hub) has a known footprint, measured from its model:
-  // 5.2 cm behind the axle (the caster) to 7.6 ahead (the motor and color sensor), 16.8 wide. Other builds are a circle.
+  // 6.8 cm behind the axle (the caster) to 6.0 ahead (the motor and color sensor), 16.8 wide. Other builds are a circle.
   const drivingBase = build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright';
   return {
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,
     lift, radius: Math.max(9, build.track / 2 + 2.5),
-    footprint: drivingBase ? { x0: -5.2, x1: 7.6, z0: -8.4, z1: 8.4 } : null,
+    footprint: drivingBase ? { x0: -5.2 + AXLE_FWD, x1: 7.6 + AXLE_FWD, z0: -8.4, z1: 8.4 } : null,
     // each sensor's lens (fwd, up, right; cm) and the way it looks (a unit vector in the same axes)
     sensors,
     // the robot's own LEGO parts (sensors and their mounts), and everything built from parts the physics and the
     // drawing put on the robot: those plus a custom attachment
     bodyLdr,
     partsLdr: bodyLdr + (build.attachment.module === 'custom' ? (build.attachment.ldr || '') : ''),
-    // The arm is the Driving Base 2 arm from the FIRST robot guide: its axle is 6.4 cm ahead of the wheels and
+    // The arm is the Driving Base 2 arm from the FIRST robot guide: its axle is 4.8 cm ahead of the wheels and
     // 5.2 cm up, geared off the motor E gear; the cross bar at its tip is 7.15 cm from the axle, 23.5 degrees below
     // horizontal at rest. Other modules still hang from a mount 8 cm ahead.
     // The dozer blade and basket hang from the same bracket and axle. The sweeper is a beam on motor E's own
     // axle, which stands at the front left, so it swings about a vertical axis there.
     attachment: (() => {
       const m = build.attachment.module;
-      if (m === 'arm') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
-      if (m === 'plow') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
-      if (m === 'basket') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 6.4, height: 5.2 + lift, drop: 0 };
-      if (m === 'custom') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: build.attachment.length || 1, tipAngle: build.attachment.tipAngle || 0, height: 5.2 + lift, drop: 0, ldr: build.attachment.ldr || '', stops: build.attachment.stops };
-      if (m === 'scoop') return { module: m, mount: 'front', fwd: 6.4, lat: 0, angle: 0, length: 18.0, tipAngle: -15.5, height: 5.2 + lift, drop: 0 };
-      if (m === 'sweeper') return { module: m, mount: 'front', fwd: 6.4, lat: -3.2, angle: 0, length: 12.8, height: 5.6 + lift, drop: 0 };
+      const ARM_FWD = 6.4 + AXLE_FWD;      // the arm bracket's axle (and motor E's), LDraw z = -160
+      if (m === 'arm') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
+      if (m === 'plow') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
+      if (m === 'basket') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 6.4, height: 5.2 + lift, drop: 0 };
+      if (m === 'custom') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: build.attachment.length || 1, tipAngle: build.attachment.tipAngle || 0, height: 5.2 + lift, drop: 0, ldr: build.attachment.ldr || '', stops: build.attachment.stops };
+      if (m === 'scoop') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 18.0, tipAngle: -15.5, height: 5.2 + lift, drop: 0 };
+      if (m === 'sweeper') return { module: m, mount: 'front', fwd: ARM_FWD, lat: -3.2, angle: 0, length: 12.8, height: 5.6 + lift, drop: 0 };
       return { module: m, mount: build.attachment.mount, fwd: af, lat: al, angle: aa, length: 12, height: 6 + lift, drop: 0 };
     })(),
   };
