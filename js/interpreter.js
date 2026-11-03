@@ -28,9 +28,11 @@ export class Runtime {
   /** Step mode: each thread stops before its next block until step() is called. */
   setStepMode(on) {
     this.stepMode = !!on;
-    if (!on) this.release();
+    if (!on) { this.pauseNext = false; this.release(); }
     this.onChange();
   }
+  /** Pause before the next block, even inside a loop that is running through without pausing. */
+  pauseSoon() { this.stepMode = true; this.pauseNext = true; this.onChange(); }
   /** Run one block on every waiting thread. */
   step() { if (this.paused) this.stepsTaken++; this.release(); }
   release() {
@@ -39,7 +41,7 @@ export class Runtime {
     this.onChange();
   }
   gate(ctx) {
-    ctx.path.push(ctx.block.id);
+    this.pauseNext = false;
     this.paused = true;
     this.onChange();
     if (this.onPause && !this.ff) this.onPause();
@@ -49,7 +51,8 @@ export class Runtime {
   /** The threads' recorded paths (which blocks each has executed), for snapshots. */
   threadPaths() {
     const out = {};
-    for (const [id, t] of this.threads) out[id] = { path: t.path.slice(), frames: (t.frames || []).map((f) => ({ ...f })) };
+    // a path only grows, so a snapshot keeps the array itself and its length (no copy at every pause)
+    for (const [id, t] of this.threads) out[id] = { path: t.path, len: t.path.length, frames: (t.frames || []).map((f) => ({ ...f })) };
     return out;
   }
 
@@ -71,7 +74,7 @@ export class Runtime {
     this.onChange();
   }
   /** While fast-forwarding, the next block the path says this thread executed (or null at the end). */
-  ffNext(ctx) { return ctx.ffPath ? (ctx.ffPath[ctx.path.length] ?? null) : null; }
+  ffNext(ctx) { return ctx.ffPath && ctx.path.length < ctx.ffLen ? ctx.ffPath[ctx.path.length] : null; }
   ffEnters(ctx, first) { return !!first && this.ffNext(ctx) === first.id; }
 
   log(msg) { this.onLog(msg); }
@@ -87,7 +90,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
-    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0; this.finished = false;
+    this.paused = false; this.pauseNext = false; this.gateWaiters = []; this.stepsTaken = 0; this.finished = false; this.quickNoted = false;
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();
@@ -131,7 +134,7 @@ export class Runtime {
   launch(hat, ffRecord) {
     const old = this.threads.get(hat.id);
     if (old) { old.stopped = true; this.glow(hat, false); }
-    const ctx = { hat, stopped: false, path: [], block: null, ffPath: ffRecord ? ffRecord.path : null, ffFrames: ffRecord ? ffRecord.frames : [], frames: [] };
+    const ctx = { hat, stopped: false, path: [], block: null, ffPath: ffRecord ? ffRecord.path : null, ffLen: ffRecord ? (ffRecord.len ?? ffRecord.path.length) : 0, ffFrames: ffRecord ? ffRecord.frames : [], frames: [] };
     this.threads.set(hat.id, ctx);
     this.glow(hat, true);
     (async () => {
@@ -207,6 +210,35 @@ export class Runtime {
     while (!goal.done) await this.yield(ctx);
   }
 
+  /**
+   * A loop's rounds from round `i`. A round that took no simulated time (start moving, an if, a variable) is over
+   * in one frame, so pausing at each of its blocks would need hundreds of Steps to get anywhere: once a round has
+   * taken no time, the next rounds run without pausing until the loop ends or a round takes time again.
+   */
+  async loop(b, ctx, more, i = 0) {
+    const body = b.getInputTargetBlock('SUBSTACK');
+    let quick = false;
+    for (; more(i); i++) {
+      const t0 = this.robot.time;
+      if (quick) ctx.skip = (ctx.skip || 0) + 1;
+      try { await this.execStack(body, ctx); } finally { if (quick) ctx.skip--; }
+      const was = quick;
+      quick = this.robot.time === t0;
+      if (body && quick && !was && this.stepMode && !ctx.skip && !this.quickNoted && this.onQuickLoop) { this.quickNoted = true; this.onQuickLoop(); }
+      await this.yield(ctx);
+    }
+  }
+  /** Fast-forward through a loop's recorded rounds; if the thread was paused inside it, carry on with the rest. */
+  async ffLoop(b, ctx) {
+    const first = b.getInputTargetBlock('SUBSTACK');
+    let i = 0;
+    while (this.ffEnters(ctx, first)) {
+      await this.execStack(first, ctx);
+      i++;
+      if (!ctx.ffPath) { await this.yield(ctx); return HANDLERS[b.type].call(this, b, ctx, i); }
+    }
+  }
+
   async execStack(block, ctx) {
     while (block) {
       if (ctx.stopped) throw new StopSignal();
@@ -220,7 +252,7 @@ export class Runtime {
     ctx.block = block;
     if (ctx.ffPath) {
       // fast-forward: at the end of the path this is the block the thread was waiting on; otherwise walk on
-      if (ctx.path.length + 1 >= ctx.ffPath.length) { ctx.ffPath = null; this.mark(ctx, block); await this.gate(ctx); }
+      if (ctx.path.length + 1 >= ctx.ffLen) { ctx.ffPath = null; ctx.path.push(block.id); this.mark(ctx, block); await this.gate(ctx); }
       else {
         ctx.path.push(block.id);
         const f = FF[block.type];
@@ -228,8 +260,10 @@ export class Runtime {
         return;
       }
     } else {
+      ctx.path.push(block.id);   // every block run, so a snapshot can rebuild where each thread is
       this.mark(ctx, block);
-      if (this.stepMode) await this.gate(ctx);
+      // in later rounds of a loop that takes no time, Step runs on to the loop's end (unless asked to pause)
+      if (this.stepMode && (!ctx.skip || this.pauseNext)) await this.gate(ctx);
     }
     const h = HANDLERS[block.type];
     if (!h) { this.log(`"${block.type}" is not supported in the simulator yet.`); return; }
@@ -354,19 +388,11 @@ const HANDLERS = {
     const end = this.robot.time + Math.max(0, this.num(b, 'DURATION'));
     do { await this.yield(ctx); } while (this.robot.time < end);
   },
-  async control_repeat(b, ctx) {
+  async control_repeat(b, ctx, from = 0) {
     const n = Math.round(this.num(b, 'TIMES'));
-    for (let i = 0; i < n; i++) {
-      await this.execStack(b.getInputTargetBlock('SUBSTACK'), ctx);
-      await this.yield(ctx);
-    }
+    await this.loop(b, ctx, (i) => i < n, from);
   },
-  async control_forever(b, ctx) {
-    for (;;) {
-      await this.execStack(b.getInputTargetBlock('SUBSTACK'), ctx);
-      await this.yield(ctx);
-    }
-  },
+  async control_forever(b, ctx, from = 0) { await this.loop(b, ctx, () => true, from); },
   async control_if(b, ctx) {
     if (this.bool(b, 'CONDITION')) await this.execStack(b.getInputTargetBlock('SUBSTACK'), ctx);
   },
@@ -377,12 +403,7 @@ const HANDLERS = {
   async control_wait_until(b, ctx) {
     while (!this.bool(b, 'CONDITION')) await this.yield(ctx);
   },
-  async control_repeat_until(b, ctx) {
-    while (!this.bool(b, 'CONDITION')) {
-      await this.execStack(b.getInputTargetBlock('SUBSTACK'), ctx);
-      await this.yield(ctx);
-    }
-  },
+  async control_repeat_until(b, ctx, from = 0) { await this.loop(b, ctx, () => !this.bool(b, 'CONDITION'), from); },
   async flippercontrol_stop(b, ctx) {
     const opt = b.getFieldValue('STOP_OPTION');
     if (opt === 'this stack') throw new StopSignal();
@@ -420,9 +441,9 @@ const HANDLERS = {
 
 // Fast-forward versions of the control blocks: follow the recorded path instead of evaluating anything.
 const FF = {
-  async control_repeat(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
-  async control_forever(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
-  async control_repeat_until(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); while (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
+  async control_repeat(b, ctx) { await this.ffLoop(b, ctx); },
+  async control_forever(b, ctx) { await this.ffLoop(b, ctx); },
+  async control_repeat_until(b, ctx) { await this.ffLoop(b, ctx); },
   async control_if(b, ctx) { const first = b.getInputTargetBlock('SUBSTACK'); if (this.ffEnters(ctx, first)) await this.execStack(first, ctx); },
   async control_if_else(b, ctx) {
     const a = b.getInputTargetBlock('SUBSTACK'), c = b.getInputTargetBlock('SUBSTACK2');

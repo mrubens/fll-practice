@@ -104,6 +104,8 @@ function restoreSnapshot(s) {
   runtime.stepsTaken = s.stepsTaken;
   scoring.emit({ type: 'score', score: scoring.score });
 }
+// a loop that takes no time runs through its later rounds without pausing at each block: say so once a run
+runtime.onQuickLoop = () => { if (!replay.active) toast('This loop takes no time, so Step runs it until it ends. Press Step again to pause it.'); };
 runtime.onPause = () => { setTimeout(() => { if (runtime.running && runtime.paused && !replay.active) { const snap = takeSnapshot(); if (snap) replay.snaps.set(runtime.stepsTaken, snap); } }, 0); };
 scoring.on((ev) => {
   if (replay.active) return;
@@ -296,7 +298,7 @@ btnStop.addEventListener('click', () => { stopRun(); runtime.setStepMode(false);
 btnStep.addEventListener('click', () => {
   if (!runtime.running) { runtime.setStepMode(true); startRun(); return; }
   if (runtime.paused) runtime.step();
-  else runtime.setStepMode(true);                       // a running program pauses before its next block
+  else runtime.pauseSoon();                             // a running program pauses before its next block
 });
 updateRunState();
 
