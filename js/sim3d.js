@@ -609,10 +609,10 @@ export class Sim3D {
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
     if (['arm', 'plow', 'basket', 'sweeper', 'scoop'].includes(a.module)) this.legoTool(a.module, body, prim);
-    else if (a.module !== 'none' && a.module !== 'custom') this.legoAttachment(a.module, prim);
-    // the parts built in the robot builder: the sensors, and a custom attachment
-    if (geom.partsLdr || a.module === 'custom') drawCustom(this, body, { ldr: geom.partsLdr, bracket: a.module === 'custom' });
-    this.armPivot.visible = a.module !== 'none';
+    else if (a.module !== 'none' && a.module !== 'custom' && a.module !== 'tools') this.legoAttachment(a.module, prim);
+    // the parts built in the robot builder: the sensors, and a custom attachment (and the tool motors' gears)
+    if (geom.partsLdr || a.module === 'custom' || (geom.tools && geom.tools.length)) drawCustom(this, body, { ldr: geom.partsLdr, bracket: a.module === 'custom' });
+    this.armPivot.visible = a.module !== 'none' && a.module !== 'tools';
     this.armPivot.position.set(a.fwd, a.height - geom.lift, a.lat);   // body already rides at geom.lift
     this.armPivot.rotation.y = -a.angle * DEG;
     body.add(this.armPivot);

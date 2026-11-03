@@ -2,7 +2,8 @@
 0 Name: advanced-driving-base.ldr
 0 Author: FLL Sim (scripted from the official building instructions); rearranged for fll-practice
 0 !LICENSE Model data for simulation use
-0 // the color sensors (B left, F right) are parts the robot builder places; the wheels are models/src/advanced-wheels.ldr
+0 // the color sensors (B left, F right) are parts the robot builder places; the wheels are models/src/advanced-wheels.ldr;
+0 // the 28-tooth gears on the tool motors D and C are the drives (js/lego.js CHASSIS_DRIVES), drawn turning
 
 0 // front: 9L beam
 1 0 0 -48.7646 -140 0 0 1 1 0 0 0 1 0 40490.dat
@@ -155,7 +156,6 @@
 1 0 60 -159.7646 -180 0 0 1 -1 0 0 0 -1 0 61332.dat
 0 STEP
 0 // front: 28t gear on motor D
-1 71 60 -148.7646 -120 1 0 0 0 0 1 0 -1 0 46372.dat
 0 // front: gear pin
 1 0 60 -138.7646 -140 0 1 0 -1 0 0 0 0 1 61332.dat
 0 // front: gear pin
@@ -355,7 +355,6 @@
 1 0 0 -69.7646 159 0 0 -1 -1 0 0 0 1 0 40490.dat
 0 STEP
 0 // rear: 28t gear on motor C
-1 71 -60 -149.7646 190 1 0 0 0 0 1 0 -1 0 46372.dat
 0 // rear: gear pin
 1 0 -60 -139.7646 170 0 1 0 -1 0 0 0 0 1 61332.dat
 0 // rear: gear pin

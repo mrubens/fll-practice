@@ -51,6 +51,62 @@ export function motionOf(D, scene, an) {
 }
 const len3 = (v) => Math.hypot(v[0], v[1], v[2]);
 
+/**
+ * The bodies a motor turns through gears (and the Advanced Driving Base's drive gears), with what hangs on them by
+ * pins: Map body index -> {port, w, at} (w: the turn per motor degree as an axis vector; at: a point on the axle).
+ */
+export function gearedMotion(an, chassis) {
+  const out = new Map();
+  an.bodies.forEach((b, i) => { if (b.role === 'geared' || (b.role === 'drive' && chassis !== 'driving-base')) out.set(i, { port: b.port, w: b.w, at: b.at }); });
+  for (let grew = true; grew;) {
+    grew = false;
+    for (const j of an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) {
+      if (out.has(x) && !out.has(y) && an.bodies[y].role === 'free') { out.set(y, out.get(x)); grew = true; }
+    }
+  }
+  return out;
+}
+
+/** How far each tool motor can turn its geared parts before they run into the robot or the parts that stay put: {port: [lo, hi]}. */
+export function toolStops(D, scene, an, ports) {
+  const motion = gearedMotion(an, scene.chassis);
+  const loose = new Set(an.loose);
+  const near = (a, b) => len3(sub(a.c, b.c)) < Math.hypot(...a.h) + Math.hypot(...b.h);
+  const out = {};
+  for (const port of ports) {
+    const moving = [], still = [...baseBoxes(D, scene.chassis)];
+    an.bodies.forEach((b, i) => {
+      const m = motion.get(i);
+      for (const it of b.items) {
+        if (it.role !== 'part' || loose.has(it)) continue;
+        if (m && m.port === port) { for (const bx of it.boxes) if (!roundAbout(bx, m)) moving.push({ bx, m }); }
+        else still.push(...it.boxes);
+      }
+    });
+    if (!moving.length) { out[port] = [-180, 180]; continue; }
+    const turned = ({ bx, m }, deg) => { const R = rotAxis(unitV(m.w), deg * len3(m.w) * DEG); return { c: add(app(R, sub(bx.c, m.at)), m.at), h: bx.h, R: mul(R, bx.R) }; };
+    const rest = new Set();
+    moving.forEach((mv, i) => still.forEach((s, j) => { if (near(mv.bx, s) && boxesOverlap(mv.bx, s, 8)) rest.add(i + ',' + j); }));
+    const hits = (deg) => moving.some((mv, i) => { const t = turned(mv, deg); return still.some((s, j) => !rest.has(i + ',' + j) && near(t, s) && boxesOverlap(t, s, 8)); });
+    const sweep = (dir) => { for (let a = 3; a <= 180; a += 3) if (hits(dir * a)) return dir * (a - 3); return dir * 180; };
+    out[port] = [sweep(-1), sweep(1)];
+  }
+  return out;
+}
+const unitV = (v) => { const l = len3(v) || 1; return [v[0] / l, v[1] / l, v[2] / l]; };
+/** A box that turns about its own middle line (a gear or an axle on the axle it turns on) sweeps nothing new. */
+function roundAbout(bx, m) {
+  const u = unitV(m.w), off = sub(bx.c, m.at), along = dot(off, u);
+  if (len3(sub(off, [u[0] * along, u[1] * along, u[2] * along])) > 2) return false;
+  for (let k = 0; k < 3; k++) {
+    const col = [bx.R[k], bx.R[3 + k], bx.R[6 + k]];
+    if (Math.abs(Math.abs(dot(col, u)) - 1) > 1e-3) continue;
+    const others = [0, 1, 2].filter((x) => x !== k).map((x) => bx.h[x]);
+    return Math.abs(others[0] - others[1]) <= 1;
+  }
+  return false;
+}
+
 const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr without its drive axle and gear; a 7-long axle joins the angle connectors, which take one stud of axle each)
 1 0 -40 -181.423 -221.2836 0 -1 0 0.6428 0 -0.766 0.766 0 0.6428 32009.dat
 1 322 -20 -130 -160 0 1 0 -0.766 0 -0.6428 -0.6428 0 0.766 60483.dat
@@ -93,6 +149,7 @@ export class AttachmentBuilder {
     this.history = [];
     this.ghost = null;
     this.motor = 0;
+    this.tools = {};          // the Advanced Driving Base's tool motors in the preview: port -> degrees
   }
 
   /** Open on a robot build; `lastCustom`: the child's last own attachment (.ldr), kept for "My own". */
@@ -144,15 +201,21 @@ export class AttachmentBuilder {
     if (chassis === 'driving-base') { const pivot = toRobot(DRIVE_AXLE.at); controls.target.set(pivot[0] + 3, pivot[1] - 1, pivot[2]); }
     else controls.target.set(ch.footprint.x1 - 6, 3, 0);
     const attach = !!ch.attachments;
-    this.root.querySelectorAll('.lb-preset').forEach((b) => { b.disabled = !attach && b.dataset.module !== 'none'; b.title = b.disabled ? `Made for the Driving Base's arm bracket: the ${ch.label} has no attachments yet` : (BUILT_IN.find((x) => x.module === b.dataset.module) || {}).note || ''; });
-    const motor = this.root.querySelector('.lb-motor');
-    if (motor) motor.hidden = !attach;
+    this.root.querySelectorAll('.lb-preset').forEach((b) => {
+      const m = b.dataset.module;
+      b.disabled = !attach && m !== 'none' && !(m === 'custom' && ch.custom);
+      b.title = b.disabled ? `Made for the Driving Base's arm bracket` : m === 'custom' && ch.tools.length ? 'Build tools on the front and back frames: a gear meshing with a tool motor\'s 28-tooth gear turns with it' : (BUILT_IN.find((x) => x.module === m) || {}).note || '';
+    });
+    const sub = this.root.querySelector('.lb-presets > span');
+    if (sub) sub.innerHTML = ch.tools.length ? 'Attachment <small>tool motors D and C</small>' : 'Attachment <small>motor E</small>';
+    this._sliders();
   }
 
   /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` puts the choice on the robot. */
   setModule(module, tell = false) {
     if (!this.three || !this.D) { this.mode = module; return; }
-    if (module !== 'none' && this.build && !(CHASSIS[this.build.chassis] || {}).attachments) {
+    const chs = this.build && (CHASSIS[this.build.chassis] || {});
+    if (module !== 'none' && chs && !(module === 'custom' ? chs.custom : chs.attachments)) {
       this.message(`The attachments here fit the Driving Base's arm bracket. The ${CHASSIS[this.build.chassis].label} has none yet.`);
       return;
     }
@@ -185,7 +248,7 @@ export class AttachmentBuilder {
   /** Indexes of the bodies that turn with motor E (the drive and what hangs on it). */
   _driveBodies() {
     const an = this.an;
-    const onDrive = new Set(an.bodies.map((b, i) => (b.role === 'drive' ? i : -1)).filter((i) => i >= 0));
+    const onDrive = new Set(an.bodies.map((b, i) => (b.role === 'drive' || b.role === 'geared' ? i : -1)).filter((i) => i >= 0));
     for (let grew = true; grew;) { grew = false; for (const j of an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) if (onDrive.has(x) && !onDrive.has(y) && an.bodies[y].role !== 'base') { onDrive.add(y); grew = true; } }
     return onDrive;
   }
@@ -201,7 +264,10 @@ export class AttachmentBuilder {
     if (this.mode === 'custom') {
       const keep = this.parts.filter((q) => !loose.has(q));
       if (this.an.jammed) attachment = this.build.attachment;      // motor E could not turn it: the last one stays
-      else {
+      else if ((CHASSIS[this.build.chassis] || {}).tools.length) {
+        const scene = new Scene(this.D, [...body, ...keep], this.build.chassis);
+        attachment = { module: 'custom', ldr: keep.length ? toLdr(keep) : '', stops: toolStops(this.D, scene, scene.analyze(), this._toolPorts()) };
+      } else {
         const scene = new Scene(this.D, [...body, ...keep], this.build.chassis);
         const motion = motionOf(this.D, scene, scene.analyze());
         attachment = { module: 'custom', ldr: keep.length ? toLdr(keep) : '', ...motion };
@@ -282,12 +348,13 @@ export class AttachmentBuilder {
       <div class="lb-body">
         <div class="lb-palette" role="list"></div>
         <div class="lb-view">
-          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · <b>Esc</b> put it down · click a placed part: <b>M</b> move, <b>Delete</b> remove · <b>Q E</b> turn motor E</div>
+          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · right-click or <b>Esc</b> to put down or deselect · click a placed part: <b>M</b> move, <b>Delete</b> remove · <b>Q E</b> turn motor E</div>
           <div class="lb-sel" hidden>
             <b class="lb-sel-name"></b>
             <label class="lb-sel-port" hidden>Port <select></select></label>
             <button type="button" class="tb" data-sel="move" title="Pick it up and put it somewhere else (M)">Move</button>
             <button type="button" class="tb" data-sel="delete" title="Take it off (Delete)">Remove</button>
+            <button type="button" class="lb-sel-x" data-sel="close" title="Deselect (Esc, or click empty space)" aria-label="Deselect">×</button>
           </div>
           <div class="lb-msg" aria-live="polite"></div>
           <div class="lb-motor"><label>Try motor E <input type="range" min="-120" max="120" value="0" step="1"></label><output>0°</output></div>
@@ -304,12 +371,13 @@ export class AttachmentBuilder {
     r.querySelector('.lb-robots').addEventListener('click', (e) => { const b = e.target.closest('.lb-robot'); if (b) this.usePreset(b.dataset.robot); });
     this.msgEl = r.querySelector('.lb-msg');
     this.statusEl = r.querySelector('.lb-status');
-    const slider = r.querySelector('.lb-motor input'), out = r.querySelector('.lb-motor output');
-    slider.addEventListener('input', () => this.setMotor(Number(slider.value)));
-    this.slider = slider; this.sliderOut = out;
+    r.querySelector('.lb-motor').addEventListener('input', (e) => {
+      const port = e.target.dataset.port;
+      if (port === 'E') this.setMotor(Number(e.target.value)); else if (port) this.setTool(port, Number(e.target.value));
+    });
     // the selected part's bar: its port (a sensor), move it, take it off
     this.selEl = r.querySelector('.lb-sel');
-    this.selEl.addEventListener('click', (e) => { const b = e.target.closest('[data-sel]'); if (!b) return; if (b.dataset.sel === 'move') this.moveSelected(); else this.removeSelected(); });
+    this.selEl.addEventListener('click', (e) => { const b = e.target.closest('[data-sel]'); if (!b) return; if (b.dataset.sel === 'move') this.moveSelected(); else if (b.dataset.sel === 'close') this.deselect(); else this.removeSelected(); });
     this.selEl.querySelector('select').addEventListener('change', (e) => { if (this.selected) this.setPort(this.selected.q, e.target.value); });
     this.sideEl.addEventListener('change', (e) => this._sideChange(e));
     this.sideEl.addEventListener('click', (e) => { const row = e.target.closest('[data-part]'); if (row && e.target.tagName !== 'SELECT') this._selectQ(this.body[Number(row.dataset.part)]); });
@@ -343,7 +411,7 @@ export class AttachmentBuilder {
     if (!this.sideEl || !this.build) return;
     const b = this.build;
     const sel = (value, attrs) => `<select ${attrs}>${PORT_LETTERS.map((p) => `<option value="${p}"${p === value ? ' selected' : ''}>${p}</option>`).join('')}${value ? '' : '<option value="" selected>none</option>'}</select>`;
-    const motor = MODULES[b.attachment.module] && MODULES[b.attachment.module].motor;
+    const motor = MODULES[b.attachment.module] && MODULES[b.attachment.module].motor && !((CHASSIS[b.chassis] || {}).tools || []).length;
     const rows = [
       `<div class="lb-port"><i class="dev motor"></i><span>Left wheel motor</span>${sel(b.ports.left, 'data-wheel="left" aria-label="Left wheel motor port"')}</div>`,
       `<div class="lb-port"><i class="dev motor"></i><span>Right wheel motor</span>${sel(b.ports.right, 'data-wheel="right" aria-label="Right wheel motor port"')}</div>`,
@@ -388,7 +456,10 @@ export class AttachmentBuilder {
   /** Plug a sensor into a port; whatever was on that port moves to the sensor's old one. */
   setPort(q, port) {
     if (!q || !SENSOR_PARTS[q.f]) return;
-    if (port === 'E' && MODULES[this.build.attachment.module].motor) { this.message('Port E is the attachment motor.'); this._sidePanel(); this._selBar(); return; }
+    const tools = ((CHASSIS[this.build.chassis] || {}).tools || []);
+    if (port === 'E' && MODULES[this.build.attachment.module].motor && !tools.length) { this.message('Port E is the attachment motor.'); this._sidePanel(); this._selBar(); return; }
+    const tool = tools.find((t) => t.port === port);
+    if (tool) { this.message(`Port ${port} is the ${tool.label.toLowerCase()}.`); this._sidePanel(); this._selBar(); return; }
     const was = this.ports.get(q) || null;
     const ports = { ...this.build.ports };
     if (port && (ports.left === port || ports.right === port)) {
@@ -493,7 +564,13 @@ export class AttachmentBuilder {
     const el = renderer.domElement;
     el.addEventListener('pointermove', (e) => this._move(e));
     el.addEventListener('pointerdown', (e) => { this.downAt = [e.clientX, e.clientY]; });
-    el.addEventListener('pointerup', (e) => { if (this.downAt && Math.hypot(e.clientX - this.downAt[0], e.clientY - this.downAt[1]) < 5) this._click(e); this.downAt = null; });
+    el.addEventListener('pointerup', (e) => {
+      const still = this.downAt && Math.hypot(e.clientX - this.downAt[0], e.clientY - this.downAt[1]) < 5;
+      this.downAt = null;
+      if (!still) return;
+      if (e.button === 2) this.deselect(); else this._click(e);      // right-click: put it down, or deselect
+    });
+    el.addEventListener('contextmenu', (e) => e.preventDefault());
     el.addEventListener('pointerleave', () => { if (this.ghost) { this.ghost.mesh.visible = false; this.marker.visible = false; } });
   }
 
@@ -539,14 +616,23 @@ export class AttachmentBuilder {
     this.scene = new Scene(this.D, this._all(), this.build.chassis);
     const { ld, drive } = this.three;
     for (const m of this.meshes || []) m.parent && m.parent.remove(m);
+    for (const g of this.gearGroups || []) ld.remove(g.group);
     this.meshes = [];
     this.an = this.scene.analyze();
-    this.stopsCache = null;
+    this.stopsCache = null; this.toolStopsCache = null;
+    // bodies turned through gears get a group each, turned about their axle in the preview
+    const motion = gearedMotion(this.an, this.build.chassis);
+    const groupOf = new Map();
+    this.gearGroups = [];
+    for (const [i, m] of motion) {
+      const group = new THREE.Group(); group.matrixAutoUpdate = false; ld.add(group);
+      groupOf.set(i, group); this.gearGroups.push({ group, ...m });
+    }
     const bodyOf = new Map();
     this.an.bodies.forEach((b, i) => b.items.forEach((it) => bodyOf.set(it, i)));
     // bodies hinged to the drive move with it in the preview
-    const onDrive = new Set(this.an.bodies.map((b, i) => (b.role === 'drive' ? i : -1)).filter((i) => i >= 0));
-    for (let grew = true; grew;) { grew = false; for (const j of this.an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) if (onDrive.has(x) && !onDrive.has(y) && this.an.bodies[y].role !== 'base') { onDrive.add(y); grew = true; } }
+    const onDrive = new Set(this.an.bodies.map((b, i) => (b.role === 'drive' && !motion.has(i) ? i : -1)).filter((i) => i >= 0));
+    for (let grew = true; grew;) { grew = false; for (const j of this.an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) if (onDrive.has(x) && !onDrive.has(y) && this.an.bodies[y].role !== 'base' && !motion.has(y)) { onDrive.add(y); grew = true; } }
     const loose = new Set(this.an.loose);
     for (const it of this.scene.items) {
       const tpl = this.tpl.get(it.q.f);
@@ -555,7 +641,8 @@ export class AttachmentBuilder {
       m.userData.item = it;
       if (loose.has(it)) tint(m, 0xE8232A, 0.45);
       if (it === this.selected) { tint(m, 0x0A8DFF, 0.5); m.traverse((o) => { if (o.isMesh && o.material.emissive) o.material.emissive.setHex(0x0A4F99); }); }   // black parts show it too
-      (onDrive.has(bodyOf.get(it)) ? drive : ld).add(m);
+      const bi = bodyOf.get(it);
+      (groupOf.get(bi) || (onDrive.has(bi) ? drive : ld)).add(m);
       this.meshes.push(m);
     }
     this._poseDrive();
@@ -573,6 +660,10 @@ export class AttachmentBuilder {
       group.matrixWorldNeedsUpdate = true;
     };
     turn(this.three.drive, driveRot(this.motor), DRIVE_AXLE.at);
+    for (const g of this.gearGroups || []) {
+      const deg = g.port === 'E' ? this.motor : (this.tools[g.port] || 0);
+      turn(g.group, rotAxis(unitV(g.w), deg * len3(g.w) * DEG), g.at);
+    }
     const b = BUILT_IN.find((x) => x.module === this.mode) || {};
     turn(this.three.bmove, b.axis ? rotAxis(b.axis, this.motor * DEG) : driveRot((b.sign || 1) * this.motor), b.at || DRIVE_AXLE.at);
   }
@@ -583,6 +674,39 @@ export class AttachmentBuilder {
     if (this.mode !== 'custom') return MODULE_STOPS[this.mode] || [-120, 120];
     if (!this.stopsCache) this.stopsCache = this.parts.length ? motionOf(this.D, this.scene, this.an).stops.map((v) => Math.max(-120, Math.min(120, v))) : [-120, 120];
     return this.stopsCache;
+  }
+
+  /** The tool motors of this chassis (the Advanced Driving Base's D and C), or none. */
+  _toolPorts() { return ((this.build && CHASSIS[this.build.chassis]) || {}).tools ? CHASSIS[this.build.chassis].tools.map((t) => t.port) : []; }
+
+  /** How far a tool motor can turn what its gears drive in the preview. */
+  _toolStop(port) {
+    if (this.mode !== 'custom' || !this.parts.length) return [-120, 120];
+    if (!this.toolStopsCache) this.toolStopsCache = toolStops(this.D, this.scene, this.an, this._toolPorts());
+    return (this.toolStopsCache[port] || [-120, 120]).map((v) => Math.max(-120, Math.min(120, v)));
+  }
+
+  /** Turn a tool motor in the preview (its slider, or Q/E for the first and Z/X for the second). */
+  setTool(port, deg) {
+    const [lo, hi] = this._toolStop(port);
+    this.tools[port] = Math.round(Math.max(lo, Math.min(hi, deg)));
+    const s = this.sliders && this.sliders[port];
+    if (s) { s.input.min = lo; s.input.max = hi; s.input.value = this.tools[port]; s.out.textContent = `${this.tools[port]}°`; }
+    this._poseDrive();
+    if (this.ghost) this._snap();
+  }
+
+  /** The "Try motor" sliders for this chassis: motor E, or one per tool motor. */
+  _sliders() {
+    const box = this.root.querySelector('.lb-motor');
+    const tools = ((this.build && CHASSIS[this.build.chassis]) || {}).tools || [];
+    const list = tools.length ? tools.map((t) => ({ port: t.port, label: `Motor ${t.port} <small>${t.label.replace(' tool motor', '').toLowerCase()}</small>` })) : [{ port: 'E', label: 'Try motor E' }];
+    box.innerHTML = list.map((x) => `<label>${x.label} <input type="range" min="-120" max="120" value="0" step="1" data-port="${x.port}"></label><output data-port="${x.port}">0°</output>`).join('');
+    this.sliders = {};
+    for (const x of list) this.sliders[x.port] = { input: box.querySelector(`input[data-port="${x.port}"]`), out: box.querySelector(`output[data-port="${x.port}"]`) };
+    this.slider = this.sliders.E ? this.sliders.E.input : null; this.sliderOut = this.sliders.E ? this.sliders.E.out : null;
+    this.tools = {};
+    box.hidden = false;
   }
 
   /** Turn motor E in the preview (the slider, or Q and E), only as far as the build lets it. */
@@ -608,10 +732,18 @@ export class AttachmentBuilder {
     if (this.mode === 'none') bits.push('No attachment');
     else if (this.mode !== 'custom') bits.push(`${b.label}: ${b.note}. Motor E turns it`);
     else {
-      const onDrive = this._driveBodies();
-      const moving = this.scene.parts.filter((it) => an.bodies.some((bd, i) => onDrive.has(i) && bd.items.includes(it))).length;
-      bits.push(this.parts.length ? `Your attachment: ${this.parts.length} part${this.parts.length === 1 ? '' : 's'}, ${moving} turn${moving === 1 ? 's' : ''} with motor E` : 'Your attachment: empty. Snap a part onto the orange axle in the bracket (motor E turns it)');
-      if (an.jammed) { bits.push('The drive axle is locked to the robot: motor E cannot turn.'); warn = true; }
+      const tp = this._toolPorts();
+      if (tp.length) {
+        const motion = gearedMotion(an, this.build.chassis);
+        const per = tp.map((p) => { const n = this.scene.parts.filter((it) => an.bodies.some((bd, i) => motion.get(i) && motion.get(i).port === p && bd.items.includes(it))).length; return `${n} turn${n === 1 ? 's' : ''} with motor ${p}`; });
+        bits.push(this.parts.length ? `Your tools: ${this.parts.length} part${this.parts.length === 1 ? '' : 's'}, ${per.join(', ')}` : 'Your tools: empty. Build on the magenta frame at the front (motor D) or back (motor C): a gear that meshes with the 28-tooth gear under it turns with that motor');
+        if (an.gearJam) { bits.push('Some gears are locked against each other or the robot: those motors cannot turn.'); warn = true; }
+      } else {
+        const onDrive = this._driveBodies();
+        const moving = this.scene.parts.filter((it) => an.bodies.some((bd, i) => onDrive.has(i) && bd.items.includes(it))).length;
+        bits.push(this.parts.length ? `Your attachment: ${this.parts.length} part${this.parts.length === 1 ? '' : 's'}, ${moving} turn${moving === 1 ? 's' : ''} with motor E` : 'Your attachment: empty. Snap a part onto the orange axle in the bracket (motor E turns it)');
+        if (an.jammed) { bits.push('The drive axle is locked to the robot: motor E cannot turn.'); warn = true; }
+      }
     }
     if (an.loose.length) { bits.push(`${an.loose.length} part${an.loose.length === 1 ? ' is' : 's are'} not attached to anything (red) and would fall off.`); warn = true; }
     this.status(bits.join(' · '), warn);
@@ -637,6 +769,12 @@ export class AttachmentBuilder {
     if (!q || !this.scene) return;
     this.selected = this.scene.parts.find((it) => it.q === q) || null;
     this._rebuild();
+  }
+
+  /** Put down the part in hand, or else let go of the selected part. */
+  deselect() {
+    if (this.ghost) { if (this.ghost.carry) this.undo(); this._dropGhost(); return; }
+    if (this.selected) { this.selected = null; this._rebuild(); this.message(''); }
   }
 
   removeSelected() {
@@ -677,6 +815,7 @@ export class AttachmentBuilder {
   // ---------------- placing parts ----------------
   /** Take a part in hand to place it; `carry`: a part being moved ({port, inBody, from}). */
   pick(f, carry = null) {
+    if (!carry && this.ghost && this.ghost.f === f && !this.ghost.carry) { this._dropGhost(); return; }   // its button again: put it down
     this._dropGhost();
     this.selected = null;
     this._selBar();
@@ -693,6 +832,7 @@ export class AttachmentBuilder {
     const sp = SENSOR_PARTS[f];
     const name = sp ? sp.label : shortName(this.D.parts.parts[f].d);
     this.message(sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
+      : this.mode === 'custom' && this._toolPorts().length ? `${name}: snap it onto the tool frame or another part. A gear that meshes with a tool motor's 28-tooth gear turns with that motor.`
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
       : `${name}: snap it onto the robot (to hold a sensor, say). To build an attachment, pick "My own" above.`);
     this._guide();
@@ -750,7 +890,7 @@ export class AttachmentBuilder {
     cands.sort((p, q) => p.dist - q.dist || p.z - q.z);
     let found = null, near = null;
     for (const cand of cands.slice(0, 8)) {
-      if (this.motor !== 0 && this._onDriveItem(cand.it)) continue;
+      if (this._turned() && this._onDriveItem(cand.it)) continue;
       // the way the part is held first; if it does not fit that way, the other turns and the flip (a beam goes onto
       // the drive axle only square to it, which a child should not have to find with R and F)
       const ways = [];
@@ -776,7 +916,7 @@ export class AttachmentBuilder {
       }
       if (found) break;
     }
-    if (this.motor !== 0 && !found && cands.some((c) => this._onDriveItem(c.it))) this.message('Set "Try motor E" back to 0 to add parts to the moving arm.');
+    if (this._turned() && !found && cands.some((c) => this._onDriveItem(c.it))) this.message('Set the "Try motor" sliders back to 0 to add parts to what they turn.');
     const res = found || near;
     if (!res) {
       g.q = null; g.ok = false; g.mesh.visible = false;
@@ -802,7 +942,7 @@ export class AttachmentBuilder {
 
   /** Nothing under the pointer to snap onto: show where to start, the drive axle in the bracket. */
   _guide() {
-    if (this.mode !== 'custom' || (this.ghost && SENSOR_PARTS[this.ghost.f])) { this.marker.visible = false; return; }
+    if (this.mode !== 'custom' || this._toolPorts().length || (this.ghost && SENSOR_PARTS[this.ghost.f])) { this.marker.visible = false; return; }
     const L = 140, mid = DRIVE_AXLE.at;
     this.marker.position.set(...mid);
     this.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...DRIVE_AXLE.axis));
@@ -811,7 +951,8 @@ export class AttachmentBuilder {
     this.marker.visible = true;
   }
 
-  _onDriveItem(it) { return this.meshes && this.meshes.some((m) => m.userData.item === it && m.parent === this.three.drive); }
+  _onDriveItem(it) { return this.meshes && this.meshes.some((m) => m.userData.item === it && (m.parent === this.three.drive || (this.gearGroups || []).some((g) => g.group === m.parent))); }
+  _turned() { return this.motor !== 0 || Object.values(this.tools || {}).some((v) => v !== 0); }
 
   _hover() {
     const hit = this._raycast();
@@ -849,14 +990,15 @@ export class AttachmentBuilder {
         note = port ? `${sp.label} placed, on port ${port}.` : `${sp.label} placed: every port is taken, so pick one for it.`;
       }
       this._rebuild(true);
-      if (g.carry) {
+      // one at a time: the part goes back in the box and the placed one is selected (Shift-click keeps it in hand)
+      if (g.carry || !e.shiftKey) {
         this._dropGhost();
         this.selected = this.scene.parts.find((it) => it.q === g.q) || null;
         this._rebuild();
-        this.message(note);
+        this.message(g.carry ? note : `${note} Shift-click to place several.`);
         return;
       }
-      this.message(`${note} Click to put another ${sp ? sp.label.toLowerCase() : shortName(this.D.parts.parts[g.f].d)} on, or Esc to stop.`);
+      this.message(`${note} Shift-click to put another ${sp ? sp.label.toLowerCase() : shortName(this.D.parts.parts[g.f].d)} on; right-click or Esc to stop.`);
       return;
     }
     const it = this._raycast();
@@ -882,7 +1024,12 @@ export class AttachmentBuilder {
     else if (g && k === '[') { g.slide--; this._snap(); }
     else if ((k === 'Delete' || k === 'Backspace') && this.selected) this.removeSelected();
     else if (!e.ctrlKey && !e.metaKey && (k === 'q' || k === 'Q' || k === 'e' || k === 'E')) {
-      this.setMotor(this.motor + (k.toLowerCase() === 'q' ? 4 : -4));   // like driving: Q raises, E lowers
+      const tp = this._toolPorts();
+      if (tp.length) this.setTool(tp[0], (this.tools[tp[0]] || 0) + (k.toLowerCase() === 'q' ? 4 : -4));
+      else this.setMotor(this.motor + (k.toLowerCase() === 'q' ? 4 : -4));   // like driving: Q raises, E lowers
+    } else if (!e.ctrlKey && !e.metaKey && (k === 'z' || k === 'Z' || k === 'x' || k === 'X') && this._toolPorts()[1]) {
+      const p2 = this._toolPorts()[1];
+      this.setTool(p2, (this.tools[p2] || 0) + (k.toLowerCase() === 'z' ? 4 : -4));
     } else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdWASD'.includes(k)) || k.startsWith('Arrow'))) {
       e.stopPropagation();          // the robot does not drive about under the builder
       return;

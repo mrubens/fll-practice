@@ -23,7 +23,7 @@ const yawQuat = (h) => { const a = -h * Math.PI / 360; return { x: 0, y: Math.si
 /** Take a previous build's dynamic bodies out of the world (their joints and colliders go with them). */
 export function removeCustom(ph) {
   if (!ph.custom) return;
-  for (const b of ph.custom.bodies) if (b && b.role === 'free') ph.world.removeRigidBody(b.body);   // the robot's and the arm's own bodies are not ours
+  for (const b of ph.custom.bodies) if (b && (b.role === 'free' || b.kind === 'geared')) ph.world.removeRigidBody(b.body);   // the robot's and the arm's own bodies are not ours
   ph.custom = null;
 }
 
@@ -51,12 +51,31 @@ export function buildCustom(ph, robot, frame) {
   const fwd = robot.geom.axleFwd;
   const lift = robot.geom.lift;
   const pv = pivot.position.clone();
-  const custom = { bodies: [], joints: [], colliders: [], onDrive: new Set() };
+  const custom = { bodies: [], joints: [], colliders: [], onDrive: new Set(), geared: [] };
   ph.custom = custom;
   const boxesOf = (items) => items.flatMap((it) => (it.role === 'part' ? it.boxes : [])).map((b) => ({ c: new THREE.Vector3(...toRobot(b.c, lift, fwd)), h: b.h.map((v) => v * LDU), q: boxQuat(b.R) }));
   // parts on the robot and on the drive: kinematic, like the other modules' pieces (they also stall the motor)
+  const toRobotDir = (v) => new THREE.Vector3(-v[2], -v[1], -v[0]);
   an.bodies.forEach((body, i) => {
     if (body.role === 'free') return;
+    // turned by a tool motor through gears (or a gear on the Driving Base's drive): a kinematic body of its own that
+    // turns about its gear's axle, at its ratio, as its motor turns (driveGeared)
+    if (body.role === 'geared' || (body.role === 'drive' && robot.build.chassis !== 'driving-base')) {
+      const w = toRobotDir(body.w), rate = w.length();
+      const gb = ph.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(robot.x * S, 0, robot.y * S).setRotation(yawQuat(robot.heading)));
+      for (const b of boxesOf(body.items)) {
+        const node = new THREE.Object3D();
+        node.position.copy(b.c).sub(pv); node.quaternion.copy(b.q); pivot.add(node); node.updateMatrixWorld(true);
+        const desc = R.ColliderDesc.cuboid(Math.max(0.02, b.h[0]) * S, Math.max(0.02, b.h[1]) * S, Math.max(0.02, b.h[2]) * S)
+          .setTranslation(b.c.x * S, b.c.y * S, b.c.z * S).setRotation({ x: b.q.x, y: b.q.y, z: b.q.z, w: b.q.w })
+          .setFriction(0.6).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT);
+        ph.robotParts.push({ collider: ph.world.createCollider(desc, gb), node, half: b.h, onArm: false, tool: body.port });
+      }
+      custom.bodies[i] = { role: body.role, kind: 'geared', body: gb };
+      const m = robot.motors[body.port];
+      custom.geared.push({ i, body: gb, port: body.port, axis: w.normalize(), rate, at: new THREE.Vector3(...toRobot(body.at, lift, fwd)), last: m ? m.angle : 0 });
+      return;
+    }
     const onArm = body.role === 'drive';
     for (const b of boxesOf(body.items)) {
       const node = new THREE.Object3D();
@@ -171,9 +190,29 @@ export function placeCustom(ph, x, y, heading, armAngle = 0) {
 export function restoreCustom(ph) {
   const c = ph.custom;
   if (!c) return;
-  for (const b of c.bodies) if (b) b.body = b.role === 'base' ? ph.robotBody : b.role === 'drive' ? ph.armBody : ph.world.getRigidBody(b.body.handle);
+  for (const b of c.bodies) if (b) b.body = b.kind === 'geared' ? ph.world.getRigidBody(b.body.handle) : b.role === 'base' ? ph.robotBody : b.role === 'drive' ? ph.armBody : ph.world.getRigidBody(b.body.handle);
+  for (const g of c.geared || []) g.body = c.bodies[g.i].body;
   c.colliders = c.colliders.map((col) => ph.world.getCollider(col.handle));
   for (const j of c.joints) j.joint = ph.world.getImpulseJoint(j.joint.handle);
+}
+
+/**
+ * Turn the geared bodies to their motors' angles with the robot at (x, z, heading): f of the way from where they were
+ * (the last step) to where the motors are now, or straight there (teleport).
+ */
+export function driveGeared(ph, robot, x, z, heading, f = 1, teleport = false) {
+  const c = ph.custom;
+  if (!c || !c.geared || !c.geared.length) return;
+  const y = yawQuat(heading), yaw = new THREE.Quaternion(y.x, y.y, y.z, y.w);
+  for (const g of c.geared) {
+    const m = robot.motors[g.port], cur = m ? m.angle : 0;
+    const deg = teleport ? cur : g.last + (cur - g.last) * f;
+    const qr = new THREE.Quaternion().setFromAxisAngle(g.axis, deg * g.rate * Math.PI / 180);
+    const t = g.at.clone().sub(g.at.clone().applyQuaternion(qr)).applyQuaternion(yaw).add(new THREE.Vector3(x, 0, z));
+    const q = yaw.clone().multiply(qr);
+    if (teleport) { g.body.setTranslation({ x: t.x * S, y: t.y * S, z: t.z * S }, true); g.body.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true); g.last = cur; }
+    else { g.body.setNextKinematicTranslation({ x: t.x * S, y: t.y * S, z: t.z * S }); g.body.setNextKinematicRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
+  }
 }
 
 /** World pose (cm, quaternion) of each hinged body, for drawing: [{index, p, q}]. */

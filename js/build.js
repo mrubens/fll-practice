@@ -16,13 +16,13 @@ export const CHASSIS = {
     label: 'Driving Base', model: 'models/driving-base.mpd', wheels: 'models/attach/wheels.mpd', context: ['models/attach/arm-fixed.mpd'],
     axleZ: AXLE_Z, wheel: '5.6', track: 11.2, ports: { left: 'C', right: 'D' },
     footprint: { x0: -6.8, x1: 6.0, z0: -8.4, z1: 8.4 }, hub: { p: [0, -100, 0], r: [-1, 0, 0, 0, 1, 0, 0, 0, -1] },
-    attachments: true, tools: [],
+    attachments: true, custom: true, tools: [],
   },
   advanced: {
     label: 'Advanced Driving Base', model: 'models/advanced-driving-base.mpd', wheels: 'models/attach/advanced-wheels.mpd', context: [],
     axleZ: 80, wheel: '8.8', track: 14.48, ports: { left: 'A', right: 'E' },
     footprint: { x0: -8.0, x1: 11.6, z0: -9.6, z1: 9.6 }, hub: { p: [0, -161.7646, -40], r: [0, 0, -1, 0, 1, 0, 1, 0, 0] },
-    attachments: false, tools: [{ port: 'D', label: 'Front tool motor' }, { port: 'C', label: 'Back tool motor' }],
+    attachments: false, custom: true, tools: [{ port: 'D', label: 'Front tool motor' }, { port: 'C', label: 'Back tool motor' }],
   },
 };
 
@@ -124,17 +124,24 @@ export function normalizeBuild(b) {
   } else body = chassis === 'advanced' ? advancedBody() : standardBody(isPort(ports.color) ? ports.color : 'B', isPort(ports.distance) ? ports.distance : 'F');
   delete ports.color; delete ports.distance;
   const attachment = Object.assign({}, base.attachment, src.attachment || {});
-  // a custom attachment keeps its parts (an .ldr in the Driving Base's frame) and what the builder measured of it
+  // a custom attachment keeps its parts (an .ldr in the chassis's frame) and what the builder measured of it: on the
+  // Driving Base where motor E stops it ([lo, hi]); on the Advanced Driving Base, per tool motor ({D: [lo, hi], C: ...})
   if (attachment.module === 'custom') {
     attachment.ldr = String(attachment.ldr || '').slice(0, 300000);
     attachment.length = Number(attachment.length) || 0; attachment.tipAngle = Number(attachment.tipAngle) || 0;
-    attachment.stops = Array.isArray(attachment.stops) && attachment.stops.length === 2 ? attachment.stops.map(Number) : [-180, 180];
+    const st = attachment.stops;
+    if (ch.tools.length) {
+      const out = {};
+      for (const t of ch.tools) { const v = st && !Array.isArray(st) && st[t.port]; out[t.port] = Array.isArray(v) && v.length === 2 ? v.map(Number) : [-180, 180]; }
+      attachment.stops = out;
+    } else attachment.stops = Array.isArray(st) && st.length === 2 ? st.map(Number) : [-180, 180];
   } else { delete attachment.ldr; delete attachment.length; delete attachment.tipAngle; delete attachment.stops; }
-  if (!MODULES[attachment.module] || MODULES[attachment.module].hidden || !ch.attachments) attachment.module = 'none';
+  const allowed = attachment.module === 'custom' ? ch.custom : ch.attachments;
+  if (!MODULES[attachment.module] || MODULES[attachment.module].hidden || !allowed) attachment.module = 'none';
   // Attachments always go on the front and their motor is always on port E, like the Guided Mission robot:
   // one less thing for kids to decide. Whatever else was on E moves to its usual port.
   attachment.mount = 'front';
-  ports.attachment = MODULES[attachment.module].motor ? 'E' : null;
+  ports.attachment = MODULES[attachment.module].motor && !ch.tools.length ? 'E' : null;   // tool motors have their own ports
   if (ports.attachment) {
     // a sensor that was on E moves to a free port
     const taken = new Set([ports.left, ports.right, 'E', ...Object.values(body.ports)]);
@@ -182,7 +189,7 @@ export function geometryFor(build) {
   const hp = ch.hub.p, hr = ch.hub.r;
   const led = { pos: toRobot(turn(hr, [0, -79, 0]).map((v, k) => v + hp[k])), x: dirToRobot(turn(hr, [1, 0, 0])), y: dirToRobot(turn(hr, [0, 0, 1])) };
   return {
-    chassis: build.chassis || 'driving-base', model: ch.model, axleFwd, led,
+    chassis: build.chassis || 'driving-base', model: ch.model, axleFwd, led, tools: ch.tools.map((t) => t.port),
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,
     lift, radius: Math.max(9, build.track / 2 + 2.5),
     // measured from the model: the Driving Base reaches 6.8 cm behind its axles (the caster) to 6.0 ahead and is
@@ -201,6 +208,8 @@ export function geometryFor(build) {
     // axle, which stands at the front left, so it swings about a vertical axis there.
     attachment: (() => {
       const m = build.attachment.module;
+      // the Advanced Driving Base's own tools: parts turned by the tool motors through their gears (legophysics.js)
+      if (ch.tools.length) return { module: m === 'custom' ? 'tools' : 'none', mount: 'front', fwd: 0, lat: 0, angle: 0, length: 0, height: 0, drop: 0, stops: build.attachment.stops || {} };
       const ARM_FWD = 6.4 + axleFwd;       // the arm bracket's axle (and motor E's), LDraw z = -160
       if (m === 'arm') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
       if (m === 'plow') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
@@ -246,7 +255,7 @@ export function validateBuild(build) {
   const used = [build.ports.left, build.ports.right, ...((CHASSIS[build.chassis] || {}).tools || []).map((t) => t.port), ...sensors.filter((x) => x.port).map((x) => x.port)];
   const unplugged = sensors.filter((x) => !x.port).length;
   if (unplugged) issues.push(`${unplugged === 1 ? 'A sensor is' : `${unplugged} sensors are`} not plugged into a port.`);
-  if (MODULES[build.attachment.module].motor) {
+  if (MODULES[build.attachment.module].motor && !((CHASSIS[build.chassis] || {}).tools || []).length) {
     if (!build.ports.attachment) issues.push('The attachment needs a motor port.');
     else used.push(build.ports.attachment);
   }

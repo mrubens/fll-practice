@@ -16,6 +16,7 @@ export function drawCustom(sim, body, attachment) {
   if (sim.robotLego) sim.robotPending++;
   const done = () => { if (gen === sim.robotBuildGen && sim.revealRobot) sim.revealRobot(); };
   sim.customBodies = [];
+  sim.customGeared = [];
   const ldr = attachment.ldr || '';
   const LD_TO_ROBOT = ldToRobot(sim.robot.geom.axleFwd);
   sim.ldToRobot = LD_TO_ROBOT;
@@ -35,7 +36,13 @@ export function drawCustom(sim, body, attachment) {
         if (it.role === 'base' || !tpl.get(it.q.f)) continue;
         group.add(partMesh(tpl.get(it.q.f), it.q));
       }
-      if (b.role === 'drive') { group.matrix.copy(toMoving); sim.armMoving.add(group); }
+      if (b.role === 'geared' || (b.role === 'drive' && sim.robot.build.chassis !== 'driving-base')) {
+        // turned through gears by a motor: about its gear's axle, drawn each frame from the motor's angle
+        group.matrix.copy(LD_TO_ROBOT); body.add(group);
+        const w = new THREE.Vector3(-b.w[2], -b.w[1], -b.w[0]);
+        const at = new THREE.Vector3(-b.at[2] * 0.04 + sim.robot.geom.axleFwd, -b.at[1] * 0.04 + sim.robot.geom.lift, -b.at[0] * 0.04);
+        sim.customGeared.push({ group, port: b.port, rate: w.length(), axis: w.normalize(), at });
+      } else if (b.role === 'drive') { group.matrix.copy(toMoving); sim.armMoving.add(group); }
       else if (b.role === 'base') { group.matrix.copy(LD_TO_ROBOT); body.add(group); }
       else {
         // hung on pins: drawn in the robot's frame until the physics says where its body is
@@ -50,6 +57,15 @@ export function drawCustom(sim, body, attachment) {
 const tmpM = new THREE.Matrix4(), tmpInv = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), ONE = new THREE.Vector3(1, 1, 1);
 /** Each frame: put the hinged parts where the physics has their bodies. */
 export function poseCustom(sim) {
+  for (const g of sim.customGeared || []) {
+    const m = sim.robot.motors[g.port], deg = m ? m.angle : 0;
+    tmpQ.setFromAxisAngle(g.axis, deg * g.rate * Math.PI / 180);
+    tmpM.makeRotationFromQuaternion(tmpQ);
+    const t = g.at.clone().sub(g.at.clone().applyQuaternion(tmpQ));
+    tmpM.setPosition(t);
+    g.group.matrix.multiplyMatrices(tmpM, sim.ldToRobot);
+    g.group.matrixWorldNeedsUpdate = true;
+  }
   if (!sim.customBodies || !sim.customBodies.length) return;
   const ph = sim.world && sim.world.physics;
   const poses = customPoses(ph);

@@ -48,6 +48,57 @@ export const DRIVE_PARTS = [
   { f: '32270', c: 0, p: [60, -130, -160], r: [0, 0, 1, 1, 0, 0, 0, 1, 0] },
 ];
 
+// Each chassis's drives: the parts a motor turns, the motor's port, and the axis (LDraw frame) the drive turns about
+// for a positive motor angle. The Driving Base: the arm bracket's axle and its bevel gear (motor E). The Advanced
+// Driving Base: the 28-tooth gears lying flat under its two tool mounts, on motor D (front) and motor C (back).
+const ADB_GEAR = (x, y, z) => ({ f: '46372', c: 71, p: [x, y, z], r: [1, 0, 0, 0, 0, 1, 0, -1, 0] });
+export const CHASSIS_DRIVES = {
+  'driving-base': [{ port: 'E', parts: DRIVE_PARTS, at: DRIVE_AXLE.at, axis: [-1, 0, 0] }],
+  advanced: [
+    { port: 'D', parts: [ADB_GEAR(60, -148.7646, -120)], at: [60, -148.7646, -120], axis: [0, -1, 0] },
+    { port: 'C', parts: [ADB_GEAR(-60, -149.7646, 190)], at: [-60, -149.7646, 190], axis: [0, -1, 0] },
+  ],
+};
+
+// Gears: pitch radius (LDU; 1.25 per tooth, so a 12 and a 20 tooth mesh 2 studs apart), whether they mesh side by
+// side (spur teeth) and at right angles (bevel teeth). Their axle runs along their own z.
+export const GEARS = {
+  '32270': { r: 15, spur: true, bevel: true },     // 12 tooth double bevel
+  '18575': { r: 25, spur: true, bevel: true },     // 20 tooth double bevel
+  '46372': { r: 35, spur: true, bevel: true },     // 28 tooth double bevel
+  '32498': { r: 45, spur: true, bevel: true },     // 36 tooth double bevel
+  '6589': { r: 15, spur: false, bevel: true },     // 12 tooth bevel
+  '32198a': { r: 25, spur: false, bevel: true },   // 20 tooth bevel
+};
+const gearAxis = (q) => unit(app(q.r, [0, 0, 1]));
+/**
+ * Where two placed gears touch when they mesh (side by side with parallel axles, or bevel to bevel with axles crossing
+ * at a right angle), or null when they do not.
+ */
+export function gearMesh(qa, qb) {
+  const ga = GEARS[qa.f], gb = GEARS[qb.f];
+  if (!ga || !gb) return null;
+  const a = qa.p, b = qb.p, u = gearAxis(qa), v = gearAxis(qb);
+  const uv = dot(u, v);
+  if (Math.abs(Math.abs(uv) - 1) < 1e-3) {
+    if (!ga.spur || !gb.spur) return null;
+    const d = sub(b, a), along = dot(d, u);
+    if (Math.abs(along) > 8) return null;                                // their teeth side by side
+    const perp = sub(d, scl(u, along)), L = len(perp);
+    if (Math.abs(L - (ga.r + gb.r)) > 4) return null;
+    return add(a, scl(perp, ga.r / L));
+  }
+  if (Math.abs(uv) > 0.02 || !ga.bevel || !gb.bevel) return null;
+  // the axles cross (nearly) at the apex; each gear sits the other's radius from it
+  const w0 = sub(a, b), d1 = dot(u, w0), e1 = dot(v, w0), den = 1 - uv * uv;
+  const s = (uv * e1 - d1) / den, t = (e1 - uv * d1) / den;
+  const pa = add(a, scl(u, s)), pb = add(b, scl(v, t));
+  if (len(sub(pa, pb)) > 4) return null;
+  const p = scl(add(pa, pb), 0.5);
+  if (Math.abs(len(sub(a, p)) - gb.r) > 7 || Math.abs(len(sub(b, p)) - ga.r) > 7) return null;
+  return sub(add(a, b), p);
+}
+
 // ---------------- small 3D math (row-major 3x3, like LDraw's a..i) ----------------
 
 export const I3 = [1, 0, 0, 0, 1, 0, 0, 0, 1];
@@ -249,7 +300,18 @@ export class Scene {
     const bb = baseBoxes(D, chassis);
     this.base = { q: null, role: 'base', conns: baseConns, boxes: bb, aabb: aabbOf(bb) };
     this.base.conns.forEach((c) => { c.part = this.base; });
-    if (db) for (const q of DRIVE_PARTS) this._add(q, 'drive');
+    this.drives = CHASSIS_DRIVES[chassis] || [];
+    for (const dv of this.drives) for (const q of dv.parts) this._add(q, 'drive').port = dv.port;
+    // a tool motor's output turns with its drive: the axle holes on the drive's axle line belong to the drive
+    if (!db) for (const dv of this.drives) {
+      const item = this.items.find((it) => it.role === 'drive' && it.port === dv.port), ax = unit(dv.axis), keep = [];
+      for (const c of this.base.conns) {
+        const off = sub(c.o, dv.at), along = dot(off, ax), perp = len(sub(off, scl(ax, along)));
+        if (Math.abs(Math.abs(dot(c.d, ax)) - 1) < 1e-3 && perp < 1 && Math.abs(along) < 60 && c.s.some((x) => x[0] === 'A')) { c.part = item; item.conns.push(c); }
+        else keep.push(c);
+      }
+      this.base.conns = keep;
+    }
     for (const q of parts) this._add(q, 'part');
   }
   _add(q, role) {
@@ -287,6 +349,7 @@ export class Scene {
     // anything it would overlap without being connected to
     for (const other of this.all()) {
       if (touching.has(other) || !aabbNear(it.aabb, other.aabb, 0)) continue;
+      if (other.q && gearMesh(q, other.q)) continue;                     // meshing gears' teeth go between each other
       for (const A of it.boxes) for (const B of other.boxes) if (boxesOverlap(A, B, other.role === 'base' ? 3 : 2)) return { ok: false, conns, why: 'bumps into another part' };
     }
     return { ok: true, conns };
@@ -336,8 +399,12 @@ export class Scene {
     const parent = all.map((_, i) => i);
     const find = (i) => { while (parent[i] !== i) { parent[i] = parent[parent[i]]; i = parent[i]; } return i; };
     const union = (a, b) => { a = find(a); b = find(b); if (a !== b) parent[Math.max(a, b)] = Math.min(a, b); return a !== b; };
-    const drives = all.filter((it) => it.role === 'drive').map((it) => idx.get(it));
-    drives.forEach((d) => union(drives[0], d));
+    // each motor's drive parts turn together
+    const drivePorts = [...new Set(all.filter((it) => it.role === 'drive').map((it) => it.port))];
+    const driveFirst = drivePorts.map((p) => idx.get(all.find((it) => it.role === 'drive' && it.port === p)));
+    for (const p of drivePorts) { const ds = all.filter((it) => it.role === 'drive' && it.port === p).map((it) => idx.get(it)); ds.forEach((d) => union(ds[0], d)); }
+    const drives = driveFirst;
+    const isDriveRoot = (r) => driveFirst.some((d) => find(d) === r);
     // every connection between two different parts
     const links = [];
     for (let i = 0; i < all.length; i++) for (let j = i + 1; j < all.length; j++) {
@@ -374,7 +441,7 @@ export class Scene {
     // collect the sets
     const sets = new Map();
     all.forEach((it, i) => { const r = find(i); if (!sets.has(r)) sets.set(r, []); sets.get(r).push(it); });
-    const baseRoot = find(0), driveRoot = drives.length ? find(drives[0]) : -1;
+    const baseRoot = find(0);
     // hinges between sets, merged per line
     let joints = [];
     for (const l of links) {
@@ -394,13 +461,13 @@ export class Scene {
     // hinged to each other through it (and a lone one that joins nothing just stays where it is)
     const small = (items) => items.every((it) => it.role === 'part' && SMALL.has(categoryOf(this.D, it.q.f)));
     for (const [root, items] of sets) {
-      if (root === baseRoot || root === driveRoot || !small(items)) continue;
+      if (root === baseRoot || isDriveRoot(root) || !small(items)) continue;
       const mine = joints.filter((j) => j.a === root || j.b === root);
       const others = [...new Set(mine.map((j) => (j.a === root ? j.b : j.a)))];
       if (!mine.length || !mine.every((j) => sameLine(j.line, mine[0].line))) continue;
       joints = joints.filter((j) => !mine.includes(j));
       if (others.length === 1) { union(others[0], root); continue; }
-      const hub = others.includes(baseRoot) ? baseRoot : others.includes(driveRoot) ? driveRoot : others[0];
+      const hub = others.includes(baseRoot) ? baseRoot : others.find((o) => isDriveRoot(o)) ?? others[0];
       for (const o of others) {
         if (o === hub) continue;
         const js = mine.filter((j) => j.a === o || j.b === o || j.a === hub || j.b === hub);
@@ -427,7 +494,7 @@ export class Scene {
     all.forEach((it, i) => { const r = find(i); if (!roots.has(r)) roots.set(r, []); roots.get(r).push(it); });
     // bodies that hang on nothing (a part left behind when its neighbour was deleted)
     const reach = new Set([find(0)]);
-    if (drives.length) reach.add(find(drives[0]));
+    for (const d of drives) reach.add(find(d));
     for (let grew = true; grew;) {
       grew = false;
       for (const j of joints) {
@@ -438,9 +505,38 @@ export class Scene {
     const bodies = [], ofRoot = new Map(), loose = [];
     for (const [r, items] of roots) {
       if (!reach.has(r)) { loose.push(...items); continue; }
-      const role = r === find(0) ? 'base' : drives.length && r === find(drives[0]) ? 'drive' : 'free';
+      const di = drives.findIndex((d) => find(d) === r);
+      const role = r === find(0) ? 'base' : di >= 0 ? 'drive' : 'free';
       ofRoot.set(r, bodies.length);
-      bodies.push({ role, items });
+      const body = { role, items };
+      if (di >= 0) { const dv = this.drives.find((x) => x.port === drivePorts[di]); Object.assign(body, { port: dv.port, w: dv.axis, at: dv.at }); }
+      bodies.push(body);
+    }
+    // gears: a body whose gear meshes with a turning body's gear turns too, about its own gear's axle, at the ratio
+    // the teeth make (and so on down a gear train). w: its turn per degree of the motor, as an axis vector.
+    const gears = [];
+    bodies.forEach((b, i) => { for (const it of b.items) if (it.q && GEARS[it.q.f]) gears.push({ it, i }); });
+    let gearJam = false;
+    const queue = bodies.map((b, i) => (b.role === 'drive' ? i : -1)).filter((i) => i >= 0);
+    while (queue.length) {
+      const i = queue.shift(), bi = bodies[i];
+      for (const A of gears) {
+        if (A.i !== i) continue;
+        for (const B of gears) {
+          if (B.i === i) continue;
+          const c = gearMesh(A.it.q, B.it.q);
+          if (!c) continue;
+          const v = gearAxis(B.it.q), vb = cross(v, sub(c, B.it.q.p)), n2 = dot(vb, vb);
+          if (n2 < 1e-6) continue;
+          const wj = scl(v, dot(cross(bi.w, sub(c, A.it.q.p)), vb) / n2);
+          const bj = bodies[B.i];
+          if (bj.role === 'base') { gearJam = true; continue; }
+          if (bj.w) { if (len(sub(bj.w, wj)) > 1e-3 * (1 + len(wj))) gearJam = true; continue; }
+          if (bj.role !== 'free') continue;
+          Object.assign(bj, { role: 'geared', port: bi.port, w: wj, at: B.it.q.p });
+          queue.push(B.i);
+        }
+      }
     }
     const outJoints = [];
     for (const j of joints) {
@@ -451,8 +547,8 @@ export class Scene {
       if (prev) { prev.friction += j.friction; continue; }
       outJoints.push({ a, b, at, axis: j.axis, line: j.line, friction: j.friction, frictionPins: j.frictionPins });
     }
-    const jammed = drives.length > 0 && find(0) === find(drives[0]);
-    return { bodies, joints: outJoints, loose: loose.filter((it) => it.role === 'part'), jammed };
+    const jammed = drives.some((d) => find(0) === find(d)) || gearJam;
+    return { bodies, joints: outJoints, loose: loose.filter((it) => it.role === 'part'), jammed, gearJam };
   }
 }
 

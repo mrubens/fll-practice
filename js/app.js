@@ -675,7 +675,7 @@ function driveDown(k) {
 }
 // The arrow keys drive like W A S D when no program is running (while one runs they press the hub's buttons).
 const ARROWS = { ArrowUp: 'w', ArrowDown: 's', ArrowLeft: 'a', ArrowRight: 'd' };
-const driveKey = (e) => { const k = e.key.toLowerCase(); return ARROWS[e.key] || ('wasdqe'.includes(k) && k.length === 1 ? k : null); };
+const driveKey = (e) => { const k = e.key.toLowerCase(); return ARROWS[e.key] || ('wasdqezx'.includes(k) && k.length === 1 ? k : null); };
 document.addEventListener('keydown', (e) => {
   const k = driveKey(e);
   if (!k || e.metaKey || e.ctrlKey || e.altKey || typing()) return;
@@ -726,9 +726,13 @@ function driveFromKeys() {
   if (fwd) { l = r = fwd * v; const ease = 1 - Math.min(1, Math.abs(turn)) * 0.7; if (turn > 0) r *= ease; else if (turn < 0) l *= ease; }   // arcs while moving
   else if (turn) { l = turn * v * 0.6; r = -turn * v * 0.6; }                           // pivots in place
   robot.motors[cfg.left].target = l; robot.motors[cfg.right].target = r;
-  const arm = cfg.attachment && robot.motors[cfg.attachment];
+  // Q and E: the attachment motor (the Advanced Driving Base's front tool motor D); Z and X: its back tool motor C
+  const tools = cfg.tools || [];
+  const arm = (cfg.attachment || tools[0]) && robot.motors[cfg.attachment || tools[0]];
   if (arm) arm.target = ((k.has('q') ? 1 : 0) - (k.has('e') ? 1 : 0)) * MAX_DEG_PER_S * 0.2;
-  const moving = [robot.motors[cfg.left], robot.motors[cfg.right], arm].some((m) => m && (m.target !== 0 || Math.abs(m.velocity) > 1));
+  const arm2 = tools[1] && robot.motors[tools[1]];
+  if (arm2) arm2.target = ((k.has('z') ? 1 : 0) - (k.has('x') ? 1 : 0)) * MAX_DEG_PER_S * 0.2;
+  const moving = [robot.motors[cfg.left], robot.motors[cfg.right], arm, arm2].some((m) => m && (m.target !== 0 || Math.abs(m.velocity) > 1));
   return moving;
 }
 // One simulated step (1/200 s): the robot, the referee, the program's tick, and the match clock. The live loop and
