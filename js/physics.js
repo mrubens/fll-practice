@@ -964,6 +964,7 @@ export class Physics {
 
   setRobotPose(x, y, heading) {
     if (!this.robotBody || ![x, y, heading].every(Number.isFinite)) return;   // NaN would poison the physics world
+    this.jam = null;                                   // picked up and put down: nothing is jammed any more
     this.robotBody.setTranslation({ x: x * S, y: 0, z: y * S }, true);
     this.robotBody.setRotation(yawQuat(heading), true);
     this.lastArmAngle = this.attachmentAngle(this.robot);
@@ -1014,6 +1015,11 @@ export class Physics {
     pass(this.bodyCollider);
     for (const part of this.robotParts) pass(part.collider);
     if (this.robotParts.length) pass(this.bodyCollider);
+    // jammed earlier (see _jammed): no driving further the way that jammed until the pieces are free again
+    if (this.jam) {
+      const d = move.x * this.jam.x + move.z * this.jam.z;
+      if (d > 0) move = { x: move.x - d * this.jam.x, y: 0, z: move.z - d * this.jam.z };
+    }
     // Several physics substeps per robot step: the arm can sweep a centimeter per step, and jointed pieces need
     // the kinematic push spread over small moves to react properly.
     const SUB = this.substeps || this.sim.physicsSubsteps || 3;
@@ -1031,12 +1037,46 @@ export class Physics {
     }
     this.lastArmAngle = angle;
     this.robotContacts(robot.time, speed, touched);
+    // a model (or piece) the robot pushes that is pressed into another model jams: the robot stops, as it would on
+    // the real table, instead of shoving thin parts through the other model with its unlimited push
+    const jam = this._jammed(touched, robot.time);
+    if (jam.jammed) {
+      const len = Math.hypot(move.x, move.z);
+      if (len > 0) this.jam = { x: move.x / len, z: move.z / len };
+      body.setTranslation(cur, true);
+      body.setRotation(yawQuat(robot.heading), true);
+      heading = robot.heading;
+    } else if (jam.depth < 0.15 * S) this.jam = null;
     for (const o of touched) o.touched = robot.time;
     for (const ob of this.obstacleBodies) if (ob.o.impact && !touched.has(ob.o)) ob.o.impact = 0;
     this.readPieces(robot.time);
     this.syncObstacles();
     const t = body.translation();
     return [t.x / S, t.z / S, heading];
+  }
+
+  /**
+   * Whether a piece the robot moves (directly or through its model) has just been pressed deeper into another model
+   * (jammed), and the deepest such overlap.
+   */
+  _jammed(touched, time) {
+    const JAM = 0.3 * S;
+    let jam = false, deepest = 0;
+    for (const pc of this.pieces) {
+      if (pc.body.bodyType() !== 0 || !((pc.o && touched.has(pc.o)) || pc.touched === time)) { pc.jamDepth = 0; continue; }
+      let depth = 0;
+      for (const c of pc.colliders) {
+        this.world.contactPairsWith(c, (other) => {
+          const o = this.colliderToObstacle.get(other.handle) || this.colliderToPiece.get(other.handle)?.o;
+          if (!o || o === pc.o) return;
+          this.world.contactPair(c, other, (m) => { for (let i = 0; i < m.numContacts(); i++) depth = Math.max(depth, -m.contactDist(i)); });
+        });
+      }
+      if (depth > JAM && depth > (pc.jamDepth || 0)) jam = true;
+      pc.jamDepth = depth;
+      deepest = Math.max(deepest, depth);
+    }
+    return { jammed: jam, depth: deepest };
   }
 
   /** Everything the robot's colliders are in contact with after a step: marks pieces and models as touched. */
