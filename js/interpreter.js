@@ -174,6 +174,14 @@ export class Runtime {
     for (const w of waiters) w();
   }
 
+  /** A force sensor test: 'pressed', 'hardpressed' or 'released' (no sensor on the port: released). */
+  forceTest(port, option) {
+    const f = this.robot.forceSample(port);
+    if (option === 'hardpressed') return !!f && f.hard;
+    if (option === 'released') return !f || !f.pressed;
+    return !!f && f.pressed;
+  }
+
   hatPredicate(hat) {
     switch (hat.type) {
       case 'flipperevents_whenCondition': return this.bool(hat, 'CONDITION');
@@ -182,6 +190,7 @@ export class Runtime {
         const s = this.robot.colorSample(this.str(hat, 'PORT'));
         return !!s && s.code === this.str(hat, 'OPTION');
       }
+      case 'flipperevents_whenPressed': return this.forceTest(this.str(hat, 'PORT'), hat.getFieldValue('OPTION'));
       case 'flipperevents_whenDistance':
         return this.distanceTest(this.str(hat, 'PORT'), hat.getFieldValue('COMPARATOR'), this.num(hat, 'VALUE'), hat.getFieldValue('UNIT'));
       default: return false;
@@ -453,6 +462,12 @@ const REPORTERS = {
   },
   flippersensors_isDistance(b) {
     return this.distanceTest(this.str(b, 'PORT'), b.getFieldValue('COMPARATOR'), this.num(b, 'VALUE'), b.getFieldValue('UNIT'));
+  },
+  flippersensors_isPressed(b) { return this.forceTest(this.str(b, 'PORT'), b.getFieldValue('OPTION')); },
+  flippersensors_force(b) {
+    const f = this.robot.forceSample(this.str(b, 'PORT'));
+    if (!f) return 0;
+    return b.getFieldValue('UNIT') === 'percent' ? Math.round(f.newtons * 10) : f.newtons;
   },
   flippersensors_buttonIsPressed(b) {
     const down = !!this.robot.hub.buttons[b.getFieldValue('BUTTON')];

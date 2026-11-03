@@ -53,12 +53,14 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
   shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
-- **Place your sensors.** The robot builder's parts box starts with the SPIKE color and distance sensors: snap one
+- **Place your sensors.** The robot builder's parts box starts with the SPIKE color, distance and force sensors: snap one
   onto any hole or pin of the robot (add beams to hold it where you want it), and it plugs into the next free hub
   port; the Hub ports panel on the right (or the bar over a selected part) changes ports, and Move and Remove take it
   elsewhere or off. Readings come from where each sensor really is: a color sensor reads the mat where it looks, so it
   has to look down from close by (full strength up to 2 cm, nothing past 4.5 cm, like the real one), and a distance
-  sensor measures along the way its eyes look. Two color sensors for line following work; a sensor hung on a single
+  sensor measures along the way its eyes look. A force sensor's button reads when something is against it: 2.5 N for
+  a touch, more the harder the robot drives into it, up to 10 N ("hard pressed" from 8 N); its blocks are SPIKE's
+  ("is pressed?", "pressure in newtons / %", "when pressed") and export to Python. Two color sensors for line following work; a sensor hung on a single
   pin is flagged, since it would swing. The sensors stay when you change the attachment.
 - **Build your own attachment.** In the robot builder pick "My own" and build on the Driving Base's arm bracket:
   a parts box with every Technic part of the SPIKE Prime sets (beams, frames, pins, axles, connectors, bushes, gears)
@@ -129,7 +131,7 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - Mission-model positions and footprints come from the FIRST wireframe PDF (measured by the fll-sim project);
   the mat image is the Robot Game Rulebook's render, since FIRST does not publish the print file. Scoring zones
   are built from the model positions and are approximate; adjust them in `js/missions.js`.
-- Not simulated: force sensor, pitch/roll (the table is flat), sound files, broadcasts, light-matrix pixel
+- Not simulated: pitch/roll (the table is flat), sound files, broadcasts, light-matrix pixel
   blocks, precision tokens and inspection points. Mission models do not articulate.
 
 ## Run or host it yourself

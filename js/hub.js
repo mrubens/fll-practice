@@ -82,7 +82,7 @@ export class HubPanel {
     for (const p of PORT_LETTERS) {
       const el = this.ports[p];
       const sensor = c.sensors[p];
-      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : sensor === 'color' ? 'color sensor' : sensor === 'distance' ? 'distance' : p === c.attachment ? 'attachment' : 'motor';
+      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : sensor === 'color' ? 'color sensor' : sensor === 'distance' ? 'distance' : sensor === 'force' ? 'force sensor' : p === c.attachment ? 'attachment' : 'motor';
       el.querySelector('.type').textContent = type;
       el.dataset.type = type;
     }
@@ -144,6 +144,9 @@ export class HubPanel {
       if (c.sensors[p] === 'color') {
         const s = r.colorSample(p);
         v.innerHTML = s ? `<i class="sw" style="background:${rgb(s.rgb)}"></i>${s.name} · ${s.reflect}%` : '—';
+      } else if (c.sensors[p] === 'force') {
+        const f = r.forceSample(p);
+        v.textContent = f ? `${f.newtons.toFixed(1)} N${f.hard ? ' · hard' : f.pressed ? ' · pressed' : ''}` : '—';
       } else if (c.sensors[p] === 'distance') {
         const d = r.distanceCm(p);
         v.textContent = d === null ? 'none' : `${Math.round(d)} cm`;

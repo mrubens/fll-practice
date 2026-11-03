@@ -23,10 +23,11 @@ export const MODULES = {
 
 // Sensors are LEGO parts placed on the robot in the robot builder (an .ldr in the Driving Base's LDraw frame, like
 // a custom attachment), each with a hub port. Per sensor part: what it is, and where its lens (or eyes) are and which
-// way it looks, in the part's own LDraw frame (LDU; both sensors look along their -z).
+// way it looks, in the part's own LDraw frame (LDU; all of them look along their -z).
 export const SENSOR_PARTS = {
   '37308': { type: 'color', label: 'Color sensor', lens: [0, 0, -49], dir: [0, 0, -1] },
   '37316': { type: 'distance', label: 'Distance sensor', lens: [0, 0, -69], dir: [0, 0, -1] },
+  '37312': { type: 'force', label: 'Force sensor', lens: [0, 0, -70], dir: [0, 0, -1] },   // lens: the button's face
 };
 // The Driving Base's color sensor, at the front right where Driving Base 3 hangs it, looking down 1.6 cm above the mat.
 const COLOR_AT_FRONT_RIGHT = '1 15 -100 -90 -160 0 -1 0 0 0 -1 1 0 0 37308.dat';

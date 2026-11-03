@@ -1069,6 +1069,8 @@ export class Physics {
     this.readPieces(robot.time);
     this.syncObstacles();
     const t = body.translation();
+    // the drive that could not happen this step (cm, world): a force sensor pressed by it reads harder
+    this.blocked = { x: nx - t.x / S, y: ny - t.z / S, dt };
     return [t.x / S, t.z / S, heading];
   }
 

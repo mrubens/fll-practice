@@ -79,7 +79,10 @@ export const SELECTORS = {
   'flippersensors_color-sensor-selector': { cat: 'sensors', options: PORTS },
   'flippersensors_distance-sensor-selector': { cat: 'sensors', options: PORTS },
   'flippersensors_color-selector': { cat: 'sensors', options: COLOR_OPTIONS },
+  'flippersensors_force-sensor-selector': { cat: 'sensors', options: PORTS },
+  'flipperevents_force-sensor-selector': { cat: 'events', options: PORTS },
 };
+const FORCE_OPTIONS = [['pressed', 'pressed'], ['hard pressed', 'hardpressed'], ['released', 'released']];
 
 const MOVE_UNITS = [['rotations', 'rotations'], ['degrees', 'degrees'], ['seconds', 'seconds'], ['cm', 'cm'], ['in', 'inches']];
 const MOTOR_UNITS = [['rotations', 'rotations'], ['degrees', 'degrees'], ['seconds', 'seconds']];
@@ -148,6 +151,8 @@ export const BLOCKS = [
     args: [sel('PORT', 'flipperevents_color-sensor-selector', 'A'), sel('OPTION', 'flipperevents_color-selector', '9')] },
   { op: 'flipperevents_whenDistance', cat: 'events', kind: 'hat', msg: '%PORT when %COMPARATOR %VALUE %UNIT',
     args: [sel('PORT', 'flipperevents_distance-sensor-selector', 'A'), field('COMPARATOR', DIST_CMP, '<'), num('VALUE', 15), field('UNIT', DIST_UNITS, 'cm')] },
+  { op: 'flipperevents_whenPressed', cat: 'events', kind: 'hat', msg: '%PORT when %OPTION',
+    args: [sel('PORT', 'flipperevents_force-sensor-selector', 'A'), field('OPTION', FORCE_OPTIONS, 'pressed')] },
   { op: 'flipperevents_whenCondition', cat: 'events', kind: 'hat', msg: 'when %CONDITION', args: [{ n: 'CONDITION', k: 'bool' }] },
   { op: 'flipperevents_whenTimer', cat: 'events', kind: 'hat', msg: 'when timer > %VALUE', args: [num('VALUE', 5)] },
 
@@ -174,6 +179,10 @@ export const BLOCKS = [
     args: [sel('PORT', 'flippersensors_distance-sensor-selector', 'A'), field('COMPARATOR', DIST_CMP, '<'), num('VALUE', 15), field('UNIT', DIST_UNITS, 'cm')] },
   { op: 'flippersensors_distance', cat: 'sensors', kind: 'reporter', msg: '%PORT distance in %UNIT',
     args: [sel('PORT', 'flippersensors_distance-sensor-selector', 'A'), field('UNIT', DIST_UNITS, 'cm')] },
+  { op: 'flippersensors_isPressed', cat: 'sensors', kind: 'boolean', msg: '%PORT is %OPTION ?',
+    args: [sel('PORT', 'flippersensors_force-sensor-selector', 'A'), field('OPTION', FORCE_OPTIONS, 'pressed')] },
+  { op: 'flippersensors_force', cat: 'sensors', kind: 'reporter', msg: '%PORT pressure in %UNIT',
+    args: [sel('PORT', 'flippersensors_force-sensor-selector', 'A'), field('UNIT', [['newtons', 'newton'], ['%', 'percent']], 'newton')] },
   { op: 'flippersensors_buttonIsPressed', cat: 'sensors', kind: 'boolean', msg: 'is %BUTTON button %EVENT ?',
     args: [field('BUTTON', [['left', 'left'], ['right', 'right']], 'left'), field('EVENT', [['pressed', 'pressed'], ['released', 'released']], 'pressed')] },
   { op: 'flippersensors_orientationAxis', cat: 'sensors', kind: 'reporter', msg: '%AXIS angle',

@@ -263,6 +263,30 @@ export class Robot {
     return classify(this.world.sampleRGB(spot.x, spot.y).map((v) => Math.round(v * (1 - k) + 10 * k)));
   }
 
+  /**
+   * The force sensor on a port: {newtons, pressed, hard}, or null when there is none. Its button reads when something
+   * is up against it: a little for a touch (a piece leaning on it, the robot resting against a wall), more the harder
+   * the robot drives into what it is pressed on (the drive that could not happen in its direction), up to 10 N.
+   */
+  forceSample(port) {
+    const s = this.sensorOn(port, 'force');
+    if (!s) return null;
+    const [f, up, lat] = s.pos, [df, du, dl] = s.dir;
+    const h = this.heading * DEG;
+    const dx = Math.cos(h) * df - Math.sin(h) * dl, dy = Math.sin(h) * df + Math.cos(h) * dl;
+    const BACK = 0.3;                                   // look from just inside the button, so a face it touches counts
+    const [px, py] = this._point(f - df * BACK, lat - dl * BACK);
+    const d = this.world.raycast(px, py, dx, dy, 1, up - du * BACK, du);
+    let n = 0;
+    if (Number.isFinite(d) && d - BACK < 0.4) {          // touching: the drive keeps 2.5 mm off what it meets (physics SKIN)
+      const ph = this.world.physics, b = ph && ph.blocked;
+      const push = b && b.dt > 0 ? Math.max(0, (b.x * dx + b.y * dy) / b.dt) : 0;   // cm/s of drive held back along the button
+      n = Math.min(10, 2.5 + push * 0.75);
+    }
+    n = Math.round(n * 10) / 10;
+    return { newtons: n, pressed: n >= 1, hard: n >= 8 };
+  }
+
   /** Distance in cm from the distance sensor on a port along the way it looks, or null when nothing is in range. */
   distanceCm(port) {
     const s = this.sensorOn(port, 'distance');

@@ -141,6 +141,7 @@ select.vt { cursor: pointer; color: var(--fg); }
 .port .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(0,0,0,.2); }
 .port[data-type="color sensor"] b { background: #3DB7E8; }
 .port[data-type="distance"] b { background: #3DB7E8; }
+.port[data-type="force sensor"] b { background: #3DB7E8; }
 .port[data-type="left wheel"] b, .port[data-type="right wheel"] b { background: #FF4FA8; }
 
 /* ---- toasts / modal ---- */
@@ -335,7 +336,7 @@ body.building #hubPanel { display: none; }
 .lb-port.on { border-color: var(--accent); background: #EAF4FF; }
 .lb-port .dev { width: 12px; height: 12px; border-radius: 4px; flex: none; }
 .lb-port .dev.motor { background: #FF4FA8; }
-.lb-port .dev.color, .lb-port .dev.distance { background: #3DB7E8; }
+.lb-port .dev.color, .lb-port .dev.distance, .lb-port .dev.force { background: #3DB7E8; }
 .lb-hint { margin: 8px 0 0; color: var(--muted); line-height: 1.35; }
 .lb-palette .lb-hint { margin: 0 2px 4px; font-size: 11px; }
 .lb-issues { margin: 8px 0 0; color: var(--stop); font-weight: 700; }

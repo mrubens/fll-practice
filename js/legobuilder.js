@@ -340,7 +340,7 @@ export class AttachmentBuilder {
       ${sensors ? '' : '<p class="lb-hint">No sensors yet: pick one from Sensors on the left and snap it onto the robot.</p>'}
       <p class="lb-hint">Free: ${free.length ? free.join(', ') : 'none'}</p>
       <p class="lb-issues">${issues.join(' ')}</p>
-      <p class="lb-hint">A color sensor reads the mat when it looks down at it from close by (up to about 2 cm; nothing past 4.5). A distance sensor measures along the way its eyes look.</p>`;
+      <p class="lb-hint">A color sensor reads the mat when it looks down at it from close by (up to about 2 cm; nothing past 4.5). A distance sensor measures along the way its eyes look. A force sensor's button reads when something is against it, harder the harder the robot pushes (up to 10 N).</p>`;
   }
 
   _sideChange(e) {
