@@ -3,7 +3,7 @@
 // attachment is a built-in one or the child's own, built on the arm bracket's axle, which motor E turns.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
+import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, CHASSIS_DRIVES, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
 import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
 import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
@@ -143,7 +143,7 @@ export const TOOL_PRESETS = {
   advanced: [
     // LEGO's Lift Arm for the Advanced Driving Base (its building instructions, steps 1-22), on the front tool frame: motor D's
     // 28-tooth gear turns a 36-tooth gear on an upright axle, whose 12-tooth gear turns two 20-tooth gears on the arm's 9-long axle
-    { id: 'lift-arm', label: 'Lift arm', note: 'LEGO\'s Lift Arm on motor D: a long arm out the front with a rack at its tip (28:36 then 12:20 gears, so it turns about half as far as the motor)',
+    { id: 'lift-arm', port: 'D', label: 'Lift arm', note: 'LEGO\'s Lift Arm on motor D: a long arm out the front with a rack at its tip (28:36 then 12:20 gears, so it turns about half as far as the motor)',
       ldr: `1 0 0 -168.7646 -120 0 0 1 0 1 0 -1 0 0 64179.dat
 1 26 -20 -168.7646 -120 1 0 0 0 1 0 0 0 1 39793.dat
 1 0 10 -168.7646 -140 1 0 0 0 1 0 0 0 1 61332.dat
@@ -179,7 +179,58 @@ export const TOOL_PRESETS = {
 1 14 0 -80.7646 -336 1 0 0 0 1 0 0 0 1 4519.dat
 1 0 0 -80.7646 -376 0 0 1 0 -1 0 1 0 0 87761.dat
 ` },
-    { id: 'back-lift', label: 'Back lift arm', note: 'motor C: a beam behind the robot that lifts and lowers (a 20-tooth gear meshing with the 28-tooth gear)',
+    // LEGO's Dozer Blade (its building instructions, steps 1-26) on the back tool frame: the same gear train from motor C's
+    // 28-tooth gear, turning a 15-long axle (a 9 and a 6 joined) that carries two doubled curved racks down to the blade
+    { id: 'dozer', port: 'C', label: 'Dozer blade', note: 'LEGO\'s Dozer Blade on motor C: two curved arms from the back frame down to a blade behind the robot (28:36 then 12:20 gears)',
+      ldr: `1 0 0 -169.7646 190 0 0 1 0 1 0 -1 0 0 64179.dat
+1 26 20 -169.7646 190 1 0 0 0 1 0 0 0 1 39793.dat
+1 0 -10 -169.7646 170 1 0 0 0 1 0 0 0 1 61332.dat
+1 0 -10 -169.7646 210 1 0 0 0 1 0 0 0 1 61332.dat
+1 14 -30 -169.7646 170 1 0 0 0 1 0 0 0 1 62462.dat
+1 14 -30 -169.7646 210 1 0 0 0 1 0 0 0 1 62462.dat
+1 1 -60 -169.7646 170 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 -60 -169.7646 210 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 60 -169.7646 170 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 60 -169.7646 210 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 20 -169.7646 190 0 1 0 -1 0 0 0 0 1 3705.dat
+1 72 20 -149.7646 190 1 0 0 0 0 -1 0 1 0 32498.dat
+1 19 20 -189.7646 190 1 0 0 0 0 -1 0 1 0 32270.dat
+1 14 20 -204.7646 190 1 0 0 0 0 -1 0 1 0 32123b.dat
+1 14 -80 -209.7646 190 0 1 0 0 0 1 1 0 0 60484.dat
+1 14 80 -209.7646 190 0 1 0 0 0 1 1 0 0 60484.dat
+1 71 60 -209.7646 190 1 0 0 0 1 0 0 0 1 60485.dat
+1 4 -90 -209.7646 190 1 0 0 0 1 0 0 0 1 3706.dat
+1 15 -30 -209.7646 190 0 0 -1 0 1 0 1 0 0 59443.dat
+1 4 0 -229.7646 190 1 0 0 0 -1 0 0 0 -1 42003.dat
+1 0 0 -249.7646 200 0 1 0 0 0 -1 -1 0 0 6628.dat
+1 19 60 -209.7646 190 0 0 1 0 1 0 -1 0 0 18575.dat
+1 19 40 -209.7646 190 0 0 1 0 1 0 -1 0 0 18575.dat
+1 71 20 -209.7646 190 0 0 1 0 1 0 -1 0 0 3713.dat
+1 71 100 -209.7646 190 0 0 1 0 1 0 -1 0 0 3713.dat
+1 71 -100 -209.7646 190 0 0 1 0 1 0 -1 0 0 3713.dat
+1 0 -120 -9.7646 190 0 -1 0 1 0 0 0 0 1 24121.dat
+1 0 -140 -9.7646 190 0 1 0 0 0 -1 -1 0 0 24121.dat
+1 71 -130 -182.9697 290 1 0 0 0 1 0 0 0 1 3673.dat
+1 71 -130 -109.7646 363.2051 1 0 0 0 1 0 0 0 1 3673.dat
+1 4 -130 -9.7646 390 1 0 0 0 1 0 0 0 1 32062.dat
+1 72 -130 -9.7646 390 1 0 0 0 1 0 0 0 1 41678.dat
+1 0 -140 -19.7646 370 0 1 0 -1 0 0 0 0 1 61332.dat
+1 0 -120 -19.7646 370 0 1 0 -1 0 0 0 0 1 61332.dat
+1 0 120 -9.7646 190 0 1 0 0 0 -1 -1 0 0 24121.dat
+1 0 140 -9.7646 190 0 -1 0 1 0 0 0 0 1 24121.dat
+1 71 130 -182.9697 290 1 0 0 0 1 0 0 0 1 3673.dat
+1 71 130 -109.7646 363.2051 1 0 0 0 1 0 0 0 1 3673.dat
+1 4 130 -9.7646 390 1 0 0 0 1 0 0 0 1 32062.dat
+1 72 130 -9.7646 390 1 0 0 0 1 0 0 0 1 41678.dat
+1 0 120 -19.7646 370 0 1 0 -1 0 0 0 0 1 61332.dat
+1 0 140 -19.7646 370 0 1 0 -1 0 0 0 0 1 61332.dat
+1 26 0 -9.7646 370 0 0 1 0 1 0 -1 0 0 32525.dat
+1 0 0 -29.7646 370 0 0 1 0 1 0 -1 0 0 32278.dat
+1 19 -80 -29.7646 370 0 1 0 1 0 0 0 0 -1 6558.dat
+1 19 80 -29.7646 370 0 1 0 1 0 0 0 0 -1 6558.dat
+1 322 0 -49.7646 370 0 0 -1 0 1 0 1 0 0 11954.dat
+` },
+    { id: 'back-lift', port: 'C', label: 'Back lift arm', note: 'motor C: a beam behind the robot that lifts and lowers (a 20-tooth gear meshing with the 28-tooth gear)',
       ldr: `1 0 -40 -169.76 191 -1 0 0 0 0 1 0 1 0 3708.dat
 1 0 -20 -169.76 191 0 0 1 0 -1 0 1 0 0 18575.dat
 1 15 -160 -169.76 271 0 -1 0 -1 0 0 0 0 -1 40490.dat
@@ -188,7 +239,13 @@ export const TOOL_PRESETS = {
 ` },
   ],
 };
-const ldrKey = (parts) => parts.map((q) => q.f + ' ' + q.p.map((v) => Math.round(v)).join(',')).sort().join('|');
+const partKey = (q) => q.f + ' ' + q.p.map((v) => Math.round(v)).join(',');
+/** Which tool motor's frame a part of the Advanced Driving Base belongs to: the nearer one, front (D) or back (C). */
+function toolSide(chassis, q) {
+  let best = null, d = Infinity;
+  for (const dv of CHASSIS_DRIVES[chassis] || []) { const e = Math.abs(q.p[2] - dv.at[2]); if (e < d) { d = e; best = dv.port; } }
+  return best;
+}
 
 export class AttachmentBuilder {
   /**
@@ -359,8 +416,11 @@ export class AttachmentBuilder {
     const t = (TOOL_PRESETS[this.build.chassis] || []).find((x) => x.id === id);
     if (!t) return;
     this._push();
-    if (this.mode !== 'custom') this.setModule('custom');
-    this.parts = parseLdr(t.ldr).filter((q) => this.D.parts.parts[q.f]);
+    const was = this.mode === 'custom';
+    if (!was) this.setModule('custom');
+    // it replaces what is on its own tool frame and keeps the other frame's tool (a lift arm in front, a dozer behind)
+    const keep = was ? this.parts.filter((q) => toolSide(this.build.chassis, q) !== t.port) : [];
+    this.parts = keep.concat(parseLdr(t.ldr).filter((q) => this.D.parts.parts[q.f]));
     this.selected = null;
     this._rebuild(true);
     this.message(`${t.label}: ${t.note}. Change it as you like.`);
@@ -369,9 +429,12 @@ export class AttachmentBuilder {
   /** Which button in the attachment row is the robot's: a built-in, a ready-made tool (when the build is it), or My own. */
   _presetMarks() {
     if (!this.root) return;
-    const key = this.mode === 'custom' ? ldrKey(this.parts) : null;
-    const tool = key && (TOOL_PRESETS[this.build && this.build.chassis] || []).find((t) => ldrKey(parseLdr(t.ldr)) === key);
-    this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.tool ? !!tool && tool.id === b.dataset.tool : b.dataset.module === this.mode && !(this.mode === 'custom' && tool)));
+    // a ready-made tool is on when all its parts are there; "My own" when the build is anything more (or other)
+    const have = new Set(this.mode === 'custom' ? this.parts.map(partKey) : []);
+    const on = (TOOL_PRESETS[this.build && this.build.chassis] || []).filter((t) => have.size && parseLdr(t.ldr).every((q) => have.has(partKey(q))));
+    const covered = new Set(on.flatMap((t) => parseLdr(t.ldr).map(partKey)));
+    const mine = this.mode === 'custom' && (!on.length || [...have].some((k) => !covered.has(k)));
+    this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.tool ? on.some((t) => t.id === b.dataset.tool) : b.dataset.module === this.mode && (this.mode !== 'custom' || mine)));
   }
 
   /** The parts of a built-in attachment, on the drive axle (their files have their origin on it). */

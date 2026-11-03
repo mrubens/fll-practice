@@ -61,9 +61,11 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   **Lift arm**, LEGO's own Lift Arm rebuilt part by part from its building instructions (a frame dropped into the front
   tool frame, where a 36-tooth gear meshes with motor D's 28-tooth gear and a 12-tooth gear on the same upright axle
   turns two 20-tooth gears on the arm's axle, so the arm turns about half as far as the motor; it lifts from just over
-  the mat to straight up and over), and "Back lift arm" (a 12-long axle across the back frame with a 20-tooth gear
-  meshing over motor C's 28-tooth gear, and a 9-long beam out behind the robot). Parts keep the colours they are built
-  in. Each tool motor turns a 28-tooth gear lying flat under its frame:
+  the mat to straight up and over), **Dozer blade**, LEGO's Dozer Blade the same way (the same gear train on the back
+  tool frame turns a 15-long axle carrying two doubled curved gear racks down to a blade of an azure panel on an 11- and a
+  15-long beam behind the robot; it rests on the mat and lifts up and over), and "Back lift arm" (a 12-long axle across the back frame with a 20-tooth gear
+  meshing over motor C's 28-tooth gear, and a 9-long beam out behind the robot). A ready-made tool replaces only what is
+  on its own frame, so a lift arm in front and a dozer behind go on together. Parts keep the colours they are built in. Each tool motor turns a 28-tooth gear lying flat under its frame:
   parts locked to it turn with it, and any gear placed so it meshes with it (side by side, or at a right angle like
   real bevel gears) turns at the ratio the teeth make, the other way round, and so on down a gear train. Gears locked
   against the robot or each other are flagged. The builder has a "Try motor" slider per tool motor and works out where
