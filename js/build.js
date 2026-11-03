@@ -21,7 +21,7 @@ export const CHASSIS = {
   advanced: {
     label: 'Advanced Driving Base', model: 'models/advanced-driving-base.mpd', wheels: 'models/attach/advanced-wheels.mpd', context: [],
     axleZ: 80, wheel: '8.8', track: 14.48, ports: { left: 'A', right: 'E' },
-    footprint: { x0: -8.0, x1: 11.6, z0: -9.6, z1: 9.6 }, hub: { p: [0, -161.7646, -40], r: [0, 0, -1, 0, 1, 0, 1, 0, 0] },
+    footprint: { x0: -8.0, x1: 11.6, z0: -9.6, z1: 9.6 }, hub: { p: [0, -161.7646, 20], r: [0, 0, -1, 0, 1, 0, 1, 0, 0] },
     attachments: false, custom: true, tools: [{ port: 'D', label: 'Front tool motor' }, { port: 'C', label: 'Back tool motor' }],
   },
 };
