@@ -856,13 +856,13 @@ export class Sim3D {
 
   drawMatrix() {
     const ctx = this.matrixCanvas.getContext('2d');
-    ctx.fillStyle = '#15171C';
+    ctx.fillStyle = '#F7F8FA';      // the hub's white top: the LEDs sit under it
     ctx.fillRect(0, 0, 160, 160);
     const m = this.robot.hub.matrix;
     for (let i = 0; i < 25; i++) {
       const r = Math.floor(i / 5), c = i % 5;
       const b = m[i] / 9;
-      ctx.fillStyle = b > 0 ? `rgba(255, 215, 70, ${0.25 + 0.75 * b})` : 'rgba(255,255,255,0.08)';
+      ctx.fillStyle = b > 0 ? `rgba(255, 196, 0, ${0.3 + 0.7 * b})` : 'rgba(30, 36, 48, 0.07)';
       ctx.beginPath();
       ctx.roundRect(c * 32 + 6, r * 32 + 6, 20, 20, 4);
       ctx.fill();
