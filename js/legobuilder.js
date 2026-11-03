@@ -1,10 +1,12 @@
-// The attachment builder: build a robot attachment from real LEGO parts that snap together where LEGO really
-// connects (see lego.js), on the Driving Base's arm bracket, whose axle motor E turns.
+// The robot builder: the LEGO Driving Base with its sensors and its attachment, built from real LEGO parts that snap
+// together where LEGO really connects (see lego.js). Sensors snap onto the robot and plug into a hub port; the
+// attachment is a built-in one or the child's own, built on the arm bracket's axle, which motor E turns.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
 import { LD_TO_ROBOT, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
-import { MODULE_STOPS } from './robot.js';
+import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
+import { SENSOR_PARTS, MODULES, validateBuild } from './build.js';
 
 const DEG = Math.PI / 180;
 const P = [0, 0, -1, 0, -1, 0, -1, 0, 0];                 // LDraw axes -> robot axes (a proper rotation, its own inverse)
@@ -75,24 +77,26 @@ export const BUILT_IN = [
 ];
 
 export class AttachmentBuilder {
-  /** onApply(meta): a custom build is done; onModule(module): a built-in attachment (or none) was chosen; side: an
-   * element shown in a panel on the right (the robot's ports and sensors). */
-  constructor({ onApply, onModule, side }) {
-    this.onApply = onApply;
-    this.onModule = onModule;
-    this.side = side;
-    this.mode = 'custom';
-    this.customParts = [];
+  /**
+   * onChange(build): the robot changed (sensors, ports, attachment); normalize(build) makes a build whole (build.js);
+   * presets: {id: build} offered across the top.
+   */
+  constructor({ onChange, normalize, presets }) {
+    this.onChange = onChange;
+    this.normalize = normalize;
+    this.presets = presets || {};
+    this.mode = 'none';
+    this.body = [];           // the robot's own parts: sensors and what holds them (placements)
+    this.parts = [];          // the child's own attachment (placements), shown when the mode is 'custom'
+    this.ports = new Map();   // sensor placement -> hub port
     this.root = null;
-    this.parts = [];          // placements
     this.history = [];
     this.ghost = null;
     this.motor = 0;
   }
 
-  /** Open on the robot's attachment: {module, ldr} (ldr: the custom build, kept for "My own"), or an .ldr string. */
-  async open(opts) {
-    if (typeof opts === 'string' || !opts) opts = { module: 'custom', ldr: opts || '' };
+  /** Open on a robot build; `lastCustom`: the child's last own attachment (.ldr), kept for "My own". */
+  async open(build, lastCustom = '') {
     if (!this.root) this._dom();
     this.root.hidden = false;
     document.body.classList.add('lego-building');
@@ -101,27 +105,96 @@ export class AttachmentBuilder {
     this.tpl = await partTemplates(this.D);
     if (!this.three) await this._three();
     this._palette();
-    this.customParts = parseLdr(opts.ldr || '').filter((q) => this.D.parts.parts[q.f]);
     this.history = [];
-    this.setModule(BUILT_IN.some((b) => b.module === opts.module) ? opts.module : 'custom');
+    this._load(build, lastCustom);
     this._resize();
     this._loop();
   }
 
-  /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` passes the choice to the app. */
+  /** Take a whole build into the builder (on opening, or a robot preset). */
+  _load(build, lastCustom) {
+    this.build = this.normalize(build);
+    const known = (ldr) => parseLdr(ldr || '').filter((q) => this.D.parts.parts[q.f]);
+    this.body = known(this.build.body.ldr);
+    this.ports = new Map();
+    const all = parseLdr(this.build.body.ldr || '');
+    all.forEach((q, i) => { const k = this.body.findIndex((x) => x.p.join() === q.p.join() && x.f === q.f && x.r.join() === q.r.join()); if (k >= 0 && this.build.body.ports[i]) this.ports.set(this.body[k], this.build.body.ports[i]); });
+    const a = this.build.attachment;
+    if (a.module === 'custom') this.parts = known(a.ldr);
+    else if (lastCustom !== undefined && lastCustom !== null) this.parts = known(lastCustom);
+    this.mode = null;               // a new robot: nothing carries over from the last one shown
+    this.setModule(a.module);
+  }
+
+  /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` puts the choice on the robot. */
   setModule(module, tell = false) {
     if (!this.three || !this.D) { this.mode = module; return; }
-    if (this.mode === 'custom' && module !== 'custom') this.customParts = this.parts;
+    if (this.mode === 'custom' && module !== 'custom') this._settleBody();
+    // building your own from the arm starts from the arm's own parts
+    if (module === 'custom' && this.mode === 'arm' && !this.parts.length) this.parts = parseLdr(EXAMPLE_ARM);
     this._dropGhost();
     this.mode = module;
     this.selected = null;
-    this.parts = module === 'custom' ? this.customParts : [];
     this.root.querySelectorAll('.lb-preset').forEach((b) => b.classList.toggle('on', b.dataset.module === module));
     this.root.querySelectorAll('[data-custom]').forEach((b) => { b.hidden = module !== 'custom'; });
     this._showBuiltIn(module);
     this._rebuild();
     this.setMotor(0);
-    if (tell && module !== 'custom' && this.onModule) this.onModule(module);
+    if (tell) this._emit();
+  }
+
+  /** Parts of the child's attachment that ended up fixed to the robot (not turned by motor E) belong to the robot. */
+  _settleBody() {
+    if (!this.an || !this.scene) return;
+    const onDrive = this._driveBodies();
+    const fixed = new Set();
+    this.an.bodies.forEach((b, i) => { if (!onDrive.has(i)) for (const it of b.items) if (it.role === 'part') fixed.add(it.q); });
+    const move = this.parts.filter((q) => fixed.has(q));
+    if (!move.length) return;
+    this.parts = this.parts.filter((q) => !fixed.has(q));
+    this.body.push(...move);
+  }
+
+  /** Indexes of the bodies that turn with motor E (the drive and what hangs on it). */
+  _driveBodies() {
+    const an = this.an;
+    const onDrive = new Set(an.bodies.map((b, i) => (b.role === 'drive' ? i : -1)).filter((i) => i >= 0));
+    for (let grew = true; grew;) { grew = false; for (const j of an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) if (onDrive.has(x) && !onDrive.has(y) && an.bodies[y].role !== 'base') { onDrive.add(y); grew = true; } }
+    return onDrive;
+  }
+
+  /** The robot as built now, put on the robot on the table (onChange). */
+  _emit() {
+    if (!this.an) return;
+    const loose = new Set(this.an.loose.map((it) => it.q));
+    const body = this.body.filter((q) => !loose.has(q));
+    const ports = {};
+    body.forEach((q, i) => { if (this.ports.get(q)) ports[i] = this.ports.get(q); });
+    let attachment = { module: this.mode };
+    if (this.mode === 'custom') {
+      const keep = this.parts.filter((q) => !loose.has(q));
+      if (this.an.jammed) attachment = this.build.attachment;      // motor E could not turn it: the last one stays
+      else {
+        const scene = new Scene(this.D, [...body, ...keep]);
+        const motion = motionOf(this.D, scene, scene.analyze());
+        attachment = { module: 'custom', ldr: keep.length ? toLdr(keep) : '', ...motion };
+      }
+    }
+    this.build = this.normalize({ ...this.build, preset: null, name: 'Custom robot', body: { ldr: body.length ? toLdr(body, 'Robot parts') : '', ports }, attachment });
+    this._sidePanel();
+    if (this.onChange) this.onChange(this.build, this.mode === 'custom' ? toLdr(this.parts) : null);
+  }
+
+  /** A robot preset: its sensors, ports and attachment. */
+  usePreset(id) {
+    const p = this.presets[id];
+    if (!p || !this.D) return;
+    this._load({ ...p, preset: id }, null);
+    this.history = [];               // a new robot: undo starts over
+    this.build = this.normalize({ ...p, preset: id });
+    this._sidePanel();
+    if (this.onChange) this.onChange(this.build, null);
+    this.message(`${p.name}.`);
   }
 
   /** The parts of a built-in attachment, on the drive axle (their files have their origin on it). */
@@ -139,11 +212,8 @@ export class AttachmentBuilder {
     });
   }
 
-  /** Done: a custom build goes on the robot (a built-in one is on it already). */
-  done() {
-    if (this.mode === 'custom') this._apply();
-    else this.close();
-  }
+  /** Done: everything is on the robot already. */
+  done() { this.close(); }
 
   close() {
     if (!this.root) return;
@@ -158,43 +228,64 @@ export class AttachmentBuilder {
   _dom() {
     const r = document.createElement('section');
     r.className = 'lego-builder';
-    r.setAttribute('aria-label', 'Attachment builder');
+    r.setAttribute('aria-label', 'Robot builder');
     r.innerHTML = `
       <div class="lb-head">
         <h3>Robot builder</h3>
+        <div class="lb-robots" role="group" aria-label="Robots">
+          <span>Start from</span>
+          ${Object.entries(this.presets).map(([id, p]) => `<button type="button" class="lb-robot" data-robot="${id}" title="${p.name}">${p.label || p.name}</button>`).join('')}
+        </div>
+        <div class="lb-tools">
+          <button type="button" class="tb" data-act="undo" title="Undo (Ctrl+Z)">Undo</button>
+          <button type="button" class="tb primary" data-act="done">Done</button>
+        </div>
+      </div>
+      <div class="lb-sub">
         <div class="lb-presets" role="group" aria-label="Attachment">
-          <span>Attachment</span>
+          <span>Attachment <small>motor E</small></span>
           ${BUILT_IN.map((b) => `<button type="button" class="lb-preset" data-module="${b.module}"${b.note ? ` title="${b.note}"` : ''}>${b.label}</button>`).join('')}
         </div>
         <div class="lb-tools">
-          <button type="button" class="tb" data-act="undo" data-custom title="Undo (Ctrl+Z)">Undo</button>
-          <button type="button" class="tb" data-act="clear" data-custom>Clear</button>
+          <button type="button" class="tb" data-act="clear" data-custom title="Take your attachment's parts off">Clear</button>
           <button type="button" class="tb" data-act="load" data-custom>Open .ldr</button>
           <button type="button" class="tb" data-act="save" data-custom>Save .ldr</button>
-          <button type="button" class="tb primary" data-act="done">Done</button>
         </div>
       </div>
       <div class="lb-body">
         <div class="lb-palette" role="list"></div>
         <div class="lb-view">
-          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · <b>Esc</b> put it down · click a placed part, then <b>Delete</b> · <b>Q E</b> turn motor E</div>
+          <div class="lb-keys">Click a part, then click to place it where it snaps. <b>R</b> turn · <b>F</b> flip · <b>Tab</b> use another hole or pin · <b>[ ]</b> slide · <b>Esc</b> put it down · click a placed part: <b>M</b> move, <b>Delete</b> remove · <b>Q E</b> turn motor E</div>
+          <div class="lb-sel" hidden>
+            <b class="lb-sel-name"></b>
+            <label class="lb-sel-port" hidden>Port <select></select></label>
+            <button type="button" class="tb" data-sel="move" title="Pick it up and put it somewhere else (M)">Move</button>
+            <button type="button" class="tb" data-sel="delete" title="Take it off (Delete)">Remove</button>
+          </div>
           <div class="lb-msg" aria-live="polite"></div>
           <div class="lb-motor"><label>Try motor E <input type="range" min="-120" max="120" value="0" step="1"></label><output>0°</output></div>
         </div>
-        <aside class="lb-side"></aside>
+        <aside class="lb-side" aria-label="Hub ports"></aside>
       </div>
       <div class="lb-status" aria-live="polite"></div>
       <input type="file" accept=".ldr,.mpd,.dat,text/plain" hidden>`;
     document.body.appendChild(r);
     this.root = r;
     this.view = r.querySelector('.lb-view');
-    if (this.side) { r.querySelector('.lb-side').appendChild(this.side); this.side.hidden = false; } else r.querySelector('.lb-side').remove();
+    this.sideEl = r.querySelector('.lb-side');
     r.querySelector('.lb-presets').addEventListener('click', (e) => { const b = e.target.closest('.lb-preset'); if (b) this.setModule(b.dataset.module, true); });
+    r.querySelector('.lb-robots').addEventListener('click', (e) => { const b = e.target.closest('.lb-robot'); if (b) this.usePreset(b.dataset.robot); });
     this.msgEl = r.querySelector('.lb-msg');
     this.statusEl = r.querySelector('.lb-status');
     const slider = r.querySelector('.lb-motor input'), out = r.querySelector('.lb-motor output');
     slider.addEventListener('input', () => this.setMotor(Number(slider.value)));
     this.slider = slider; this.sliderOut = out;
+    // the selected part's bar: its port (a sensor), move it, take it off
+    this.selEl = r.querySelector('.lb-sel');
+    this.selEl.addEventListener('click', (e) => { const b = e.target.closest('[data-sel]'); if (!b) return; if (b.dataset.sel === 'move') this.moveSelected(); else this.removeSelected(); });
+    this.selEl.querySelector('select').addEventListener('change', (e) => { if (this.selected) this.setPort(this.selected.q, e.target.value); });
+    this.sideEl.addEventListener('change', (e) => this._sideChange(e));
+    this.sideEl.addEventListener('click', (e) => { const row = e.target.closest('[data-part]'); if (row && e.target.tagName !== 'SELECT') this._selectQ(this.body[Number(row.dataset.part)]); });
     const file = r.querySelector('input[type=file]');
     file.addEventListener('change', async () => {
       const f = file.files[0]; file.value = '';
@@ -203,14 +294,14 @@ export class AttachmentBuilder {
       const known = all.filter((q) => this.D.parts.parts[q.f]);
       this._push();
       this.parts = known;
-      this._rebuild();
+      this._rebuild(true);
       this.message(known.length < all.length ? `Opened ${f.name}: ${all.length - known.length} part(s) are not in this parts box and were left out.` : `Opened ${f.name}.`);
     });
-    r.querySelector('.lb-tools').addEventListener('click', (e) => {
-      const b = e.target.closest('button'); if (!b) return;
+    r.addEventListener('click', (e) => {
+      const b = e.target.closest('.lb-tools button'); if (!b) return;
       const act = b.dataset.act;
       if (act === 'undo') this.undo();
-      else if (act === 'clear') { if (this.parts.length) { this._push(); this.parts = []; this._rebuild(); } }
+      else if (act === 'clear') { if (this.parts.length) { this._push(); this.parts = []; this._rebuild(true); } }
       else if (act === 'load') file.click();
       else if (act === 'save') this._download();
       else if (act === 'done') this.done();
@@ -220,20 +311,92 @@ export class AttachmentBuilder {
     window.addEventListener('resize', () => this._resize());
   }
 
+  /** The hub's ports: what is plugged into each, the sensors' ports to change, and anything wrong. */
+  _sidePanel() {
+    if (!this.sideEl || !this.build) return;
+    const b = this.build;
+    const sel = (value, attrs) => `<select ${attrs}>${PORT_LETTERS.map((p) => `<option value="${p}"${p === value ? ' selected' : ''}>${p}</option>`).join('')}${value ? '' : '<option value="" selected>none</option>'}</select>`;
+    const motor = MODULES[b.attachment.module] && MODULES[b.attachment.module].motor;
+    const rows = [
+      `<div class="lb-port"><i class="dev motor"></i><span>Left wheel motor</span>${sel(b.ports.left, 'data-wheel="left" aria-label="Left wheel motor port"')}</div>`,
+      `<div class="lb-port"><i class="dev motor"></i><span>Right wheel motor</span>${sel(b.ports.right, 'data-wheel="right" aria-label="Right wheel motor port"')}</div>`,
+    ];
+    if (motor) rows.push(`<div class="lb-port"><i class="dev motor"></i><span>Attachment motor</span><b class="fixed">E</b></div>`);
+    const counts = {};
+    this.body.forEach((q, i) => {
+      const sp = SENSOR_PARTS[q.f];
+      if (!sp) return;
+      counts[sp.type] = (counts[sp.type] || 0) + 1;
+      const n = this.body.filter((x) => SENSOR_PARTS[x.f] && SENSOR_PARTS[x.f].type === sp.type).length;
+      const name = n > 1 ? `${sp.label} ${counts[sp.type]}` : sp.label;
+      const on = this.selected && this.selected.q === q;
+      rows.push(`<div class="lb-port sensor${on ? ' on' : ''}" data-part="${i}" title="Click to find it on the robot"><i class="dev ${sp.type}"></i><span>${name}</span>${sel(this.ports.get(q) || '', `data-sensor="${i}" aria-label="${name} port"`)}</div>`);
+    });
+    const used = new Set([b.ports.left, b.ports.right, motor ? 'E' : null, ...[...this.ports.values()]]);
+    const free = PORT_LETTERS.filter((p) => !used.has(p));
+    const issues = validateBuild(b);
+    const sensors = this.body.some((q) => SENSOR_PARTS[q.f]);
+    this.sideEl.innerHTML = `<h4>Hub ports</h4>${rows.join('')}
+      ${sensors ? '' : '<p class="lb-hint">No sensors yet: pick one from Sensors on the left and snap it onto the robot.</p>'}
+      <p class="lb-hint">Free: ${free.length ? free.join(', ') : 'none'}</p>
+      <p class="lb-issues">${issues.join(' ')}</p>
+      <p class="lb-hint">A color sensor reads the mat when it looks down at it from close by (up to about 2 cm; nothing past 4.5). A distance sensor measures along the way its eyes look.</p>`;
+  }
+
+  _sideChange(e) {
+    const t = e.target;
+    if (t.dataset.sensor !== undefined) { this.setPort(this.body[Number(t.dataset.sensor)], t.value); return; }
+    if (t.dataset.wheel) {
+      const side = t.dataset.wheel, other = side === 'left' ? 'right' : 'left', ports = { ...this.build.ports };
+      const was = ports[side];
+      ports[side] = t.value;
+      if (ports[other] === t.value) ports[other] = was;                   // swap with the other wheel
+      for (const [q, p] of this.ports) if (p === t.value) this.ports.set(q, was);   // or with a sensor
+      this.build = this.normalize({ ...this.build, ports });
+      this._emit();
+    }
+  }
+
+  /** Plug a sensor into a port; whatever was on that port moves to the sensor's old one. */
+  setPort(q, port) {
+    if (!q || !SENSOR_PARTS[q.f]) return;
+    if (port === 'E' && MODULES[this.build.attachment.module].motor) { this.message('Port E is the attachment motor.'); this._sidePanel(); this._selBar(); return; }
+    const was = this.ports.get(q) || null;
+    const ports = { ...this.build.ports };
+    if (port && (ports.left === port || ports.right === port)) {
+      if (!was) { this.message(`Port ${port} drives a wheel.`); this._sidePanel(); this._selBar(); return; }
+      if (ports.left === port) ports.left = was; else ports.right = was;
+    }
+    this._push();
+    for (const [o, p] of this.ports) if (o !== q && p === port) { if (was) this.ports.set(o, was); else this.ports.delete(o); }
+    if (port) this.ports.set(q, port); else this.ports.delete(q);
+    this.build = this.normalize({ ...this.build, ports });
+    this._emit();
+    this._selBar();
+  }
+
+  /** The first port nothing is on, for a new sensor. */
+  _freePort() {
+    const b = this.build;
+    const used = new Set([b.ports.left, b.ports.right, MODULES[b.attachment.module].motor ? 'E' : null, ...this.ports.values()]);
+    return ['B', 'F', 'A', 'E', 'C', 'D'].find((p) => !used.has(p)) || null;
+  }
+
   _palette() {
     const pal = this.root.querySelector('.lb-palette');
     if (pal.childElementCount) return;
     for (const cat of this.D.parts.categories) {
       const det = document.createElement('details');
-      det.open = cat.name === 'Beams' || cat.name === 'Pins' || cat.name === 'Axles' || cat.name === 'Connectors';
+      det.open = ['Sensors', 'Beams', 'Pins', 'Axles', 'Connectors'].includes(cat.name);
       det.innerHTML = `<summary>${cat.name}</summary><div class="lb-grid"></div>`;
+      if (cat.name === 'Sensors') { det.classList.add('sensors'); det.querySelector('summary').insertAdjacentHTML('afterend', '<p class="lb-hint">Snap one onto the robot, then pick its port.</p>'); }
       const grid = det.querySelector('.lb-grid');
       for (const f of cat.parts) {
         const info = this.D.parts.parts[f];
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'lb-part'; b.dataset.part = f;
         b.title = `${info.d} (${f})`;
-        b.innerHTML = `<img alt=""><span>${shortName(info.d)}</span>`;
+        b.innerHTML = `<img alt=""><span>${SENSOR_PARTS[f] ? SENSOR_PARTS[f].label : shortName(info.d)}</span>`;
         b.addEventListener('click', () => this.pick(f));
         grid.appendChild(b);
       }
@@ -330,12 +493,25 @@ export class AttachmentBuilder {
   }
 
   // ---------------- the build ----------------
-  _push() { this.history.push(this.parts.map((q) => ({ ...q, p: q.p.slice(), r: q.r.slice() }))); if (this.history.length > 200) this.history.shift(); }
-  undo() { if (!this.history.length) return; this.parts = this.history.pop(); this.selected = null; this._rebuild(); }
+  _push() {
+    this.history.push({ body: this.body.slice(), parts: this.parts.slice(), ports: new Map(this.ports), wheels: { ...this.build.ports } });
+    if (this.history.length > 200) this.history.shift();
+  }
+  undo() {
+    const h = this.history.pop();
+    if (!h) return;
+    this.body = h.body; this.parts = h.parts; this.ports = h.ports;
+    this.build = this.normalize({ ...this.build, ports: h.wheels });
+    this.selected = null;
+    this._rebuild(true);
+  }
 
-  /** Rebuild the scene, meshes and status after any change. */
-  _rebuild() {
-    this.scene = new Scene(this.D, this.parts);
+  /** The parts in the scene: the robot's own, and the child's attachment when it is the one on the robot. */
+  _all() { return this.mode === 'custom' ? [...this.body, ...this.parts] : this.body; }
+
+  /** Rebuild the scene, meshes and status after any change; `changed`: the robot changed, put it on the table. */
+  _rebuild(changed = false) {
+    this.scene = new Scene(this.D, this._all());
     const { ld, drive } = this.three;
     for (const m of this.meshes || []) m.parent && m.parent.remove(m);
     this.meshes = [];
@@ -353,12 +529,14 @@ export class AttachmentBuilder {
       const m = partMesh(tpl, it.q);
       m.userData.item = it;
       if (loose.has(it)) tint(m, 0xE8232A, 0.45);
-      if (it === this.selected) tint(m, 0x0A8DFF, 0.5);
+      if (it === this.selected) { tint(m, 0x0A8DFF, 0.5); m.traverse((o) => { if (o.isMesh && o.material.emissive) o.material.emissive.setHex(0x0A4F99); }); }   // black parts show it too
       (onDrive.has(bodyOf.get(it)) ? drive : ld).add(m);
       this.meshes.push(m);
     }
     this._poseDrive();
     this._summary();
+    this._selBar();
+    if (changed) this._emit(); else this._sidePanel();
     if (this.ghost) this._snap();
   }
 
@@ -393,22 +571,74 @@ export class AttachmentBuilder {
 
   _summary() {
     const an = this.an;
-    const count = (role) => an.bodies.filter((b) => b.role === role).reduce((s, b) => s + b.items.filter((it) => it.role === 'part').length, 0);
-    const moving = count('drive'), fixed = count('base'), swinging = count('free');
-    const hinges = an.joints.length;
-    const n = this.parts.length;
-    const b = BUILT_IN.find((x) => x.module === this.mode);
-    if (this.mode === 'none') { this.status('No attachment. Pick a part on the left to build your own.'); return; }
-    if (this.mode !== 'custom') { this.status(`${b.label}: ${b.note}. Motor E turns it. Pick a part on the left to build your own${this.mode === 'arm' ? ', starting from this arm' : ''}.`); return; }
-    if (!n) { this.status('Empty: pick a part on the left and snap it onto the axle in the bracket (motor E turns it) or onto the robot.'); return; }
-    const bits = [`${n} part${n === 1 ? '' : 's'}`];
-    if (moving) bits.push(`${moving} turn${moving === 1 ? 's' : ''} with motor E`);
-    if (fixed) bits.push(`${fixed} fixed to the robot`);
-    if (swinging) bits.push(`${swinging} on hinges (${hinges} pin joint${hinges === 1 ? '' : 's'}; friction pins hold, the others swing)`);
+    const sensorItems = this.scene.parts.filter((it) => SENSOR_PARTS[it.q.f]);
+    const base = an.bodies.find((b) => b.role === 'base');
+    const notFixed = sensorItems.filter((it) => !base || !base.items.includes(it)).length;
+    const nSensors = sensorItems.length;
+    const bits = [];
     let warn = false;
-    if (an.jammed) { bits.push('The drive axle is locked to the robot: motor E cannot turn.'); warn = true; }
+    bits.push(nSensors ? `${nSensors} sensor${nSensors === 1 ? '' : 's'}` : 'No sensors');
+    if (notFixed) { bits.push(`${notFixed === 1 ? 'A sensor is' : `${notFixed} sensors are`} not fixed to the robot: it reads from where it was built, so fix sensors to the robot itself.`); warn = true; }
+    const b = BUILT_IN.find((x) => x.module === this.mode);
+    if (this.mode === 'none') bits.push('No attachment');
+    else if (this.mode !== 'custom') bits.push(`${b.label}: ${b.note}. Motor E turns it`);
+    else {
+      const onDrive = this._driveBodies();
+      const moving = this.scene.parts.filter((it) => an.bodies.some((bd, i) => onDrive.has(i) && bd.items.includes(it))).length;
+      bits.push(this.parts.length ? `Your attachment: ${this.parts.length} part${this.parts.length === 1 ? '' : 's'}, ${moving} turn${moving === 1 ? 's' : ''} with motor E` : 'Your attachment: empty. Snap a part onto the orange axle in the bracket (motor E turns it)');
+      if (an.jammed) { bits.push('The drive axle is locked to the robot: motor E cannot turn.'); warn = true; }
+    }
     if (an.loose.length) { bits.push(`${an.loose.length} part${an.loose.length === 1 ? ' is' : 's are'} not attached to anything (red) and would fall off.`); warn = true; }
     this.status(bits.join(' · '), warn);
+  }
+
+  /** The selected part's bar over the view: its name, its port (a sensor), Move and Remove. */
+  _selBar() {
+    if (!this.selEl) return;
+    const it = this.selected;
+    this.selEl.hidden = !it;
+    if (!it) return;
+    const sp = SENSOR_PARTS[it.q.f];
+    this.selEl.querySelector('.lb-sel-name').textContent = sp ? sp.label : shortName(this.D.parts.parts[it.q.f].d);
+    const portEl = this.selEl.querySelector('.lb-sel-port');
+    portEl.hidden = !sp;
+    if (sp) {
+      const cur = this.ports.get(it.q) || '';
+      portEl.querySelector('select').innerHTML = PORT_LETTERS.map((p) => `<option value="${p}"${p === cur ? ' selected' : ''}>${p}</option>`).join('') + (cur ? '' : '<option value="" selected>none</option>');
+    }
+  }
+
+  _selectQ(q) {
+    if (!q || !this.scene) return;
+    this.selected = this.scene.parts.find((it) => it.q === q) || null;
+    this._rebuild();
+  }
+
+  removeSelected() {
+    const it = this.selected;
+    if (!it) return;
+    this._push();
+    this.body = this.body.filter((q) => q !== it.q);
+    this.parts = this.parts.filter((q) => q !== it.q);
+    this.ports.delete(it.q);
+    this.selected = null;
+    this._rebuild(true);
+    this.message('');
+  }
+
+  /** Pick the selected part up again to put it somewhere else (a sensor keeps its port). */
+  moveSelected() {
+    const it = this.selected;
+    if (!it) return;
+    this._push();
+    const port = this.ports.get(it.q) || null;
+    const inBody = this.body.includes(it.q);
+    this.body = this.body.filter((q) => q !== it.q);
+    this.parts = this.parts.filter((q) => q !== it.q);
+    this.ports.delete(it.q);
+    this.selected = null;
+    this._rebuild(true);
+    this.pick(it.q.f, { port, inBody, from: it.q });
   }
 
   _download() {
@@ -419,29 +649,12 @@ export class AttachmentBuilder {
     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
-  _apply() {
-    if (this.an.jammed) { this.message('Motor E could not turn this: the drive axle is locked to the robot.'); return; }
-    const keep = this.parts.filter((q) => !this.an.loose.some((it) => it.q === q));
-    const scene = new Scene(this.D, keep);
-    const an = scene.analyze();
-    const motion = motionOf(this.D, scene, an);
-    this.onApply && this.onApply({ ldr: keep.length ? toLdr(keep) : '', ...motion });
-    this.close();
-  }
-
   // ---------------- placing parts ----------------
-  pick(f) {
-    let note = '';
-    if (this.mode !== 'custom') {
-      // building starts from the arm's own parts, or from the child's last build
-      const from = this.mode === 'arm' ? parseLdr(EXAMPLE_ARM) : null;
-      const was = BUILT_IN.find((x) => x.module === this.mode).label;
-      if (from) { this.customParts = from; this.history = []; }
-      this.setModule('custom');
-      note = from ? 'Building your own, starting from the arm. ' : `Building your own (the ${was.toLowerCase()} is built in and stays as it is). `;
-    }
+  /** Take a part in hand to place it; `carry`: a part being moved ({port, inBody, from}). */
+  pick(f, carry = null) {
     this._dropGhost();
     this.selected = null;
+    this._selBar();
     const tpl = this.tpl.get(f);
     if (!tpl) return;
     const own = this.D.snaps[f].s.filter((c) => c.k === 'cyl' && !c.gp);
@@ -450,9 +663,13 @@ export class AttachmentBuilder {
     mesh.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
     mesh.matrixAutoUpdate = false; mesh.visible = false;
     this.three.ld.add(mesh);
-    this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false };
+    this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false, carry };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
-    this.message(`${note}${shortName(this.D.parts.parts[f].d)}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`);
+    const sp = SENSOR_PARTS[f];
+    const name = sp ? sp.label : shortName(this.D.parts.parts[f].d);
+    this.message(sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
+      : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
+      : `${name}: snap it onto the robot (to hold a sensor, say). To build an attachment, pick "My own" above.`);
     this._guide();
   }
 
@@ -498,7 +715,9 @@ export class AttachmentBuilder {
         const a = this._project(shown(it, c.o)), b = this._project(shown(it, add(c.o, scl(c.d, c.len))));
         if (a.z > 1 || b.z > 1) continue;
         const [dist, frac] = segDist(m.x, m.y, a, b);
-        // the drive axle is where an attachment starts: it wins over robot holes about as near the pointer
+        // the drive axle is where an attachment starts: it wins over robot holes about as near the pointer. A
+        // built-in attachment has it, and sensors stay off it
+        if (it.role === 'drive' && (this.mode !== 'custom' || SENSOR_PARTS[g.f])) continue;
         const bias = it.role === 'drive' ? 14 : 0;
         if (dist < 26) cands.push({ c, it, dist: dist - bias, z: Math.min(a.z, b.z), at: frac * c.len });
       }
@@ -558,6 +777,7 @@ export class AttachmentBuilder {
 
   /** Nothing under the pointer to snap onto: show where to start, the drive axle in the bracket. */
   _guide() {
+    if (this.mode !== 'custom' || (this.ghost && SENSOR_PARTS[this.ghost.f])) { this.marker.visible = false; return; }
     const L = 140, mid = DRIVE_AXLE.at;
     this.marker.position.set(...mid);
     this.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...DRIVE_AXLE.axis));
@@ -590,17 +810,34 @@ export class AttachmentBuilder {
     this.mouse = this._pointer(e);
     if (this.ghost) {
       this._snap();
-      if (!this.ghost.ok || !this.ghost.q) return;
+      const g = this.ghost;
+      if (!g.ok || !g.q) return;
       this._push();
-      this.parts.push(this.ghost.q);
-      this._rebuild();
-      this.message(`Placed. Click to put another ${shortName(this.D.parts.parts[this.ghost.f].d)} on, or Esc to stop.`);
+      const sp = SENSOR_PARTS[g.f];
+      // sensors and whatever is built while a built-in attachment (or none) is on are the robot's own parts
+      const toBody = sp || this.mode !== 'custom' || (g.carry && g.carry.inBody);
+      (toBody ? this.body : this.parts).push(g.q);
+      let note = 'Placed.';
+      if (sp) {
+        const port = (g.carry && g.carry.port) || this._freePort();
+        if (port) this.ports.set(g.q, port);
+        note = port ? `${sp.label} placed, on port ${port}.` : `${sp.label} placed: every port is taken, so pick one for it.`;
+      }
+      this._rebuild(true);
+      if (g.carry) {
+        this._dropGhost();
+        this.selected = this.scene.parts.find((it) => it.q === g.q) || null;
+        this._rebuild();
+        this.message(note);
+        return;
+      }
+      this.message(`${note} Click to put another ${sp ? sp.label.toLowerCase() : shortName(this.D.parts.parts[g.f].d)} on, or Esc to stop.`);
       return;
     }
     const it = this._raycast();
     this.selected = it || null;
     this._rebuild();
-    if (it) this.message(`${shortName(this.D.parts.parts[it.q.f].d)} selected: Delete removes it.`);
+    if (it) this.message(SENSOR_PARTS[it.q.f] ? 'Pick its port above, or move it.' : 'M moves it, Delete takes it off.');
     else this.message('');
   }
 
@@ -611,19 +848,15 @@ export class AttachmentBuilder {
     const g = this.ghost;
     let used = true;
     if ((e.ctrlKey || e.metaKey) && k.toLowerCase() === 'z') this.undo();
-    else if (k === 'Escape') { if (g) this._dropGhost(); else this.done(); }
+    else if (k === 'Escape') { if (g) { if (g.carry) this.undo(); this._dropGhost(); } else if (this.selected) { this.selected = null; this._rebuild(); } else this.done(); }
+    else if (!g && (k === 'm' || k === 'M') && this.selected) this.moveSelected();
     else if (g && (k === 'r' || k === 'R')) { g.roll = (g.roll + (e.shiftKey ? 3 : 1)) % 4; this._snap(); }
     else if (g && (k === 'f' || k === 'F')) { g.flip = !g.flip; g.slide = 0; this._snap(); }
     else if (g && k === 'Tab') { g.k = ((g.kUsed ?? g.k) + (e.shiftKey ? g.own.length - 1 : 1)) % g.own.length; g.slide = 0; this._snap(); }
     else if (g && k === ']') { g.slide++; this._snap(); }
     else if (g && k === '[') { g.slide--; this._snap(); }
-    else if ((k === 'Delete' || k === 'Backspace') && this.selected) {
-      this._push();
-      this.parts = this.parts.filter((q) => q !== this.selected.q);
-      this.selected = null;
-      this._rebuild();
-      this.message('');
-    } else if (!e.ctrlKey && !e.metaKey && (k === 'q' || k === 'Q' || k === 'e' || k === 'E')) {
+    else if ((k === 'Delete' || k === 'Backspace') && this.selected) this.removeSelected();
+    else if (!e.ctrlKey && !e.metaKey && (k === 'q' || k === 'Q' || k === 'e' || k === 'E')) {
       this.setMotor(this.motor + (k.toLowerCase() === 'q' ? 4 : -4));   // like driving: Q raises, E lowers
     } else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdWASD'.includes(k)) || k.startsWith('Arrow'))) {
       e.stopPropagation();          // the robot does not drive about under the builder

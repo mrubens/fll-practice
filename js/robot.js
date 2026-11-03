@@ -40,9 +40,10 @@ export class Robot {
   /** Apply a robot build (see build.js): ports and geometry derive from it. */
   applyBuild(build) {
     this.build = normalizeBuild(build);
-    // a custom attachment needs the LEGO parts data for its physics and drawing: build again once it is here
-    if (this.build.attachment.module === 'custom' && !legoReady()) loadLego().then(() => { if (this.build.attachment.module === 'custom') this.applyBuild(this.build); }).catch(() => {});
     this.geom = geometryFor(this.build);
+    // parts built in the robot builder (sensors, a custom attachment) need the LEGO parts data for their physics:
+    // build again once it is here
+    if (this.geom.partsLdr && !legoReady()) { const b = this.build; loadLego().then(() => { if (this.build === b) this.applyBuild(b); }).catch(() => {}); }
     this.config = portsOf(this.build);
     if (this.config.attachment && this.motors[this.config.attachment]) Object.assign(this.motors[this.config.attachment], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment starts at rest
     if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
@@ -233,19 +234,43 @@ export class Robot {
     return [this.x + Math.cos(h) * fwd - Math.sin(h) * lat, this.y + Math.sin(h) * fwd + Math.cos(h) * lat];
   }
 
-  colorSample(port) {
-    if (String(port).toUpperCase() !== this.config.color) return null;
-    const [px, py] = this._point(this.geom.color.fwd, this.geom.color.lat);
-    return classify(this.world.sampleRGB(px, py));
+  /** The sensor of a type on a port (see geometryFor: its lens and the way it looks, in the robot's frame), or null. */
+  sensorOn(port, type) {
+    const p = String(port).toUpperCase();
+    return (this.geom.sensors || []).find((s) => s.port === p && (!type || s.type === type)) || null;
   }
 
-  /** Distance in cm from the distance sensor, or null when nothing is in range / no sensor on that port. */
+  /** Where a color sensor looks on the mat (x, y) and from how far (cm), or null when it does not look down at it. */
+  colorSpot(s) {
+    const [f, up, lat] = s.pos, [df, du, dl] = s.dir;
+    if (du > -0.5) return null;                         // looking sideways or up: it sees no mat
+    const t = up / -du;
+    const [x, y] = this._point(f + df * t, lat + dl * t);
+    return { x, y, t };
+  }
+
+  /**
+   * What the color sensor on a port reads, from the mat where it looks: like the real one it has to look down at the
+   * mat from close by. Its own light comes back weaker from further away (full up to 2 cm, gone by 4.5 cm), and
+   * past that it reads no color.
+   */
+  colorSample(port) {
+    const s = this.sensorOn(port, 'color');
+    if (!s) return null;
+    const spot = this.colorSpot(s);
+    if (!spot || spot.t > 4.5) return { code: '-1', name: COLOR_BY_CODE['-1'].name, reflect: 0, rgb: [0, 0, 0] };
+    const k = clamp((spot.t - 2) / 2.5, 0, 1);
+    return classify(this.world.sampleRGB(spot.x, spot.y).map((v) => Math.round(v * (1 - k) + 10 * k)));
+  }
+
+  /** Distance in cm from the distance sensor on a port along the way it looks, or null when nothing is in range. */
   distanceCm(port) {
-    if (String(port).toUpperCase() !== this.config.distance) return null;
-    const d0 = this.geom.distance;
-    const a = (this.heading + d0.angle) * DEG;
-    const [px, py] = this._point(d0.fwd, d0.lat);
-    const d = this.world.raycast(px, py, Math.cos(a), Math.sin(a), 200, d0.height);
+    const s = this.sensorOn(port, 'distance');
+    if (!s) return null;
+    const [f, up, lat] = s.pos, [df, du, dl] = s.dir;
+    const [px, py] = this._point(f, lat);
+    const h = this.heading * DEG;
+    const d = this.world.raycast(px, py, Math.cos(h) * df - Math.sin(h) * dl, Math.sin(h) * df + Math.cos(h) * dl, 200, up, du);
     return Number.isFinite(d) ? Math.max(0, d) : null;
   }
 

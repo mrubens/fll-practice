@@ -901,7 +901,8 @@ export class Physics {
       part(moving, [0.8, 2.4, 4], [1.6, 1.2, 0]);       // the fork's back
       part(moving, [0.8, 9.6, 0.8], [0.9, 4.8, 0]);     // the rack
     }
-    if (a.module === 'custom') buildCustom(this, robot, { pivot, moving, ACT, ROBOT, ATTACH });
+    if (a.module === 'custom' || robot.geom.partsLdr) buildCustom(this, robot, { pivot, moving, ACT, ROBOT, ATTACH });
+    else removeCustom(this);
     this.module = a.module;
     this.lastArmAngle = this.attachmentAngle(robot);
     this.placeArm(robot.x, robot.y, robot.heading, this.lastArmAngle, true);
@@ -1157,8 +1158,8 @@ export class Physics {
   }
 
   /** Distance (cm) along (dx, dy) from (x, y) at `height` cm to the first wall/model, or Infinity. */
-  raycast(x, y, dx, dy, height, maxDist) {
-    const ray = new this.R.Ray({ x: x * S, y: height * S, z: y * S }, { x: dx, y: 0, z: dy });
+  raycast(x, y, dx, dy, height, maxDist, up = 0) {
+    const ray = new this.R.Ray({ x: x * S, y: height * S, z: y * S }, { x: dx, y: up, z: dy });
     const hit = this.world.castRay(ray, maxDist * S, true, undefined, undefined, undefined, this.robotBody);
     if (!hit) return Infinity;
     const toi = hit.timeOfImpact !== undefined ? hit.timeOfImpact : hit.toi;

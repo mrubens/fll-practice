@@ -273,6 +273,8 @@ export class Scene {
       }
     }
     if (!conns.length) return { ok: false, conns, why: 'not connected' };
+    // the table: y runs down in this frame and the mat is at 0 (a little give for the parts' rounded edges)
+    if (it.aabb.hi[1] > 4) return { ok: false, conns, why: 'goes into the table' };
     // anything it would overlap without being connected to
     for (const other of this.all()) {
       if (touching.has(other) || !aabbNear(it.aabb, other.aabb, 0)) continue;

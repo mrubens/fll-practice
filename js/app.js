@@ -9,7 +9,7 @@ import { exportLlsp3, importLlsp3 } from './llsp3.js';
 import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
-import { MOUNTS, MODULES, PRESETS, defaultBuild, normalizeBuild, validateBuild } from './build.js';
+import { PRESETS, defaultBuild, normalizeBuild } from './build.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
@@ -415,62 +415,33 @@ async function openFile(file) {
 }
 
 // ---------- robot builder ----------
-const builder = $('#builder');
-const B$ = (id) => document.getElementById(id);
-const portOptions = (sel, allowNone) => (allowNone ? '<option value="">none</option>' : '') + PORT_LETTERS.map((p) => `<option value="${p}"${p === sel ? ' selected' : ''}>${p}</option>`).join('');
-function fillBuilder(b) {
-  B$('bLeft').innerHTML = portOptions(b.ports.left); B$('bRight').innerHTML = portOptions(b.ports.right);
-  B$('bColorPort').innerHTML = portOptions(b.ports.color); B$('bDistPort').innerHTML = portOptions(b.ports.distance);
-  B$('bDistMount').innerHTML = MOUNTS.map((m) => `<option value="${m}"${m === b.distanceMount ? ' selected' : ''}>${m}</option>`).join('');
-  B$('bModule').innerHTML = Object.entries(MODULES).filter(([, m]) => !m.hidden).map(([k, m]) => `<option value="${k}"${k === b.attachment.module ? ' selected' : ''}>${m.label}</option>`).join('');
-  const motor = MODULES[b.attachment.module].motor;
-  B$('bAttachInfo').textContent = b.attachment.module === 'none' ? '' : motor ? 'Mounted on the front. Its motor is on port E. Press Q and E over the 3D view to try it.' : 'Mounted on the front. No motor.';
-  B$('bIssues').textContent = validateBuild(b).join(' ');
-  B$('bLego').hidden = b.attachment.module !== 'custom';
-  if (b.attachment.module === 'custom') B$('bAttachInfo').textContent = b.attachment.ldr ? 'Built from LEGO parts on the arm bracket. Its motor is on port E. Press Q and E over the 3D view to try it.' : 'Nothing built yet: open the attachment builder.';
-}
-function readBuilder() {
-  return normalizeBuild({
-    preset: null, name: 'Custom robot',
-    ports: { left: B$('bLeft').value, right: B$('bRight').value, color: B$('bColorPort').value, distance: B$('bDistPort').value },
-    distanceMount: B$('bDistMount').value,
-    attachment: B$('bModule').value === 'custom' ? { ...(store.lastCustom || {}), module: 'custom' } : { module: B$('bModule').value },
-  });
-}
 function applyBuildFromUi(b) {
-  fillBuilder(b);
   robot.applyBuild(b);
   hub.updatePortTypes();
   if (!runtime.running) robot.setPose(robot.x, robot.y);
   const p = currentProject();
-  if (p) { p.build = b; p.updated = Date.now(); }
-  store.lastBuild = b;
+  if (p) { p.build = robot.build; p.updated = Date.now(); }
+  store.lastBuild = robot.build;
   saveStore();
 }
 sim.renderer.domElement.addEventListener('pointerdown', () => sim.endChase(), { capture: true });
-builder.addEventListener('input', () => applyBuildFromUi(readBuilder()));
-builder.addEventListener('change', () => applyBuildFromUi(readBuilder()));
-// The robot builder is the LEGO builder (legobuilder.js): the attachment across the top (a built-in one, none, or the
-// child's own build from real LEGO parts, saved with the project), the ports and sensors in a panel on the right.
+// The robot builder (legobuilder.js): the Driving Base with the sensors the child snaps on and plugs into ports, and
+// its attachment (a built-in one, none, or the child's own build from real LEGO parts). Every change goes straight
+// onto the robot on the table and is saved with the project.
 const legoBuilder = new AttachmentBuilder({
-  side: builder,
-  onApply: (meta) => {
-    store.lastCustom = { module: 'custom', ...meta };
-    applyBuildFromUi(normalizeBuild({ ...robot.build, preset: null, name: 'Custom robot', attachment: store.lastCustom }));
-    toast(meta.ldr ? 'Your attachment is on the robot. Motor E turns it: press Q and E over the 3D view to try it.' : 'The attachment is empty.');
+  normalize: normalizeBuild,
+  presets: {
+    'guided-mission': { ...PRESETS['guided-mission'], label: 'Guided Mission robot' },
+    'training-camp': { ...PRESETS['training-camp'], label: 'Training Camp robot' },
   },
-  onModule: (module) => applyBuildFromUi(normalizeBuild({ ...robot.build, preset: null, name: 'Custom robot', attachment: { module } })),
+  onChange: (b, customLdr) => {
+    if (customLdr !== null && customLdr !== undefined) store.lastCustom = { module: 'custom', ldr: customLdr };
+    applyBuildFromUi(b);
+  },
 });
-builder.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => {
-  applyBuildFromUi(normalizeBuild({ ...PRESETS[btn.dataset.preset], preset: btn.dataset.preset }));
-  legoBuilder.setModule(robot.build.attachment.module);
-  toast(`${PRESETS[btn.dataset.preset].name} loaded.`);
-}));
 function openBuilder() {
   runtime.stop();
-  fillBuilder(robot.build);
-  const a = robot.build.attachment;
-  legoBuilder.open({ module: a.module, ldr: a.module === 'custom' ? a.ldr : (store.lastCustom || {}).ldr });
+  legoBuilder.open(robot.build, (store.lastCustom || {}).ldr || '');
 }
 $('#btnRobot').addEventListener('click', openBuilder);
 window.legoBuilder = legoBuilder;   // for tests, like window.spikeApp

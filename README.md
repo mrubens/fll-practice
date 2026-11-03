@@ -53,7 +53,14 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
   shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
-- **Build your own attachment.** In the robot builder pick "my own attachment" and the attachment builder opens:
+- **Place your sensors.** The robot builder's parts box starts with the SPIKE color and distance sensors: snap one
+  onto any hole or pin of the robot (add beams to hold it where you want it), and it plugs into the next free hub
+  port; the Hub ports panel on the right (or the bar over a selected part) changes ports, and Move and Remove take it
+  elsewhere or off. Readings come from where each sensor really is: a color sensor reads the mat where it looks, so it
+  has to look down from close by (full strength up to 2 cm, nothing past 4.5 cm, like the real one), and a distance
+  sensor measures along the way its eyes look. Two color sensors for line following work; a sensor hung on a single
+  pin is flagged, since it would swing. The sensors stay when you change the attachment.
+- **Build your own attachment.** In the robot builder pick "My own" and build on the Driving Base's arm bracket:
   a parts box with every Technic part of the SPIKE Prime sets (beams, frames, pins, axles, connectors, bushes, gears)
   and the Driving Base with its arm bracket, whose axle motor E turns. Parts snap only where real LEGO connects (a pin
   into a pin hole, an axle into an axle hole or through a round hole, from the LDCad shadow library's connector
@@ -93,8 +100,8 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **One scrolling palette.** Like the SPIKE app, the block palette is one continuous list with a header per
   category: click a category to scroll to it, and the highlighted category follows as you scroll.
 - **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
-  hub flat), drawn from its real bricks. **Robot builder** sets the hub ports, the color and distance sensor mounts,
-  and an attachment: arm, sweeper, forklift, plow or basket, each built from the medium motor and Technic liftarms.
+  hub flat), drawn from its real bricks. **Robot builder** places the sensors and sets the hub ports, and picks
+  an attachment: arm, sweeper, forklift, plow or basket, each built from the medium motor and Technic liftarms.
   The side scoop (the Driving Base 2 arm's axle with a 15-long beam reaching out to the left and a 2x14 plate lying on
   the mat) is built for M12: park beside the cane facing north, sweep the plate under its claw with a spin, lift
   until it tips onto the trunk; the plate's tip also hooks the support tie out of its slot and drags it to the post.
@@ -148,7 +155,7 @@ Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the
 | `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
 | `js/world.js`, `js/physics.js`, `js/mechanisms.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier layer (kinematic robot, collide-and-slide, arm stall) and the per-model mechanisms (pieces, joints, which LEGO parts move) |
 | `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
-| `js/lego.js`, `js/legobuilder.js`, `js/lego3d.js`, `js/legophysics.js`, `js/legodraw.js` | The attachment builder: connector matching and what a build is made of (bodies, hinges, friction), its UI, part drawing, physics and drawing on the robot |
+| `js/lego.js`, `js/legobuilder.js`, `js/lego3d.js`, `js/legophysics.js`, `js/legodraw.js` | The robot builder: connector matching and what a build is made of (bodies, hinges, friction), its UI (sensors, ports, attachment), part drawing, physics and drawing on the robot |
 | `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Missions with rulebook wording and points read from the physical state, the referee (match rules, tokens, end-of-match freeze), mission card |
 | `js/hub.js` | Hub strip UI and audio |
 | `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
@@ -156,7 +163,7 @@ Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the
 | `js/app.js` | Toolbar, project storage, builder UI, main loop |
 | `mat/season.json`, `mat/season.jpg` | Season field: mat image, mission models (collision boxes + model files), launch pose |
 | `models/*.mpd` | Self-contained LDraw models: the 15 BIOGLOW missions and the SPIKE driving bases |
-| `models/lego/` | The attachment builder's parts box: geometry (`parts.mpd`), palette and collision boxes (`parts.json`), connectors (`snaps.json`, `base.json`), from `tools/snaps.py` |
+| `models/lego/` | The robot builder's parts box (sensors and Technic parts): geometry (`parts.mpd`), palette and collision boxes (`parts.json`), connectors (`snaps.json`, `base.json`), from `tools/snaps.py` |
 | `artifact.html`, `serve.py` | Inlined-stylesheet copy for publishing as a claude.ai artifact; tiny no-cache dev server |
 
 ## Credits

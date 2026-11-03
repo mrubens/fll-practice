@@ -266,8 +266,9 @@ export class World {
   }
 
   /** Distance (cm) from (x,y) along (dx,dy) to the first wall/obstacle, or Infinity. `height` matters once physics is on. */
-  raycast(x, y, dx, dy, maxDist = 250, height = 5) {
-    if (this.physics) return this.physics.raycast(x, y, dx, dy, height, maxDist);
+  /** Distance (cm) along a ray from (x, y) at `height`, direction (dx, up, dy), to the nearest thing it meets. */
+  raycast(x, y, dx, dy, maxDist = 250, height = 5, up = 0) {
+    if (this.physics) return this.physics.raycast(x, y, dx, dy, height, maxDist, up);
     let best = Infinity;
     for (const [ax, ay, bx, by] of this.segments()) {
       const ex = bx - ax, ey = by - ay;

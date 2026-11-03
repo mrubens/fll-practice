@@ -86,34 +86,7 @@
       </div>
       <p class="view-hint">Drag the robot to move it, or drive it with W A S D or the arrow keys (Q and E move the arm). Click a mission model to see what it scores. Shift-drag on the mat to measure. While a program runs, the arrow keys press the hub buttons.</p>
     </div>
-    <section id="builder" class="builder" hidden aria-label="Robot builder">
-      <div class="builder-head">
-        <h3>Robot</h3>
-        <div class="builder-presets">
-          <button type="button" class="tb" data-preset="guided-mission" title="Driving Base, color sensor on B, the arm on motor E">Guided Mission robot</button>
-          <button type="button" class="tb" data-preset="training-camp" title="Driving Base, color sensor on E, no attachment">Training Camp robot</button>
-        </div>
-      </div>
-      <div class="builder-grid">
-        <fieldset><legend>Drive</legend>
-          <p class="hint">The LEGO Driving Base from Training Camp: 5.6 cm wheels, 11.2 cm track, hub flat.</p>
-          <label>Left wheel motor <select id="bLeft"></select></label>
-          <label>Right wheel motor <select id="bRight"></select></label>
-        </fieldset>
-        <fieldset><legend>Sensors</legend>
-          <label>Color sensor port <select id="bColorPort"></select></label>
-          <label>Distance sensor port <select id="bDistPort"></select></label>
-          <label>Distance sensor mount <select id="bDistMount"></select></label>
-        </fieldset>
-        <!-- the attachment is chosen across the top of the builder; this keeps the robot's current module for the app -->
-        <fieldset hidden><legend>Attachment</legend>
-          <label>Module <select id="bModule"></select></label>
-          <p class="hint info" id="bAttachInfo"></p>
-          <button type="button" id="bLego" class="tb" hidden>Open the attachment builder</button>
-        </fieldset>
-      </div>
-      <p class="hint" id="bIssues"></p>
-    </section>
+  </aside>
 </main>
 <div id="toasts" aria-live="polite"></div>
 <input type="file" id="fileOpen" accept=".llsp3,application/zip" hidden>

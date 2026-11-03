@@ -1,6 +1,6 @@
-// Physics for an attachment built in the attachment builder (see lego.js): parts locked to the drive axle ride on the
-// attachment's kinematic body (motor E turns it), parts locked to the robot ride on the robot, and everything hung
-// on pins becomes a dynamic body on a revolute joint. Pin friction is a holding torque: each joint is held at an
+// Physics for the parts built in the robot builder, the sensors and a custom attachment (see lego.js): parts locked
+// to the drive axle ride on the attachment's kinematic body (motor E turns it), parts locked to the robot ride on
+// the robot, and everything hung on pins becomes a dynamic body on a revolute joint. Pin friction is a holding torque: each joint is held at an
 // angle by a stiff spring whose torque is capped at what the pins can hold, so a friction pin keeps a beam where it
 // was put and a push or a heavy load makes it slip; a free pin barely drags.
 import * as THREE from 'three';
@@ -44,9 +44,10 @@ export function buildCustom(ph, robot, frame) {
     const desc = R.ColliderDesc.cuboid(size[0] / 2 * S, size[1] / 2 * S, size[2] / 2 * S).setTranslation(w.x * S, w.y * S, w.z * S).setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT);
     ph.robotParts.push({ collider: ph.world.createCollider(desc, ph.robotBody), node, half: size.map((v) => v / 2), onArm: false });
   };
-  fixedBox(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);
-  if (!D || !a.ldr) return;
-  const { an } = buildOf(D, a.ldr);
+  if (a.module === 'custom') fixedBox(pivot, [3.2, 3.9, 4.0], [-1.2, -1.6, 0]);   // the built-in attachments have their own
+  const ldr = robot.geom.partsLdr;                   // the robot's own parts (sensors) and a custom attachment's
+  if (!D || !ldr) return;
+  const { an } = buildOf(D, ldr);
   const lift = robot.geom.lift;
   const pv = pivot.position.clone();
   const custom = { bodies: [], joints: [], colliders: [], onDrive: new Set() };

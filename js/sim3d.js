@@ -500,6 +500,7 @@ export class Sim3D {
 
   buildRobot() {
     if (this.robotGroup) { this.scene.remove(this.robotGroup); this.robotGroup = null; }
+    for (const d of this.sensorDiscs || []) this.scene.remove(d);
     this.robotBuildGen = (this.robotBuildGen || 0) + 1;   // one generation per build: late loads for an old build are dropped
     this.pendingHides = [];
     const r = this.robot, build = r.build, geom = r.geom;
@@ -560,28 +561,17 @@ export class Sim3D {
     caster.position.set(-7, 1.4, 0); caster.castShadow = true; g.add(caster);
     if (geom.lift > 0.5) { const leg = box(2, geom.lift, 2, grey); leg.position.set(-7, 2.8 + geom.lift / 2, 0); g.add(leg); }
 
-    // Distance sensor at its mount, facing out.
-    const d = geom.distance;
-    const ds = new THREE.Group();
-    const dsBox = box(2.2, 3.2, 5.2, 0xF7F8FA); ds.add(dsBox);
-    for (const z of [1.45, -1.45]) {
-      const eye = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.05, 0.4, 20), new THREE.MeshStandardMaterial({ color: 0x1F2937, roughness: 0.3 }));
-      eye.rotation.z = Math.PI / 2; eye.position.set(1.2, 0, z); ds.add(eye);
-    }
-    if (geom.distance.angle === 0) ds.position.set(3.3, 8.8, -2.4);                       // on top of the hub at the front left, as in Driving Base 2
-    else ds.position.set(d.fwd - 3.3, 5.6, d.lat);
-    ds.rotation.y = -d.angle * DEG;
-    body.add(ds);
-
-    // Color sensor pointing down, with a disc showing what it sees.
-    const c = geom.color;
-    const cs = box(2.2, 2.4, 2.4, dark); cs.position.set(c.fwd, 2.3, c.lat); body.add(cs);
-    const csMount = new THREE.Group(); csMount.position.set(c.fwd, 0, c.lat); body.add(csMount);
-    if (!isDrivingBase(build)) this.legoColorSensor(csMount, cs);   // the Driving Base model has its sensor built in
-    this.sensorDisc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
-    this.sensorDisc.rotation.x = -Math.PI / 2;
-    this.sensorDisc.position.set(c.fwd, 0.08, c.lat);
-    g.add(this.sensorDisc);
+    // Sensors are LEGO parts on the robot (drawn with the robot builder's parts below). Each color sensor gets a disc
+    // on the mat showing what it sees, where it looks.
+    this.sensorDiscs = (geom.sensors || []).filter((s) => s.type === 'color').map((s) => {
+      const disc = new THREE.Mesh(new THREE.CircleGeometry(1.1, 20), new THREE.MeshBasicMaterial({ color: 0xffffff }));
+      disc.rotation.x = -Math.PI / 2;
+      disc.userData.port = s.port;
+      disc.visible = false;
+      this.scene.add(disc);
+      return disc;
+    });
+    const csMount = null;
 
     // Attachment module at its mount point.
     const a = geom.attachment;
@@ -620,8 +610,9 @@ export class Sim3D {
       add(this.armPivot, new THREE.Mesh(new THREE.BoxGeometry(3.2, 3.9, 4), red), [-1.2, -1.6, 0]);
     }
     if (['arm', 'plow', 'basket', 'sweeper', 'scoop'].includes(a.module)) this.legoTool(a.module, body, prim);
-    else if (a.module === 'custom') drawCustom(this, body, a);
-    else if (a.module !== 'none') this.legoAttachment(a.module, prim);
+    else if (a.module !== 'none' && a.module !== 'custom') this.legoAttachment(a.module, prim);
+    // the parts built in the robot builder: the sensors, and a custom attachment
+    if (geom.partsLdr || a.module === 'custom') drawCustom(this, body, { ldr: geom.partsLdr, bracket: a.module === 'custom' });
     this.armPivot.visible = a.module !== 'none';
     this.armPivot.position.set(a.fwd, a.height - geom.lift, a.lat);   // body already rides at geom.lift
     this.armPivot.rotation.y = -a.angle * DEG;
@@ -785,21 +776,6 @@ export class Sim3D {
     });
   }
 
-  /** Real LEGO color sensor at the sensor mount, lens down. */
-  legoColorSensor(mount, hideMesh) {
-    const gen = this.robotBuildGen;
-    if (this.robotLego) this.robotPending++;
-    loadLDrawModel('models/parts/colorsensor.mpd').then((sensor) => {
-      const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
-      if (!sensor || gen !== this.robotBuildGen || !mount.parent) { done(); return; }
-      const h = new THREE.Group(); sensor.rotation.x = Math.PI; sensor.scale.setScalar(LDU); h.add(sensor);
-      h.rotation.set(-Math.PI / 2, 0, 0);
-      h.position.set(0, 2.6, 0);
-      mount.add(h);
-      if (hideMesh) hideMesh.visible = false;
-      done();
-    });
-  }
 
   // ---- mission feedback: green pulse plus an optional whole-model motion ----
   extrasFor(obstacle) { return this.obstacleExtras.filter((e) => e.userData.obstacle === obstacle); }
@@ -1125,8 +1101,13 @@ export class Sim3D {
       m.material.emissive.setHex(hit ? 0x335533 : 0x000000);
     }
     this.centerButton.material.color.set(r.hub.centerColor || '#FFFFFF');
-    const sample = r.colorSample(cfg.color);
-    if (sample) this.sensorDisc.material.color.setRGB(sample.rgb[0] / 255, sample.rgb[1] / 255, sample.rgb[2] / 255);
+    for (const disc of this.sensorDiscs || []) {
+      const s = r.sensorOn(disc.userData.port, 'color'), spot = s && r.colorSpot(s), sample = spot && spot.t <= 4.5 && r.colorSample(disc.userData.port);
+      disc.visible = !!sample;
+      if (!sample) continue;
+      disc.position.set(spot.x, 0.08, spot.y);
+      disc.material.color.setRGB(sample.rgb[0] / 255, sample.rgb[1] / 255, sample.rgb[2] / 255);
+    }
     if (this.follow) {
       const target = new THREE.Vector3(r.x, 4, r.y);
       const delta = target.clone().sub(this.controls.target);

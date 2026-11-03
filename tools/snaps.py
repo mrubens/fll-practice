@@ -35,6 +35,7 @@ OUT = os.path.join(ROOT, 'models', 'lego')
 
 # The palette: SPIKE Prime (45678) and its expansion set (45681), by builder category, with the colour the set has.
 PALETTE = [
+    ('Sensors', [('37308', 15), ('37316', 15)]),   # SPIKE color and distance sensors: placed parts with a port
     ('Beams', [('60483', 72), ('32523', 15), ('32316', 15), ('32524', 0), ('40490', 15), ('32525', 15), ('41239', 0),
                ('32278', 0), ('18654', 71)]),
     ('Bent beams and frames', [('32140', 26), ('32526', 15), ('14720', 15), ('60484', 15), ('32348', 15), ('32271', 15),
