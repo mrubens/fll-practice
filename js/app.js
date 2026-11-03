@@ -470,7 +470,8 @@ $('#btnUndo').addEventListener('click', () => workspace.undo(false));
 $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 
 // ---------- sim view tools ----------
-$('#btnResetPos').addEventListener('click', () => { robot.resetPose(); world.resetObstacles(); });
+// a running program stops first, as you'd stop the real robot before picking it up
+$('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); world.resetObstacles(); });
 $('#btnLaunch').addEventListener('click', () => {
   if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
   startMatch();
