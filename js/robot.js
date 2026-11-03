@@ -99,17 +99,21 @@ export class Robot {
 
   // ---------------- movement pair ----------------
 
+  /**
+   * The motors a movement drives, as the hub would: the pair the program set (first = left), whatever is on those
+   * ports. Paired the other way round on the real robot the "left" motor is the right wheel's, mounted mirrored, so
+   * the robot drives backward with its steering flipped; on ports that are not the wheels, the wheels do not move.
+   */
   _pairPorts() {
     const wheels = [this.config.left, this.config.right];
     const pair = this.movement.pair;
-    if (!pair) return { left: wheels[0], right: wheels[1] };
-    if (pair[0] === wheels[0] && pair[1] === wheels[1]) return { left: wheels[0], right: wheels[1] };
-    if (pair[0] === wheels[1] && pair[1] === wheels[0]) return { left: wheels[1], right: wheels[0], swapped: true };
+    if (!pair || (pair[0] === wheels[0] && pair[1] === wheels[1])) return { left: wheels[0], right: wheels[1] };
+    if (pair[0] === wheels[1] && pair[1] === wheels[0]) return { left: wheels[0], right: wheels[1], reversed: true };
     if (!this.movement.hint) {
-      this.movement.hint = `Movement motors are set to ${pair[0]}+${pair[1]}, but this robot's wheels are on ${wheels[0]}+${wheels[1]}. Driving anyway (the real robot would need the right ports).`;
+      this.movement.hint = `Movement motors are set to ${pair[0]}+${pair[1]}, but this robot's wheels are on ${wheels[0]}+${wheels[1]}: the wheels will not move. Set the movement motors to ${wheels[0]}+${wheels[1]}.`;
       this.emit('hint', this.movement.hint);
     }
-    return { left: wheels[0], right: wheels[1] };
+    return { left: pair[0], right: pair[1] };
   }
 
   setMovementPair(code) {
@@ -131,13 +135,14 @@ export class Robot {
     const ports = this._pairPorts();
     const base = (clamp(num(speedPct), -100, 100) / 100) * MAX_DEG_PER_S;
     let l = lFrac * base, r = rFrac * base;
-    if (ports.swapped) [l, r] = [r, l];
-    this.motors[ports.left].target = l;
-    this.motors[ports.right].target = r;
-    this.motors[ports.left].goal = null;
-    this.motors[ports.right].goal = null;
+    if (ports.reversed) [l, r] = [-r, -l];
+    for (const [p, v] of [[ports.left, l], [ports.right, r]]) { const m = this.motors[p]; if (!m) continue; m.target = v; this._endGoal(m); }
     return ports;
   }
+
+  /** A command replaced by a new one ends (a block still waiting on it goes on, as on the hub). */
+  _endGoal(m) { if (m && m.goal) { m.goal.done = true; m.goal = null; } }
+  _endMoveGoal() { if (this.movement.goal) { this.movement.goal.done = true; this.movement.goal = null; } }
 
   _degreesFor(amount, unit) {
     const a = Math.abs(num(amount));
@@ -155,6 +160,7 @@ export class Robot {
     if (num(amount) < 0) sign = -sign;
     const { l, r } = this._steerFractions(steering);
     const speed = this.movement.speedPct;
+    this._endMoveGoal();
     const ports = this._driveWheels(l * sign, r * sign, speed);
     const goal = { done: false, type: unit === 'seconds' ? 'time' : 'deg', remaining: unit === 'seconds' ? Math.abs(num(amount)) : this._degreesFor(amount, unit), ports };
     if (goal.remaining <= 0) { goal.done = true; this.stopMove(); return goal; }
@@ -165,24 +171,19 @@ export class Robot {
   startMove({ direction = 'forward', steering = 0 }) {
     const sign = direction === 'back' ? -1 : 1;
     const { l, r } = this._steerFractions(steering);
-    this.movement.goal = null;
+    this._endMoveGoal();
     this._driveWheels(l * sign, r * sign, this.movement.speedPct);
   }
 
   startDual(leftPct, rightPct) {
-    this.movement.goal = null;
-    const ports = this._pairPorts();
-    let l = (clamp(num(leftPct), -100, 100) / 100) * MAX_DEG_PER_S;
-    let r = (clamp(num(rightPct), -100, 100) / 100) * MAX_DEG_PER_S;
-    if (ports.swapped) [l, r] = [r, l];
-    this.motors[ports.left].target = l; this.motors[ports.left].goal = null;
-    this.motors[ports.right].target = r; this.motors[ports.right].goal = null;
+    this._endMoveGoal();
+    this._driveWheels(clamp(num(leftPct), -100, 100) / 100, clamp(num(rightPct), -100, 100) / 100, 100);
   }
 
   stopMove() {
     const ports = this._pairPorts();
-    for (const p of [ports.left, ports.right]) { this.motors[p].target = 0; this.motors[p].velocity = 0; this.motors[p].goal = null; }
-    if (this.movement.goal) { this.movement.goal.done = true; this.movement.goal = null; }
+    for (const p of [ports.left, ports.right]) { const m = this.motors[p]; if (!m) continue; m.target = 0; m.velocity = 0; this._endGoal(m); }
+    this._endMoveGoal();
   }
 
   // ---------------- single motors ----------------
@@ -199,6 +200,7 @@ export class Robot {
     goal.type = unit === 'seconds' ? 'time' : 'deg';
     goal.remaining = unit === 'seconds' ? Math.abs(num(amount)) : this._degreesFor(amount, unit === 'rotations' ? 'rotations' : 'degrees');
     if (goal.remaining <= 0) { goal.done = true; m.target = 0; return goal; }
+    this._endGoal(m);
     m.goal = goal;
     return goal;
   }
@@ -206,7 +208,7 @@ export class Robot {
   motorStart(port, direction) {
     const m = this._motor(port);
     if (!m) return;
-    m.goal = null;
+    this._endGoal(m);
     m.target = (direction === 'counterclockwise' ? -1 : 1) * (m.speedPct / 100) * MAX_DEG_PER_S;
   }
 
@@ -311,9 +313,17 @@ export class Robot {
     return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null;
   }
 
+  /** Where a tool motor's own build stops it (its parts meet the robot), or null when it is free. */
+  _toolStop(port, angle) {
+    const a = this.geom.attachment;
+    const s = a && a.module === 'tools' && a.stops && a.stops[port];
+    if (!s) return null;
+    return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null;
+  }
+
   arm() {
     const a0 = this.geom.attachment;
-    if (!a0 || a0.module === 'none') return null;
+    if (!a0 || a0.module === 'none' || a0.module === 'tools') return null;
     const port = this.config.attachment;
     const motor = port ? this.motors[port] : null;
     const angle = motor ? motor.angle : 0;
@@ -440,41 +450,57 @@ export class Robot {
       const step = ACCEL * dt;
       m.velocity += Math.abs(dv) <= step ? dv : Math.sign(dv) * step;
       const prevAngle = m.angle;
-      m.angle += m.velocity * dt;
+      let delta = m.velocity * dt;
+      // a degrees goal ends exactly on its last degree (no overshoot past it)
+      if (m.goal && m.goal.type !== 'time' && Math.abs(delta) > m.goal.remaining) delta = Math.sign(delta) * m.goal.remaining;
+      m.angle += delta;
       // The attachment's own end stops: the forklift's rack runs out, the sweeper meets the robot's body.
-      const stop = p === this.config.attachment ? this._attachmentStop(m.angle) : null;
+      const tool = (this.config.tools || []).includes(p);
+      const stop = p === this.config.attachment ? this._attachmentStop(m.angle) : tool ? this._toolStop(p, m.angle) : null;
       if (stop !== null) { m.angle = stop; if (Math.sign(m.velocity) === Math.sign(stop - prevAngle) || stop === prevAngle) { m.velocity = 0; m.stalled = true; m.stallTime = (m.stallTime || 0) + dt; if (m.goal && m.stallTime > 0.3) { m.goal.done = true; m.goal = null; m.target = 0; } } }
       // Attachment motor pressing into a wall or model: it stalls (and a "run for" goal gives up after a moment, like the hub).
-      else if (ph && p === this.config.attachment && m.velocity !== 0 && ph.attachmentBlocked(m.angle)) {
+      else if (ph && (p === this.config.attachment || tool) && m.velocity !== 0 && ph.attachmentBlocked(m.angle, p)) {
         m.angle = prevAngle; m.velocity = 0;
         m.stalled = true; m.stallTime = (m.stallTime || 0) + dt;
         if (m.goal && m.stallTime > 0.3) { m.goal.done = true; m.goal = null; m.target = 0; }
       } else if (m.stalled && m.velocity !== 0) { m.stalled = false; m.stallTime = 0; }
+      m.turned = m.angle - prevAngle;              // what the shaft really turned this step (the wheels move by this)
       if (m.goal) {
-        m.goal.remaining -= m.goal.type === 'time' ? dt : Math.abs(m.velocity) * dt;
-        if (m.goal.remaining <= 0) { m.goal.done = true; m.goal = null; m.target = 0; m.velocity = 0; }
+        m.goal.remaining -= m.goal.type === 'time' ? dt : Math.abs(m.turned);
+        if (m.goal.remaining <= 1e-9) { m.goal.done = true; m.goal = null; m.target = 0; m.velocity = 0; }
       }
     }
     const g = this.movement.goal;
     if (g) {
       const l = this.motors[g.ports.left], r = this.motors[g.ports.right];
-      g.remaining -= g.type === 'time' ? dt : Math.max(Math.abs(l.velocity), Math.abs(r.velocity)) * dt;
-      if (g.remaining <= 0) {
+      if (g.type === 'time') g.remaining -= dt;
+      else {
+        // the faster wheel counts the goal; on the last step both are cut back so it ends exactly there
+        const most = Math.max(Math.abs(l.turned), Math.abs(r.turned));
+        if (most > g.remaining && most > 0) {
+          const k = g.remaining / most;
+          for (const m of [l, r]) { const cut = m.turned * (1 - k); m.angle -= cut; m.turned -= cut; }
+        }
+        g.remaining -= Math.min(most, g.remaining);
+      }
+      if (g.remaining <= 1e-9) {
         g.done = true; this.movement.goal = null;
         for (const m of [l, r]) { m.target = 0; m.velocity = 0; }
       }
     }
     // Kinematics from the configured wheel motors.
+    // from what the wheel motors actually turned this step (the same numbers their encoders count), along the arc's
+    // midpoint heading
     const circ = Math.PI * this.geom.wheelDiameter;
-    const vL = (this.motors[this.config.left].velocity / 360) * circ;
-    const vR = (this.motors[this.config.right].velocity / 360) * circ;
-    const v = (vL + vR) / 2;
-    const w = (vL - vR) / this.geom.track; // rad/s, clockwise positive (y axis points down)
+    const sL = (this.motors[this.config.left].turned / 360) * circ;
+    const sR = (this.motors[this.config.right].turned / 360) * circ;
+    const ds = (sL + sR) / 2;
+    const dth = (sL - sR) / this.geom.track; // rad, clockwise positive (y axis points down)
     const prevHeading = this.heading;
-    this.heading += (w * dt) / DEG;
-    const h = this.heading * DEG;
-    const nx = this.x + Math.cos(h) * v * dt;
-    const ny = this.y + Math.sin(h) * v * dt;
+    const hm = prevHeading * DEG + dth / 2;
+    this.heading += dth / DEG;
+    const nx = this.x + Math.cos(hm) * ds;
+    const ny = this.y + Math.sin(hm) * ds;
     this.armContact = null;
     if (ph) {
       const nh = this.heading;

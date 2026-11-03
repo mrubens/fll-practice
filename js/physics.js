@@ -6,7 +6,7 @@ import * as THREE from 'three';
 import { LIFT } from './robot.js';
 import { SCOOP_PARTS } from './build.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
-import { buildCustom, removeCustom, customStep, placeCustom, restoreCustom } from './legophysics.js';
+import { buildCustom, removeCustom, customStep, placeCustom, restoreCustom, driveGeared } from './legophysics.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
 const DEG = Math.PI / 180;
@@ -326,9 +326,11 @@ export class Physics {
       if (pd.shape && pd.shape.length || !o.parts || !own[name].length) {
         // hand-drawn boxes (relative to the anchor): only where a piece needs something its parts do not give
         const shapes = pd.shape && pd.shape.length ? pd.shape : [{ box: [2, 2, 2], at: [0, 1, 0] }];
-        cols = shapes.map((sh, i) => {
+        // the piece's weight spread over its boxes by volume, so their number and order do not move its balance
+        const vol = (sh) => sh.box[0] * sh.box[1] * sh.box[2], total = shapes.reduce((t, sh) => t + vol(sh), 0) || 1;
+        cols = shapes.map((sh) => {
           const cd = R.ColliderDesc.cuboid((sh.box[0] / 2) * S, (sh.box[1] / 2) * S, (sh.box[2] / 2) * S).setTranslation(sh.at[0] * S, sh.at[1] * S, sh.at[2] * S)
-            .setFriction(pd.friction ?? 0.7).setMass(i === 0 ? (pd.mass ?? 0.05) : 0.001).setCollisionGroups(pieceGroups);
+            .setFriction(pd.friction ?? 0.7).setMass((pd.mass ?? 0.05) * vol(sh) / total).setCollisionGroups(pieceGroups);
           if (sh.rot) { const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(sh.rot[0] * DEG, sh.rot[1] * DEG, sh.rot[2] * DEG)); cd.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }); }
           return this.world.createCollider(cd, body);
         });
@@ -811,6 +813,7 @@ export class Physics {
       ? R.ColliderDesc.roundCuboid(((fp.x1 - fp.x0) / 2 - round) * S, (half - round) * S, ((fp.z1 - fp.z0) / 2 - round) * S, round * S).setTranslation(((fp.x0 + fp.x1) / 2) * S, (bottom + half) * S, ((fp.z0 + fp.z1) / 2) * S)
       : R.ColliderDesc.cylinder(half * S, geom.radius * S).setTranslation(0, (bottom + half) * S, 0);
     this.bodyCollider = this.world.createCollider(bodyDesc.setFriction(0.5).setCollisionGroups(ROBOT).setActiveCollisionTypes(ACT), body);
+    this.bodyOffset = fp ? new THREE.Vector3((fp.x0 + fp.x1) / 2, bottom + half, (fp.z0 + fp.z1) / 2) : new THREE.Vector3(0, bottom + half, 0);
 
     // Attachment: a tiny scene graph mirroring the 3D view. Parts that move with the motor ride on their own
     // kinematic body (so the solver sees real velocities when the arm lifts or sweeps something); parts fixed to
@@ -944,6 +947,18 @@ export class Physics {
   }
 
   /** Would the attachment pieces (shrunk a little) overlap anything at this robot pose and motor angle? */
+  /** Would the chassis itself, turned to `heading` at (x, y), overlap a wall or a model? */
+  _hullHit(x, y, heading) {
+    const { R } = this;
+    if (!this.bodyCollider || !this.bodyOffset) return false;
+    const q = yawQuat(heading);
+    const off = this.bodyOffset.clone().applyQuaternion(new THREE.Quaternion(q.x, q.y, q.z, q.w));
+    let hit = false;
+    this.world.intersectionsWithShape({ x: (x + off.x) * S, y: off.y * S, z: (y + off.z) * S }, q, this.bodyCollider.shape, () => { hit = true; return false; },
+      R.QueryFilterFlags.EXCLUDE_DYNAMIC, undefined, undefined, undefined, this._notRobot());
+    return hit;
+  }
+
   _partsHit(x, y, heading, angle, margin = STALL_MARGIN) {
     const { R } = this;
     this.syncAttachment(x, y, heading, angle);
@@ -960,8 +975,9 @@ export class Physics {
   }
 
   /** True when moving the attachment motor to `angle` would push the attachment into a wall or model. */
-  attachmentBlocked(angle) {
+  attachmentBlocked(angle, port) {
     if (!this.robotBody || !this.robotParts.length) return false;
+    if (port && this.robot && port !== this.robot.config.attachment) { const j = this.toolJam && this.toolJam[port]; return !!j && Math.sign(angle - j.angle) === j.dir; }
     if (this.armJam && Math.sign(angle - this.armJam.angle) === this.armJam.dir) return true;   // pressing a piece it cannot move
     const r = this.robot;
     const hit = this._partsHit(r.x, r.y, r.heading, angle);
@@ -971,12 +987,13 @@ export class Physics {
 
   setRobotPose(x, y, heading) {
     if (!this.robotBody || ![x, y, heading].every(Number.isFinite)) return;   // NaN would poison the physics world
-    this.jam = null; this.armJam = null; this.armDepth = 0;   // picked up and put down: nothing is jammed any more
+    this.jam = null; this.armJam = null; this.armDepth = 0; this.toolJam = {}; this.toolDepth = {};   // picked up and put down: nothing is jammed any more
     this.robotBody.setTranslation({ x: x * S, y: 0, z: y * S }, true);
     this.robotBody.setRotation(yawQuat(heading), true);
     this.lastArmAngle = this.attachmentAngle(this.robot);
     this.placeArm(x, y, heading, this.lastArmAngle, true);
     placeCustom(this, x, y, heading, this.lastArmAngle);
+    driveGeared(this, this.robot, x, y, heading, 1, true);
   }
 
   _notRobot() { const h = this.robotBody.handle, ha = this.armBody ? this.armBody.handle : -1; return (c) => { const p = c.parent(); return !p || (p.handle !== h && p.handle !== ha); }; }
@@ -992,7 +1009,12 @@ export class Physics {
     const angle = this.attachmentAngle(robot);
     const cur = body.translation();
     let heading = nh;
-    if (nh !== robot.heading && this.robotParts.length && this._partsHit(robot.x, robot.y, nh, angle)) heading = robot.heading;
+    // a turn that would swing the chassis or the attachment into a wall or model does not happen (a turn already
+    // overlapping, as when the robot was put down touching something, may still go on: it is not made worse)
+    if (nh !== robot.heading) {
+      const hull = this._hullHit(robot.x, robot.y, nh) && !this._hullHit(robot.x, robot.y, robot.heading);
+      if (hull || (this.robotParts.length && this._partsHit(robot.x, robot.y, nh, angle))) heading = robot.heading;
+    }
     const q = yawQuat(heading);
     body.setRotation(q, true);                        // queries below see the new heading
     let move = { x: (nx - robot.x) * S, y: 0, z: (ny - robot.y) * S };
@@ -1027,6 +1049,7 @@ export class Physics {
       const d = move.x * this.jam.x + move.z * this.jam.z;
       if (d > 0) move = { x: move.x - d * this.jam.x, y: 0, z: move.z - d * this.jam.z };
     }
+    body.setRotation(yawQuat(robot.heading), true);   // back to where it was: the substeps turn it there smoothly
     // Several physics substeps per robot step: the arm can sweep a centimeter per step, and jointed pieces need
     // the kinematic push spread over small moves to react properly.
     const SUB = this.substeps || this.sim.physicsSubsteps || 3;
@@ -1038,6 +1061,7 @@ export class Physics {
       body.setNextKinematicTranslation({ x: hx, y: 0, z: hz });
       body.setNextKinematicRotation(yawQuat(hh));
       this.placeArm(hx / S, hz / S, hh, ha);
+      driveGeared(this, robot, hx / S, hz / S, hh, f);
       this.updateMechanisms(robot.time);
       this.world.timestep = dt / SUB;
       this.world.step();
@@ -1064,6 +1088,22 @@ export class Physics {
       this.lastArmAngle = a0;
     } else if (armDepth < 0.15 * S) this.armJam = null;
     this.armDepth = armDepth;
+    // the same for each tool motor's geared parts (Advanced Driving Base)
+    if (this.custom && this.custom.geared && this.custom.geared.length) {
+      this.toolJam ||= {}; this.toolDepth ||= {};
+      for (const port of new Set(this.custom.geared.map((g) => g.port))) {
+        const gs = this.custom.geared.filter((g) => g.port === port), m = robot.motors[port];
+        const last = gs[0].last, cur = m ? m.angle : last, depth = this._toolDepth(port);
+        if (cur !== last && depth > 0.3 * S && depth > (this.toolDepth[port] || 0)) {
+          this.toolJam[port] = { angle: last, dir: Math.sign(cur - last) };
+          if (m) { m.angle = last; m.velocity = 0; m.stalled = true; }
+        } else {
+          if (depth < 0.15 * S) delete this.toolJam[port];
+          for (const g of gs) g.last = cur;
+        }
+        this.toolDepth[port] = depth;
+      }
+    }
     for (const o of touched) o.touched = robot.time;
     for (const ob of this.obstacleBodies) if (ob.o.impact && !touched.has(ob.o)) ob.o.impact = 0;
     this.readPieces(robot.time);
@@ -1072,6 +1112,21 @@ export class Physics {
     // the drive that could not happen this step (cm, world): a force sensor pressed by it reads harder
     this.blocked = { x: nx - t.x / S, y: ny - t.z / S, dt };
     return [t.x / S, t.z / S, heading];
+  }
+
+  /** How deep a tool motor's geared parts are into anything that is not the robot (physics units). */
+  _toolDepth(port) {
+    let depth = 0;
+    const own = new Set([this.robotBody && this.robotBody.handle, this.armBody && this.armBody.handle, ...((this.custom && this.custom.bodies) || []).filter(Boolean).map((b) => b.body.handle)]);
+    for (const part of this.robotParts) {
+      if (part.tool !== port) continue;
+      this.world.contactPairsWith(part.collider, (other) => {
+        const p = other.parent();
+        if (p && own.has(p.handle)) return;
+        this.world.contactPair(part.collider, other, (m) => { for (let i = 0; i < m.numContacts(); i++) depth = Math.max(depth, -m.contactDist(i)); });
+      });
+    }
+    return depth;
   }
 
   /** How deep the attachment's moving parts are into a loose piece (physics units). */

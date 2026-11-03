@@ -26,7 +26,19 @@ function loadStore() {
   try { return Object.assign({ projects: {}, current: null, config: null }, JSON.parse(localStorage.getItem(STORE_KEY) || '{}')); }
   catch { return { projects: {}, current: null, config: null }; }
 }
-function saveStore() { try { localStorage.setItem(STORE_KEY, JSON.stringify(store)); } catch { /* storage unavailable */ } }
+// Saving can fail (storage full, private window, blocked site data): say so, once per run of failures, so work is
+// not lost silently, and say when it works again.
+let saveFailing = false;
+function saveStore() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(store));
+    if (saveFailing) { saveFailing = false; toast('Saving works again.'); }
+    return true;
+  } catch {
+    if (!saveFailing) { saveFailing = true; setTimeout(() => toast('This browser is not saving your projects (its storage is full or blocked). Use Save .llsp3 to keep your work.', 'error'), 0); }
+    return false;
+  }
+}
 const store = loadStore();
 const uid = () => Math.random().toString(36).slice(2, 10);
 
@@ -280,6 +292,8 @@ function currentProject() { return store.projects[store.current]; }
 function loadProject(id) {
   const p = store.projects[id];
   if (!p) return;
+  // an edit still waiting to be saved belongs to the project being left: save it there first
+  if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; persistWorkspace(); }
   runtime.stop();
   store.current = id;
   B.Events.disable();
@@ -315,7 +329,7 @@ function persistWorkspace() {
 workspace.addChangeListener((e) => {
   if (e.isUiEvent || e.type === B.Events.FINISHED_LOADING) return;
   clearTimeout(saveTimer);
-  saveTimer = setTimeout(persistWorkspace, 400);
+  saveTimer = setTimeout(() => { saveTimer = null; persistWorkspace(); }, 400);
 });
 
 nameInput.addEventListener('change', () => {
@@ -721,8 +735,12 @@ function driveFromKeys() {
 // the step-back replay both use it, with the same microtask drain after each step, so a replay reproduces a run.
 function simStep() {
   robot.update(STEP); scoring.update(STEP); runtime.tick();
+  matchTick(STEP);
+}
+/** The match clock runs from the launch to the end of the match, between programs too (as on the real table). */
+function matchTick(dt) {
   if (hub.matchLeft !== null && hub.matchLeft > 0 && scoring.match.launched && !scoring.match.ended) {
-    hub.matchLeft -= STEP;
+    hub.matchLeft -= dt;
     if (hub.matchLeft <= 0) { hub.matchLeft = 0; runtime.stop(); scoring.endMatch(); }
   }
 }
@@ -745,13 +763,15 @@ async function frame(now) {
     driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
     leaveEnd();
     acc += dt;
-    while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
+    while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); matchTick(STEP); acc -= STEP; }
     drive.idle = 0;
     const steering = drive.stick || ['w', 'a', 's', 'd'].some((k) => drive.keys.has(k));
     if (steering && !sim.dragging) sim.startChase();   // the view drops in behind the robot while it is being driven (not for the arm alone)
   } else {
     acc = 0;
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
+    // between programs in a match: the clock keeps running and the referee keeps watching pieces settle
+    if (scoring.match.launched && !scoring.match.ended) { scoring.update(dt); matchTick(dt); }
   }
   hub.update(now);
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
