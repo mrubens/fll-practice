@@ -665,6 +665,12 @@ export class Sim3D {
           g.add(group);
           this.robotLDraw = group;
           this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
+          // the hub's light matrix, over the LED grid of the real hub's top (u9393: 5 x 5 LEDs, 100 x 95 LDU, 179 LDU
+          // up): row 1 toward the front, column 1 on the robot's left, as a driver standing behind it reads it
+          const led = new THREE.Mesh(new THREE.PlaneGeometry(4.3, 4.1), new THREE.MeshBasicMaterial({ map: this.matrixTex }));
+          led.matrixAutoUpdate = false;
+          led.matrix.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)).setPosition(0, 179 * LDU + 0.03, 0);
+          g.add(led);
           for (const h of this.pendingHides || []) h();
           this.pendingHides = [];
         }
