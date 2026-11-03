@@ -1124,7 +1124,13 @@ export class Physics {
     driveGeared(this, this.robot, x, y, heading, 1, true);
   }
 
-  _notRobot() { const h = this.robotBody.handle, ha = this.armBody ? this.armBody.handle : -1; return (c) => { const p = c.parent(); return !p || (p.handle !== h && p.handle !== ha); }; }
+  // the robot's own bodies: the chassis, the arm, and a built tool's gear-driven parts (the Lift arm, the Dozer)
+  _notRobot() {
+    const own = new Set([this.robotBody.handle]);
+    if (this.armBody) own.add(this.armBody.handle);
+    for (const g of (this.custom && this.custom.geared) || []) own.add(g.body.handle);
+    return (c) => { const p = c.parent(); return !p || !own.has(p.handle); };
+  }
 
   /**
    * Move the robot from its current pose towards (nx, ny, nh): spins that sweep the attachment into something are
