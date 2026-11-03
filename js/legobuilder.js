@@ -460,7 +460,7 @@ export class AttachmentBuilder {
     const bmove = new THREE.Group(); bmove.matrixAutoUpdate = false; ld.add(bmove);   // a built-in attachment's moving part
     this.three = { renderer, scene, camera, controls, ld, drive, bmove };
     // the robot as context
-    for (const url of ['models/driving-base.mpd', 'models/attach/arm-fixed.mpd']) {
+    for (const url of ['models/driving-base.mpd', 'models/attach/wheels.mpd', 'models/attach/arm-fixed.mpd']) {
       loadRaw(url).then((g) => { if (g) { const f = flatten(g); f.userData.context = true; ld.add(f); } });
     }
     this.marker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), new THREE.MeshBasicMaterial({ color: 0xFFB000, transparent: true, opacity: 0.85, depthTest: false }));

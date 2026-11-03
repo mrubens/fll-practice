@@ -1,0 +1,6 @@
+0 Driving Base wheels (the SPIKE Prime 56 mm wheels on the drive motors' axles)
+0 Name: wheels.ldr
+0 Author: FLL Practice
+0 // in the frame of models/src/driving-base.ldr: on the 3-long axles in the drive motors (x = +-140, z = -40)
+1 0 148 -70 -40 0 0 -1 -1 0 0 0 1 0 39367p01.dat
+1 0 -148 -70 -40 0 0 1 1 0 0 0 1 0 39367p01.dat

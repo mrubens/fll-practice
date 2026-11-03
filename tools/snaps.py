@@ -381,7 +381,7 @@ def main():
         return [[round(b[0] / pb.LDU, 1), round(-b[1] / pb.LDU, 1), round(-b[2] / pb.LDU, 1),
                  round(b[3] / pb.LDU, 1), round(b[4] / pb.LDU, 1), round(b[5] / pb.LDU, 1), *ql] for b in boxes]
 
-    base['boxes'] = [bx for f in ('models/driving-base.mpd', 'models/attach/arm-fixed.mpd')
+    base['boxes'] = [bx for f in ('models/driving-base.mpd', 'models/attach/wheels.mpd', 'models/attach/arm-fixed.mpd')
                      for e in pb.measure(os.path.join(ROOT, f)) for bx in ldraw_boxes(e)]
     with open(os.path.join(OUT, 'base.json'), 'w') as f:
         json.dump(base, f, separators=(',', ':'))
