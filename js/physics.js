@@ -248,12 +248,17 @@ export class Physics {
     const pieces = this.pieces.filter((pc) => !pc.equipment && pc.o && pc.body.bodyType() === 0);
     this.settled ||= new Map();
     if (!pieces.every((pc) => this.settled.has(key(pc)))) {
-      // first time this field is built: run the mechanisms until everything has come to rest
+      // first time this field is built: run the mechanisms until everything has come to rest. The robot is out of
+      // the world meanwhile: wherever it stands (a table switch leaves it where it was on the last one) it must not
+      // knock a piece into a start pose that then sticks
+      const robotBodies = [this.robotBody, this.armBody, ...((this.custom && this.custom.bodies) || []).filter((b) => b && b.role === 'free').map((b) => b.body)].filter(Boolean);
+      robotBodies.forEach((b) => b.setEnabled(false));
       const dt = this.world.timestep;
       this.world.timestep = 1 / 200;
       this.readPieces(0);
       for (let i = 0; i < seconds * 200; i++) { this.updateMechanisms(-1); this.world.step(); this.readPieces(0); }
       this.world.timestep = dt;
+      robotBodies.forEach((b) => b.setEnabled(true));
       for (const pc of pieces) { const t = pc.body.translation(), r = pc.body.rotation(); this.settled.set(key(pc), { t: { ...t }, r: { x: r.x, y: r.y, z: r.z, w: r.w } }); }
     }
     for (const pc of pieces) {

@@ -135,7 +135,7 @@ export class World {
     this.obstacles = OBSTACLES.map((o) => ({ ...o, movable: o.movable !== false, x0: o.x, y0: o.y }));
     this.startPose = { ...START_POSE };
     this.season = null;
-    if (this.physics) this.physics.rebuildObstacles();
+    if (this.physics) this.physics.rebuildWorld();   // a fresh world: how the pieces settle must not depend on what came before
     this.listeners.forEach((fn) => fn('mat'));
     this.listeners.forEach((fn) => fn('season'));
   }
@@ -157,7 +157,7 @@ export class World {
     this.tableStart = { ...board.start };
     if (this.launchOverride) this.startPose = { ...this.launchOverride };
     this.season = null;
-    if (this.physics) this.physics.rebuildObstacles();
+    if (this.physics) this.physics.rebuildWorld();   // a fresh world: how the pieces settle must not depend on what came before
     this.listeners.forEach((fn) => fn('mat'));
     this.listeners.forEach((fn) => fn('season'));
     return true;
@@ -185,7 +185,7 @@ export class World {
     this.season = cfg;
     this.allObstacles = this.obstacles;
     this.obstacles = this.allObstacles.filter((o) => !this.hiddenIds.has(o.id));
-    if (this.physics) this.physics.rebuildObstacles();
+    if (this.physics) this.physics.rebuildWorld();   // a fresh world: how the pieces settle must not depend on what came before
     this.listeners.forEach((fn) => fn('season'));
     return true;
   }
@@ -195,7 +195,7 @@ export class World {
     this.hiddenIds = new Set(ids);
     if (!this.season || !this.allObstacles) return;
     this.obstacles = this.allObstacles.filter((o) => !this.hiddenIds.has(o.id));
-    if (this.physics) this.physics.rebuildObstacles();
+    if (this.physics) this.physics.rebuildWorld();   // a fresh world: how the pieces settle must not depend on what came before
     this.listeners.forEach((fn) => fn('season'));
   }
 
