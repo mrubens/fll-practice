@@ -203,7 +203,7 @@ function updateRunState() {
   sim.locked = runtime.running || replay.active;
   btnRun.disabled = (runtime.running && !runtime.paused) || replay.active;
   btnStop.disabled = !runtime.running || replay.active;
-  btnStep.disabled = replay.active;
+  btnStep.disabled = replay.active || (runtime.finished && !runtime.running);   // at the end of a program there is nothing to step on to
   btnStep.classList.toggle('active', runtime.running && runtime.stepMode);
   const stepped = runtime.stepMode && runtime.stepsTaken > 0 && (runtime.paused || !runtime.running);
   const ranToEnd = runtime.finished && !runtime.stepMode;   // a full-speed run that finished
@@ -257,6 +257,9 @@ async function stepBack(toStart) {
   updateRunState();
 }
 btnBack.addEventListener('click', (e) => stepBack(e.shiftKey));
+// Moving the robot by hand after a program ended leaves the end behind: Step starts afresh, Step back has nothing to undo.
+function leaveEnd() { if (runtime.finished && !runtime.running && !replay.active) { runtime.finished = false; updateRunState(); } }
+robot.on('pose', leaveEnd);
 // Run while paused at a step continues at full speed; otherwise it starts the program.
 btnRun.addEventListener('click', () => { if (runtime.running && runtime.paused) runtime.setStepMode(false); else startRun(); });
 btnStop.addEventListener('click', () => { stopRun(); runtime.setStepMode(false); });
@@ -768,6 +771,7 @@ async function frame(now) {
     while (acc >= STEP && runtime.running && !runtime.paused) { simStep(); acc -= STEP; await drain(); }
   } else if (drive.keys.size || drive.stick || driveFromKeys()) {
     driveFromKeys();                                   // hand driving: same fixed steps, scoring counts on free runs
+    leaveEnd();
     acc += dt;
     while (acc >= STEP) { robot.update(STEP); scoring.update(STEP); acc -= STEP; }
     drive.idle = 0;
