@@ -205,7 +205,9 @@ function updateRunState() {
   btnStop.disabled = !runtime.running || replay.active;
   btnStep.disabled = replay.active;
   btnStep.classList.toggle('active', runtime.running && runtime.stepMode);
-  btnBack.disabled = replay.active || !replay.start || !runtime.stepMode || !(runtime.stepsTaken > 0) || !(runtime.paused || !runtime.running);
+  const stepped = runtime.stepMode && runtime.stepsTaken > 0 && (runtime.paused || !runtime.running);
+  const ranToEnd = runtime.finished && !runtime.stepMode;   // a full-speed run that finished
+  btnBack.disabled = replay.active || !replay.start || !(stepped || ranToEnd);
 }
 /**
  * Step back: the simulation is deterministic, so going back a step is a restart plus a replay of the steps
@@ -213,7 +215,8 @@ function updateRunState() {
  */
 async function stepBack(toStart) {
   if (replay.active || !replay.start) return;
-  const target = toStart ? 0 : Math.max(0, runtime.stepsTaken - 1);
+  const finished = runtime.finished && !runtime.stepMode;   // after a full-speed run: back to before its last block
+  const target = toStart ? 0 : finished ? Infinity : Math.max(0, runtime.stepsTaken - 1);
   const snap = replay.snaps.get(target);
   if (snap) {                                           // the usual case: put the whole state back as it was
     replay.active = true;
@@ -236,11 +239,18 @@ async function stepBack(toStart) {
   await drain();
   const limit = 200 * 600;                              // at most ten simulated minutes, whatever the program does
   let steps = 0;
-  if (target > 0) toast(toStart ? 'Back to the start.' : 'Rewinding one step…');
-  for (let n = 0; n < target && runtime.running; n++) {
+  if (target > 0) toast(toStart ? 'Back to the start.' : finished ? 'Rewinding to the last block…' : 'Rewinding one step…');
+  if (finished) replay.snaps.clear();
+  let last = null;
+  for (let n = 0; n < target && runtime.running && steps < limit; n++) {
+    if (finished) { last = takeSnapshot(); if (last) replay.snaps.set(runtime.stepsTaken, last); }   // each pause, for later steps back
     runtime.step();
     await drain();
     while (runtime.running && !runtime.paused && steps < limit) { simStep(); steps++; await drain(); }
+  }
+  if (finished) {                                       // ran to its end again: go to the pause before the last block
+    if (runtime.running) runtime.stop();
+    if (last) restoreSnapshot(last);
   }
   replay.active = false;
   sim.render();

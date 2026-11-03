@@ -60,7 +60,7 @@ export class Runtime {
    */
   restoreThreads(paths, vars, edge) {
     if (this.running) this.stop();
-    this.running = true;
+    this.running = true; this.finished = false;
     this.paused = false; this.gateWaiters = [];
     this.vars = new Map(Object.entries(vars || {}));
     this.edge = new Map(Object.entries(edge || {}));
@@ -87,7 +87,7 @@ export class Runtime {
     this.tickWaiters = [];
     this.hats = this.workspace.getTopBlocks(true).filter((b) => b.type.startsWith('flipperevents_when') && !b.isShadow());
     this.running = true;
-    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0;
+    this.paused = false; this.gateWaiters = []; this.stepsTaken = 0; this.finished = false;
     for (const hat of this.hats) if (hat.type === 'flipperevents_whenProgramStarts') this.launch(hat);
     this.onChange();
     this.checkFinished();
@@ -114,7 +114,7 @@ export class Runtime {
   get hasEventHats() { return this.hats.some((h) => h.type !== 'flipperevents_whenProgramStarts'); }
 
   checkFinished() {
-    if (this.running && this.threads.size === 0 && !this.hasEventHats) this.stop();
+    if (this.running && this.threads.size === 0 && !this.hasEventHats) { this.finished = true; this.stop(); }   // ran to its end, not stopped
   }
 
   glow(block, on) {
