@@ -528,7 +528,7 @@ export class Sim3D {
     this.matrixCanvas = mc;
     this.matrixTex = new THREE.CanvasTexture(mc);
     this.matrixTex.colorSpace = THREE.SRGBColorSpace;
-    const matrix = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4), new THREE.MeshBasicMaterial({ map: this.matrixTex }));
+    const matrix = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4), new THREE.MeshBasicMaterial({ map: this.matrixTex, transparent: true, depthWrite: false }));
     matrix.rotation.x = -Math.PI / 2; matrix.rotation.z = -Math.PI / 2;
     matrix.position.set(1.6, 3.72, 0);
     hubGroup.add(matrix);
@@ -667,7 +667,7 @@ export class Sim3D {
           this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
           // the hub's light matrix, over the LED grid of the real hub's top (u9393: 5 x 5 LEDs, 100 x 95 LDU, 179 LDU
           // up): row 1 toward the front, column 1 on the robot's left, as a driver standing behind it reads it
-          const led = new THREE.Mesh(new THREE.PlaneGeometry(4.3, 4.1), new THREE.MeshBasicMaterial({ map: this.matrixTex }));
+          const led = new THREE.Mesh(new THREE.PlaneGeometry(4.3, 4.1), new THREE.MeshBasicMaterial({ map: this.matrixTex, transparent: true, depthWrite: false }));
           led.matrixAutoUpdate = false;
           led.matrix.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)).setPosition(0, 179 * LDU + 0.03, 0);
           g.add(led);
@@ -856,13 +856,14 @@ export class Sim3D {
 
   drawMatrix() {
     const ctx = this.matrixCanvas.getContext('2d');
-    ctx.fillStyle = '#F7F8FA';      // the hub's white top: the LEDs sit under it
-    ctx.fillRect(0, 0, 160, 160);
+    // clear: an unlit LED can't be seen under the hub's white top, so only lit ones are drawn over it
+    ctx.clearRect(0, 0, 160, 160);
     const m = this.robot.hub.matrix;
     for (let i = 0; i < 25; i++) {
       const r = Math.floor(i / 5), c = i % 5;
       const b = m[i] / 9;
-      ctx.fillStyle = b > 0 ? `rgba(255, 196, 0, ${0.3 + 0.7 * b})` : 'rgba(30, 36, 48, 0.07)';
+      if (b <= 0) continue;
+      ctx.fillStyle = `rgba(255, 196, 0, ${0.3 + 0.7 * b})`;
       ctx.beginPath();
       ctx.roundRect(c * 32 + 6, r * 32 + 6, 20, 20, 4);
       ctx.fill();
