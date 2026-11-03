@@ -957,6 +957,7 @@ export class Physics {
   /** True when moving the attachment motor to `angle` would push the attachment into a wall or model. */
   attachmentBlocked(angle) {
     if (!this.robotBody || !this.robotParts.length) return false;
+    if (this.armJam && Math.sign(angle - this.armJam.angle) === this.armJam.dir) return true;   // pressing a piece it cannot move
     const r = this.robot;
     const hit = this._partsHit(r.x, r.y, r.heading, angle);
     this.syncAttachment(r.x, r.y, r.heading, this.attachmentAngle(r));
@@ -965,7 +966,7 @@ export class Physics {
 
   setRobotPose(x, y, heading) {
     if (!this.robotBody || ![x, y, heading].every(Number.isFinite)) return;   // NaN would poison the physics world
-    this.jam = null;                                   // picked up and put down: nothing is jammed any more
+    this.jam = null; this.armJam = null; this.armDepth = 0;   // picked up and put down: nothing is jammed any more
     this.robotBody.setTranslation({ x: x * S, y: 0, z: y * S }, true);
     this.robotBody.setRotation(yawQuat(heading), true);
     this.lastArmAngle = this.attachmentAngle(this.robot);
@@ -1048,12 +1049,36 @@ export class Physics {
       body.setRotation(yawQuat(robot.heading), true);
       heading = robot.heading;
     } else if (jam.depth < 0.15 * S) this.jam = null;
+    // the attachment pressing a loose piece that cannot get out of its way (pinned to the mat, a model or the robot):
+    // the motor stalls there, as a real one does, instead of turning the arm through it
+    const armDepth = this._armDepth();
+    if (angle !== a0 && armDepth > 0.3 * S && armDepth > (this.armDepth || 0)) {
+      this.armJam = { angle: a0, dir: Math.sign(angle - a0) };
+      const m = robot.config.attachment && robot.motors[robot.config.attachment];
+      if (m) { m.angle = a0; m.velocity = 0; m.stalled = true; }
+      this.lastArmAngle = a0;
+    } else if (armDepth < 0.15 * S) this.armJam = null;
+    this.armDepth = armDepth;
     for (const o of touched) o.touched = robot.time;
     for (const ob of this.obstacleBodies) if (ob.o.impact && !touched.has(ob.o)) ob.o.impact = 0;
     this.readPieces(robot.time);
     this.syncObstacles();
     const t = body.translation();
     return [t.x / S, t.z / S, heading];
+  }
+
+  /** How deep the attachment's moving parts are into a loose piece (physics units). */
+  _armDepth() {
+    let depth = 0;
+    for (const part of this.robotParts) {
+      if (!part.onArm) continue;
+      this.world.contactPairsWith(part.collider, (other) => {
+        const pc = this.colliderToPiece.get(other.handle);
+        if (!pc || pc.carried || pc.body.bodyType() !== 0) return;
+        this.world.contactPair(part.collider, other, (m) => { for (let i = 0; i < m.numContacts(); i++) depth = Math.max(depth, -m.contactDist(i)); });
+      });
+    }
+    return depth;
   }
 
   /**
