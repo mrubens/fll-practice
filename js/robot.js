@@ -3,7 +3,7 @@
 import { START_POSE } from './world.js';
 import { COLOR_BY_CODE } from './spec.js';
 import { textColumns, charMatrix } from './matrixfont.js';
-import { defaultBuild, normalizeBuild, geometryFor, portsOf } from './build.js';
+import { defaultBuild, normalizeBuild, geometryFor, portsOf, FREE_STOP } from './build.js';
 import { loadLego, legoReady } from './lego.js';
 
 export const MAX_DEG_PER_S = 900;        // motor speed at 100 %
@@ -318,8 +318,9 @@ export class Robot {
     const a = this.geom.attachment;
     const s = a && a.module === 'tools' && a.stops && a.stops[port];
     if (!s) return null;
-    // a stop at a half turn means nothing was in the way that far round: it turns on freely that way
-    return angle < s[0] && s[0] > -180 ? s[0] : angle > s[1] && s[1] < 180 ? s[1] : null;
+    // nothing in the way that far round (FREE_STOP; ±180 in builds saved before tools could be geared down): it turns on freely
+    const free = (v) => Math.abs(v) >= FREE_STOP || Math.abs(v) === 180;
+    return angle < s[0] && !free(s[0]) ? s[0] : angle > s[1] && !free(s[1]) ? s[1] : null;
   }
 
   arm() {

@@ -92,9 +92,16 @@ export function placementMatrix(q) {
   return new THREE.Matrix4().set(r[0], r[1], r[2], p[0], r[3], r[4], r[5], p[1], r[6], r[7], r[8], p[2], 0, 0, 0, 1);
 }
 
-/** A mesh for a placed part (shares the template's geometry and materials). */
-export function partMesh(tpl, q) {
+/**
+ * A mesh for a placed part (shares the template's geometry and materials). `c0`: the colour the template was drawn in
+ * (the palette's); a placement in another LDraw colour (a ready-made tool's black beams) gets that colour instead.
+ */
+export function partMesh(tpl, q, c0) {
   const m = tpl.clone();
+  if (c0 != null && q.c != null && q.c !== c0 && q.c !== 16 && loader) {
+    const mat = loader.getMaterial(String(q.c));
+    if (mat) m.traverse((o) => { if (o.isMesh && o.material.userData.code === String(c0)) o.material = mat; });
+  }
   m.matrixAutoUpdate = false;
   m.matrix.copy(placementMatrix(q));
   m.userData.placement = q;

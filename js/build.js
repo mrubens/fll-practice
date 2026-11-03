@@ -6,6 +6,8 @@
 // (cm: forward, up, right) has its origin between the wheels on the mat: forward = -(z - AXLE_Z) * 0.04.
 export const AXLE_Z = -40;
 export const AXLE_FWD = AXLE_Z * 0.04;     // -1.6: where the LDraw origin is, forward of the axles (cm)
+/** A tool motor's stop that is no stop: nothing is in the way however far it turns that way (motor degrees). */
+export const FREE_STOP = 1e6;
 
 // The robots the builder offers, each a LEGO model in its own LDraw frame (origin on the mat, x left, y down, z back):
 // where its drive axles run across (z), its wheels, footprint (cm, from the axles), hub (for the light matrix), the
@@ -132,7 +134,7 @@ export function normalizeBuild(b) {
     const st = attachment.stops;
     if (ch.tools.length) {
       const out = {};
-      for (const t of ch.tools) { const v = st && !Array.isArray(st) && st[t.port]; out[t.port] = Array.isArray(v) && v.length === 2 ? v.map(Number) : [-180, 180]; }
+      for (const t of ch.tools) { const v = st && !Array.isArray(st) && st[t.port]; out[t.port] = Array.isArray(v) && v.length === 2 ? v.map(Number) : [-FREE_STOP, FREE_STOP]; }
       attachment.stops = out;
     } else attachment.stops = Array.isArray(st) && st.length === 2 ? st.map(Number) : [-180, 180];
   } else { delete attachment.ldr; delete attachment.length; delete attachment.tipAngle; delete attachment.stops; }

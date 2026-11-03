@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
 import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
-import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild } from './build.js';
+import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
 
 const DEG = Math.PI / 180;
 const P = [0, 0, -1, 0, -1, 0, -1, 0, 0];                 // LDraw axes -> robot axes (a proper rotation, its own inverse)
@@ -83,12 +83,14 @@ export function toolStops(D, scene, an, ports) {
         else still.push(...it.boxes);
       }
     });
-    if (!moving.length) { out[port] = [-180, 180]; continue; }
+    if (!moving.length) { out[port] = [-FREE_STOP, FREE_STOP]; continue; }
     const turned = ({ bx, m }, deg) => { const R = rotAxis(unitV(m.w), deg * len3(m.w) * DEG); return { c: add(app(R, sub(bx.c, m.at)), m.at), h: bx.h, R: mul(R, bx.R) }; };
     const rest = new Set();
     moving.forEach((mv, i) => still.forEach((s, j) => { if (near(mv.bx, s) && boxesOverlap(mv.bx, s, 8)) rest.add(i + ',' + j); }));
     const hits = (deg) => moving.some((mv, i) => { const t = turned(mv, deg); return still.some((s, j) => !rest.has(i + ',' + j) && near(t, s) && boxesOverlap(t, s, 8)); });
-    const sweep = (dir) => { for (let a = 3; a <= 180; a += 3) if (hits(dir * a)) return dir * (a - 3); return dir * 180; };
+    // sweep the motor until what it drives has turned half a turn (geared down, the motor turns further than that)
+    const ratio = Math.max(...moving.map((mv) => len3(mv.m.w))) || 1, step = 3 / ratio;
+    const sweep = (dir) => { for (let a = step; a <= 180 / ratio + 1e-6; a += step) if (hits(dir * a)) return dir * Math.round(a - step); return dir * FREE_STOP; };
     out[port] = [sweep(-1), sweep(1)];
   }
   return out;
@@ -139,6 +141,44 @@ export const BUILT_IN = [
 // the robot.
 export const TOOL_PRESETS = {
   advanced: [
+    // LEGO's Lift Arm for the Advanced Driving Base (its building instructions, steps 1-22), on the front tool frame: motor D's
+    // 28-tooth gear turns a 36-tooth gear on an upright axle, whose 12-tooth gear turns two 20-tooth gears on the arm's 9-long axle
+    { id: 'lift-arm', label: 'Lift arm', note: 'LEGO\'s Lift Arm on motor D: a long arm out the front with a rack at its tip (28:36 then 12:20 gears, so it turns about half as far as the motor)',
+      ldr: `1 0 0 -168.7646 -120 0 0 1 0 1 0 -1 0 0 64179.dat
+1 26 -20 -168.7646 -120 1 0 0 0 1 0 0 0 1 39793.dat
+1 0 10 -168.7646 -140 1 0 0 0 1 0 0 0 1 61332.dat
+1 0 10 -168.7646 -100 1 0 0 0 1 0 0 0 1 61332.dat
+1 14 30 -168.7646 -140 1 0 0 0 1 0 0 0 1 62462.dat
+1 14 30 -168.7646 -100 1 0 0 0 1 0 0 0 1 62462.dat
+1 1 -60 -168.7646 -140 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 -60 -168.7646 -100 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 60 -168.7646 -140 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 60 -168.7646 -100 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 -20 -168.7646 -120 0 1 0 -1 0 0 0 0 1 3705.dat
+1 72 -20 -148.7646 -120 1 0 0 0 0 -1 0 1 0 32498.dat
+1 19 -20 -188.7646 -120 1 0 0 0 0 -1 0 1 0 32270.dat
+1 14 -20 -203.7646 -120 1 0 0 0 0 -1 0 1 0 32123b.dat
+1 14 -80 -208.7646 -120 0 1 0 0 0 1 1 0 0 60484.dat
+1 14 80 -208.7646 -120 0 1 0 0 0 1 1 0 0 60484.dat
+1 71 0 -208.7646 -120 1 0 0 0 1 0 0 0 1 60485.dat
+1 19 -60 -208.7646 -120 0 0 1 0 1 0 -1 0 0 18575.dat
+1 19 -40 -208.7646 -120 0 0 1 0 1 0 -1 0 0 18575.dat
+1 71 40 -208.7646 -120 0 0 1 0 1 0 -1 0 0 3713.dat
+1 71 60 -208.7646 -120 0 0 1 0 1 0 -1 0 0 3713.dat
+1 0 -20 -208.7646 -120 0 1 0 1 0 0 0 0 -1 32348.dat
+1 0 20 -208.7646 -120 0 1 0 1 0 0 0 0 -1 32348.dat
+1 4 0 -228.7646 -120 1 0 0 0 -1 0 0 0 -1 42003.dat
+1 0 0 -248.7646 -110 0 1 0 0 0 -1 -1 0 0 6628.dat
+1 1 0 -208.7646 -180 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 0 -176.7646 -204 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 0 -144.7646 -228 0 1 0 -0.6 0 -0.8 -0.8 0 0.6 40490.dat
+1 1 0 -112.7646 -252 1 0 0 0 1 0 0 0 1 6558.dat
+1 1 0 -80.7646 -276 1 0 0 0 1 0 0 0 1 6558.dat
+1 0 -20 -128.7646 -240 0 -1 0 -0.6 0 0.8 -0.8 0 -0.6 32348.dat
+1 0 20 -128.7646 -240 0 -1 0 -0.6 0 0.8 -0.8 0 -0.6 32348.dat
+1 14 0 -80.7646 -336 1 0 0 0 1 0 0 0 1 4519.dat
+1 0 0 -80.7646 -376 0 0 1 0 -1 0 1 0 0 87761.dat
+` },
     { id: 'back-lift', label: 'Back lift arm', note: 'motor C: a beam behind the robot that lifts and lowers (a 20-tooth gear meshing with the 28-tooth gear)',
       ldr: `1 0 -40 -169.76 191 -1 0 0 0 0 1 0 1 0 3708.dat
 1 0 -20 -169.76 191 0 0 1 0 -1 0 1 0 0 18575.dat
@@ -687,7 +727,7 @@ export class AttachmentBuilder {
     for (const it of this.scene.items) {
       const tpl = this.tpl.get(it.q.f);
       if (!tpl) continue;
-      const m = partMesh(tpl, it.q);
+      const m = partMesh(tpl, it.q, this.D.parts.parts[it.q.f].c);
       m.userData.item = it;
       if (loose.has(it)) tint(m, 0xE8232A, 0.45);
       if (it === this.selected) { tint(m, 0x0A8DFF, 0.5); m.traverse((o) => { if (o.isMesh && o.material.emissive) o.material.emissive.setHex(0x0A4F99); }); }   // black parts show it too
@@ -734,7 +774,8 @@ export class AttachmentBuilder {
   _toolStop(port) {
     if (this.mode !== 'custom' || !this.parts.length) return [-120, 120];
     if (!this.toolStopsCache) this.toolStopsCache = toolStops(this.D, this.scene, this.an, this._toolPorts());
-    return (this.toolStopsCache[port] || [-120, 120]).map((v) => Math.max(-120, Math.min(120, v)));
+    // the slider goes as far as the build lets the motor turn, up to a turn each way (a geared-down tool needs more than 120)
+    return (this.toolStopsCache[port] || [-120, 120]).map((v) => Math.max(-360, Math.min(360, v)));
   }
 
   /** Turn a tool motor in the preview (its slider, or Q/E for the first and Z/X for the second). */

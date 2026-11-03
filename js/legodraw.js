@@ -34,7 +34,7 @@ export function drawCustom(sim, body, attachment) {
       group.matrixAutoUpdate = false;
       for (const it of b.items) {
         if (it.role === 'base' || !tpl.get(it.q.f)) continue;
-        group.add(partMesh(tpl.get(it.q.f), it.q));
+        group.add(partMesh(tpl.get(it.q.f), it.q, D.parts.parts[it.q.f].c));
       }
       if (b.role === 'geared' || (b.role === 'drive' && sim.robot.build.chassis !== 'driving-base')) {
         // turned through gears by a motor: about its gear's axle, drawn each frame from the motor's angle
