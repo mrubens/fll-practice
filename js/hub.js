@@ -82,7 +82,7 @@ export class HubPanel {
     for (const p of PORT_LETTERS) {
       const el = this.ports[p];
       const sensor = c.sensors[p];
-      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : sensor === 'color' ? 'color sensor' : sensor === 'distance' ? 'distance' : sensor === 'force' ? 'force sensor' : p === c.attachment ? 'attachment' : 'motor';
+      const type = p === c.left ? 'left wheel' : p === c.right ? 'right wheel' : sensor === 'color' ? 'color sensor' : sensor === 'distance' ? 'distance' : sensor === 'force' ? 'force sensor' : p === c.attachment ? 'attachment' : (c.tools || []).includes(p) ? 'tool motor' : 'motor';
       el.querySelector('.type').textContent = type;
       el.dataset.type = type;
     }

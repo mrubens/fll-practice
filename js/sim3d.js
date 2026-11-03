@@ -8,8 +8,8 @@ import { LineSegments2 } from 'three/addons/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { TABLE } from './world.js';
-import { SCOOP_PARTS, AXLE_FWD } from './build.js';
-import { LD_TO_ROBOT } from './lego3d.js';
+import { SCOOP_PARTS } from './build.js';
+import { ldToRobot } from './lego3d.js';
 import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 import { drawCustom, poseCustom } from './legodraw.js';
 
@@ -77,10 +77,8 @@ function flattenObjects(objects) {
 }
 
 /** True when a build has the LEGO Driving Base's geometry, whatever its ports: small wheels, 11.2 cm track, flat hub. */
-function isDrivingBase(build) {
-  const a = build.attachment || {};
-  return build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright' && !!a;
-}
+/** Every robot is a LEGO model now (the Driving Base or the Advanced Driving Base): its real bricks are drawn. */
+function isDrivingBase(build) { return !!build; }
 
 /**
  * Blueprint outlines: while a model's bricks load, its silhouette is drawn as blue lines from a tiny
@@ -628,7 +626,7 @@ export class Sim3D {
     // Real LEGO body (packed LDraw model) for the Training Camp Driving Base; wheels stay the spinning primitives.
     // Any build with the Driving Base's geometry (small wheels, 11.2 cm track, flat hub) gets the real bricks,
     // whatever ports it uses. Nothing primitive shows while the parts load: a glimmering block stands in.
-    const modelUrl = this.robotModelUrl || (this.world.season && this.world.season.robotModel) || 'models/driving-base.mpd';
+    const modelUrl = this.robotModelUrl || geom.model || 'models/driving-base.mpd';
     if (isDrivingBase(build)) {
       const gen = this.robotBuildGen;
       let ghost = null, revealed = false;
@@ -654,7 +652,7 @@ export class Sim3D {
           // Model frame: origin at the middle of the frame on the table, forward -z, left +x, y down; the drive
           // axles at z = AXLE_Z. Ours: x forward, y up, z right, origin between the wheels (see build.js).
           group.matrixAutoUpdate = false;
-          group.matrix.copy(LD_TO_ROBOT);
+          group.matrix.copy(ldToRobot(geom.axleFwd));
           g.add(group);
           this.robotLDraw = group;
           this.robotLDrawParts.forEach((node) => { node.visible = false; });   // primitives the bricks replace
@@ -662,7 +660,8 @@ export class Sim3D {
           // up): row 1 toward the front, column 1 on the robot's left, as a driver standing behind it reads it
           const led = new THREE.Mesh(new THREE.PlaneGeometry(4.3, 4.1), new THREE.MeshBasicMaterial({ map: this.matrixTex, transparent: true, depthWrite: false, toneMapped: false }));
           led.matrixAutoUpdate = false;
-          led.matrix.makeBasis(new THREE.Vector3(0, 0, 1), new THREE.Vector3(1, 0, 0), new THREE.Vector3(0, 1, 0)).setPosition(AXLE_FWD, 179 * LDU + 0.03, 0);
+          const L = geom.led;
+          led.matrix.makeBasis(new THREE.Vector3(...L.x), new THREE.Vector3(...L.y), new THREE.Vector3(0, 1, 0)).setPosition(L.pos[0], L.pos[1] + 0.03, L.pos[2]);
           g.add(led);
           for (const h of this.pendingHides || []) h();
           this.pendingHides = [];
@@ -681,14 +680,14 @@ export class Sim3D {
     const gen = this.robotBuildGen;
     if (this.robotLego) this.robotPending++;
     // the fixed part is in the Driving Base's frame; the moving part's file has its origin on its own axle
-    const M = () => LD_TO_ROBOT.clone(), Mturn = () => LD_TO_ROBOT.clone().setPosition(0, 0, 0);
+    const M = () => ldToRobot(this.robot.geom.axleFwd), Mturn = () => ldToRobot(0);
     const files = { arm: ['arm-fixed', 'arm-moving'], plow: ['arm-fixed', 'dozer-moving'], basket: ['arm-fixed', 'basket-moving'], sweeper: [null, 'sweeper-moving'], scoop: ['arm-fixed', 'scoop-moving'] }[module];
     Promise.all(files.map((f) => (f ? loadLDrawModel(`models/attach/${f}.mpd`) : null))).then(([fixed, moving]) => {
       const done = () => { if (gen === this.robotBuildGen && this.revealRobot) this.revealRobot(); };
       if (gen !== this.robotBuildGen || (files[0] && !fixed) || !moving || !this.armPivot.parent) { done(); return; }
       if (fixed) { fixed.matrixAutoUpdate = false; fixed.matrix.copy(M()); body.add(fixed); }
       moving.matrixAutoUpdate = false; moving.matrix.copy(Mturn()); this.armMoving.add(moving);
-      if (module === 'sweeper') this.hideBasePart('32062.dat', [6.4 + AXLE_FWD, 4, -3.2]);   // its 5-long axle replaces the base's 2-long one
+      if (module === 'sweeper') this.hideBasePart('32062.dat', [6.4 + this.robot.geom.axleFwd, 4, -3.2]);   // its 5-long axle replaces the base's 2-long one
       if (this.robotLDrawParts) this.robotLDrawParts = this.robotLDrawParts.filter((n) => n !== fixed);
       primitives.forEach((m) => { m.visible = false; });
       done();

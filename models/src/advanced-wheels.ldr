@@ -1,0 +1,5 @@
+0 Advanced Driving Base wheels (88 mm, on the large motors A and E)
+0 Name: advanced-wheels.ldr
+0 Author: FLL Practice
+1 322 181 -109.7646 80 0 0 -1 0 -1 0 -1 0 0 49295p01.dat
+1 322 -181 -109.7646 80 0 0 1 0 -1 0 1 0 0 49295p01.dat

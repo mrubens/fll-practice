@@ -3,7 +3,7 @@
 // follow their physics bodies.
 import * as THREE from 'three';
 import { loadLego, buildOf } from './lego.js';
-import { LD_TO_ROBOT, loadRaw, flatten, partTemplates, partMesh } from './lego3d.js';
+import { ldToRobot, loadRaw, flatten, partTemplates, partMesh } from './lego3d.js';
 import { customPoses } from './legophysics.js';
 
 /**
@@ -17,13 +17,15 @@ export function drawCustom(sim, body, attachment) {
   const done = () => { if (gen === sim.robotBuildGen && sim.revealRobot) sim.revealRobot(); };
   sim.customBodies = [];
   const ldr = attachment.ldr || '';
+  const LD_TO_ROBOT = ldToRobot(sim.robot.geom.axleFwd);
+  sim.ldToRobot = LD_TO_ROBOT;
   loadLego().then(async (D) => {
     const [tpl, bracket] = await Promise.all([partTemplates(D), loadRaw('models/attach/arm-fixed.mpd')]);
     if (gen !== sim.robotBuildGen || !sim.armPivot || !sim.armPivot.parent) { done(); return; }
     if (bracket && attachment.bracket) {   // the arm bracket on the hub, with the drive axle running through it
       const b = flatten(bracket); b.matrixAutoUpdate = false; b.matrix.copy(LD_TO_ROBOT); body.add(b);
     }
-    const { an } = buildOf(D, ldr);
+    const { an } = buildOf(D, ldr, sim.robot.build.chassis);
     const pivot = sim.armPivot.position;
     const toMoving = new THREE.Matrix4().makeTranslation(-pivot.x, -(pivot.y), -pivot.z).multiply(LD_TO_ROBOT);
     an.bodies.forEach((b, i) => {
@@ -58,6 +60,6 @@ export function poseCustom(sim) {
     cb.body.updateMatrixWorld(true);
     tmpInv.copy(cb.body.matrixWorld).invert();
     tmpM.compose(tmpP.set(...pose.p), tmpQ.set(...pose.q), ONE);
-    cb.group.matrix.multiplyMatrices(tmpInv, tmpM).multiply(LD_TO_ROBOT);
+    cb.group.matrix.multiplyMatrices(tmpInv, tmpM).multiply(sim.ldToRobot);
   }
 }

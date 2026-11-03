@@ -383,6 +383,11 @@ def main():
 
     base['boxes'] = [bx for f in ('models/driving-base.mpd', 'models/attach/wheels.mpd', 'models/attach/arm-fixed.mpd')
                      for e in pb.measure(os.path.join(ROOT, f)) for bx in ldraw_boxes(e)]
+    # the other chassis the robot builder offers: its connectors and boxes in its own LDraw frame
+    base['chassis'] = {'advanced': {
+        'base': placed_connectors(lib, os.path.join(ROOT, 'models/src/advanced-driving-base.ldr')),
+        'boxes': [bx for f in ('models/advanced-driving-base.mpd', 'models/attach/advanced-wheels.mpd')
+                  for e in pb.measure(os.path.join(ROOT, f)) for bx in ldraw_boxes(e)]}}
     with open(os.path.join(OUT, 'base.json'), 'w') as f:
         json.dump(base, f, separators=(',', ':'))
     catalog = {'categories': [], 'parts': {}}

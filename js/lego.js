@@ -30,13 +30,14 @@ export function setLegoData(D) { ready = D; data = Promise.resolve(D); }
 
 const builds = new Map();
 /** A build's Scene and analysis from its .ldr text (cached: the physics and the drawing both ask). */
-export function buildOf(D, ldr) {
-  if (!builds.has(ldr)) {
-    const scene = new Scene(D, parseLdr(ldr).filter((q) => D.parts.parts[q.f]));
-    builds.set(ldr, { scene, an: scene.analyze() });
+export function buildOf(D, ldr, chassis = 'driving-base') {
+  const key = chassis + '\n' + ldr;
+  if (!builds.has(key)) {
+    const scene = new Scene(D, parseLdr(ldr).filter((q) => D.parts.parts[q.f]), chassis);
+    builds.set(key, { scene, an: scene.analyze() });
     if (builds.size > 20) builds.delete(builds.keys().next().value);
   }
-  return builds.get(ldr);
+  return builds.get(key);
 }
 
 // The drive: the 7-long axle through the arm bracket and its 12-tooth bevel gear, which meshes with motor E's gear.
@@ -194,10 +195,14 @@ export function partBoxes(D, q) {
   return e.b.map((b) => ({ c: add(app(q.r, [b[0], b[1], b[2]]), q.p), h: [b[3], b[4], b[5]], R: q.r }));
 }
 const quatToM = (x, y, z, w) => [1 - 2 * (y * y + z * z), 2 * (x * y - z * w), 2 * (x * z + y * w), 2 * (x * y + z * w), 1 - 2 * (x * x + z * z), 2 * (y * z - x * w), 2 * (x * z - y * w), 2 * (y * z + x * w), 1 - 2 * (x * x + y * y)];
-let baseBoxCache = null;
-export function baseBoxes(D) {
-  if (!baseBoxCache) baseBoxCache = D.ctx.boxes.map((b) => ({ c: [b[0], b[1], b[2]], h: [b[3], b[4], b[5]], R: quatToM(b[6], b[7], b[8], b[9]) }));
-  return baseBoxCache;
+const baseBoxCache = new Map();
+/** The robot's own boxes (the chassis, its wheels, the Driving Base's arm bracket) in its LDraw frame. */
+export function baseBoxes(D, chassis = 'driving-base') {
+  if (!baseBoxCache.has(chassis)) {
+    const boxes = chassis === 'driving-base' ? D.ctx.boxes : D.ctx.chassis[chassis].boxes;
+    baseBoxCache.set(chassis, boxes.map((b) => ({ c: [b[0], b[1], b[2]], h: [b[3], b[4], b[5]], R: quatToM(b[6], b[7], b[8], b[9]) })));
+  }
+  return baseBoxCache.get(chassis);
 }
 
 /** Do two oriented boxes overlap by more than `margin` (LDU) on every axis? (separating axis test) */
@@ -233,14 +238,18 @@ const aabbNear = (a, b, pad) => a.lo.every((v, i) => v - pad <= b.hi[i] && b.lo[
  * parts: the kid's placements. Returns a Scene with methods for snapping and for analysis.
  */
 export class Scene {
-  constructor(D, parts = []) {
+  constructor(D, parts = [], chassis = 'driving-base') {
     this.D = D;
+    this.chassis = chassis;
     this.items = [];             // {q, role: 'base'|'drive'|'part', conns, boxes, aabb}
-    const baseConns = [...D.ctx.base, ...D.ctx.bracket].filter((c) => c.k === 'cyl' && !c.gp).map((c) => ({ ...c, d: unit(c.d), x: unit(c.x), len: secLen(c.s) }));
-    const bb = baseBoxes(D);
+    // the Driving Base with its arm bracket and the bracket's drive axle; another chassis is just itself
+    const db = chassis === 'driving-base';
+    const ctx = db ? [...D.ctx.base, ...D.ctx.bracket] : D.ctx.chassis[chassis].base;
+    const baseConns = ctx.filter((c) => c.k === 'cyl' && !c.gp).map((c) => ({ ...c, d: unit(c.d), x: unit(c.x), len: secLen(c.s) }));
+    const bb = baseBoxes(D, chassis);
     this.base = { q: null, role: 'base', conns: baseConns, boxes: bb, aabb: aabbOf(bb) };
     this.base.conns.forEach((c) => { c.part = this.base; });
-    for (const q of DRIVE_PARTS) this._add(q, 'drive');
+    if (db) for (const q of DRIVE_PARTS) this._add(q, 'drive');
     for (const q of parts) this._add(q, 'part');
   }
   _add(q, role) {

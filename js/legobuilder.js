@@ -4,9 +4,9 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
-import { LD_TO_ROBOT, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
+import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
-import { SENSOR_PARTS, MODULES, validateBuild } from './build.js';
+import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild } from './build.js';
 
 const DEG = Math.PI / 180;
 const P = [0, 0, -1, 0, -1, 0, -1, 0, 0];                 // LDraw axes -> robot axes (a proper rotation, its own inverse)
@@ -114,6 +114,7 @@ export class AttachmentBuilder {
   /** Take a whole build into the builder (on opening, or a robot preset). */
   _load(build, lastCustom) {
     this.build = this.normalize(build);
+    this._context(this.build.chassis);
     const known = (ldr) => parseLdr(ldr || '').filter((q) => this.D.parts.parts[q.f]);
     this.body = known(this.build.body.ldr);
     this.ports = new Map();
@@ -126,9 +127,35 @@ export class AttachmentBuilder {
     this.setModule(a.module);
   }
 
+  /** The robot's own model in the view (the chassis, its wheels, the Driving Base's arm bracket), once per chassis. */
+  _context(chassis) {
+    if (!this.three || this.contextOf === chassis) return;
+    this.contextOf = chassis;
+    const ch = CHASSIS[chassis] || CHASSIS['driving-base'];
+    const { ld, controls } = this.three;
+    for (const c of ld.children.filter((c) => c.userData.context)) ld.remove(c);
+    ld.matrix.copy(ldToRobot(ch.axleZ * LDU));
+    ld.matrixWorldNeedsUpdate = true;
+    const gen = (this.contextGen = (this.contextGen || 0) + 1);
+    for (const url of [ch.model, ch.wheels, ...ch.context]) {
+      loadRaw(url).then((g) => { if (g && gen === this.contextGen) { const f = flatten(g); f.userData.context = true; ld.add(f); } });
+    }
+    // look at the arm bracket's axle on the Driving Base, at the middle of the front on another chassis
+    if (chassis === 'driving-base') { const pivot = toRobot(DRIVE_AXLE.at); controls.target.set(pivot[0] + 3, pivot[1] - 1, pivot[2]); }
+    else controls.target.set(ch.footprint.x1 - 6, 3, 0);
+    const attach = !!ch.attachments;
+    this.root.querySelectorAll('.lb-preset').forEach((b) => { b.disabled = !attach && b.dataset.module !== 'none'; b.title = b.disabled ? `Made for the Driving Base's arm bracket: the ${ch.label} has no attachments yet` : (BUILT_IN.find((x) => x.module === b.dataset.module) || {}).note || ''; });
+    const motor = this.root.querySelector('.lb-motor');
+    if (motor) motor.hidden = !attach;
+  }
+
   /** Show a built-in attachment, none, or the child's own build ('custom'); `tell` puts the choice on the robot. */
   setModule(module, tell = false) {
     if (!this.three || !this.D) { this.mode = module; return; }
+    if (module !== 'none' && this.build && !(CHASSIS[this.build.chassis] || {}).attachments) {
+      this.message(`The attachments here fit the Driving Base's arm bracket. The ${CHASSIS[this.build.chassis].label} has none yet.`);
+      return;
+    }
     if (this.mode === 'custom' && module !== 'custom') this._settleBody();
     // building your own from the arm starts from the arm's own parts
     if (module === 'custom' && this.mode === 'arm' && !this.parts.length) this.parts = parseLdr(EXAMPLE_ARM);
@@ -175,7 +202,7 @@ export class AttachmentBuilder {
       const keep = this.parts.filter((q) => !loose.has(q));
       if (this.an.jammed) attachment = this.build.attachment;      // motor E could not turn it: the last one stays
       else {
-        const scene = new Scene(this.D, [...body, ...keep]);
+        const scene = new Scene(this.D, [...body, ...keep], this.build.chassis);
         const motion = motionOf(this.D, scene, scene.analyze());
         attachment = { module: 'custom', ldr: keep.length ? toLdr(keep) : '', ...motion };
       }
@@ -322,6 +349,7 @@ export class AttachmentBuilder {
       `<div class="lb-port"><i class="dev motor"></i><span>Right wheel motor</span>${sel(b.ports.right, 'data-wheel="right" aria-label="Right wheel motor port"')}</div>`,
     ];
     if (motor) rows.push(`<div class="lb-port"><i class="dev motor"></i><span>Attachment motor</span><b class="fixed">E</b></div>`);
+    for (const t of (CHASSIS[b.chassis] || {}).tools || []) rows.push(`<div class="lb-port"><i class="dev motor"></i><span>${t.label}</span><b class="fixed">${t.port}</b></div>`);
     const counts = {};
     this.body.forEach((q, i) => {
       const sp = SENSOR_PARTS[q.f];
@@ -332,7 +360,7 @@ export class AttachmentBuilder {
       const on = this.selected && this.selected.q === q;
       rows.push(`<div class="lb-port sensor${on ? ' on' : ''}" data-part="${i}" title="Click to find it on the robot"><i class="dev ${sp.type}"></i><span>${name}</span>${sel(this.ports.get(q) || '', `data-sensor="${i}" aria-label="${name} port"`)}</div>`);
     });
-    const used = new Set([b.ports.left, b.ports.right, motor ? 'E' : null, ...[...this.ports.values()]]);
+    const used = new Set([b.ports.left, b.ports.right, motor ? 'E' : null, ...((CHASSIS[b.chassis] || {}).tools || []).map((t) => t.port), ...[...this.ports.values()]]);
     const free = PORT_LETTERS.filter((p) => !used.has(p));
     const issues = validateBuild(b);
     const sensors = this.body.some((q) => SENSOR_PARTS[q.f]);
@@ -378,7 +406,7 @@ export class AttachmentBuilder {
   /** The first port nothing is on, for a new sensor. */
   _freePort() {
     const b = this.build;
-    const used = new Set([b.ports.left, b.ports.right, MODULES[b.attachment.module].motor ? 'E' : null, ...this.ports.values()]);
+    const used = new Set([b.ports.left, b.ports.right, MODULES[b.attachment.module].motor ? 'E' : null, ...((CHASSIS[b.chassis] || {}).tools || []).map((t) => t.port), ...this.ports.values()]);
     return ['B', 'F', 'A', 'E', 'C', 'D'].find((p) => !used.has(p)) || null;
   }
 
@@ -459,10 +487,7 @@ export class AttachmentBuilder {
     const drive = new THREE.Group(); drive.matrixAutoUpdate = false; ld.add(drive);
     const bmove = new THREE.Group(); bmove.matrixAutoUpdate = false; ld.add(bmove);   // a built-in attachment's moving part
     this.three = { renderer, scene, camera, controls, ld, drive, bmove };
-    // the robot as context
-    for (const url of ['models/driving-base.mpd', 'models/attach/wheels.mpd', 'models/attach/arm-fixed.mpd']) {
-      loadRaw(url).then((g) => { if (g) { const f = flatten(g); f.userData.context = true; ld.add(f); } });
-    }
+    this.contextOf = null;
     this.marker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), new THREE.MeshBasicMaterial({ color: 0xFFB000, transparent: true, opacity: 0.85, depthTest: false }));
     this.marker.renderOrder = 10; this.marker.visible = false; ld.add(this.marker);
     const el = renderer.domElement;
@@ -511,7 +536,7 @@ export class AttachmentBuilder {
 
   /** Rebuild the scene, meshes and status after any change; `changed`: the robot changed, put it on the table. */
   _rebuild(changed = false) {
-    this.scene = new Scene(this.D, this._all());
+    this.scene = new Scene(this.D, this._all(), this.build.chassis);
     const { ld, drive } = this.three;
     for (const m of this.meshes || []) m.parent && m.parent.remove(m);
     this.meshes = [];

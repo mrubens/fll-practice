@@ -7,6 +7,25 @@
 export const AXLE_Z = -40;
 export const AXLE_FWD = AXLE_Z * 0.04;     // -1.6: where the LDraw origin is, forward of the axles (cm)
 
+// The robots the builder offers, each a LEGO model in its own LDraw frame (origin on the mat, x left, y down, z back):
+// where its drive axles run across (z), its wheels, footprint (cm, from the axles), hub (for the light matrix), the
+// motors it has besides the wheels, and whether the built-in attachments (made for the Driving Base's arm bracket)
+// fit it.
+export const CHASSIS = {
+  'driving-base': {
+    label: 'Driving Base', model: 'models/driving-base.mpd', wheels: 'models/attach/wheels.mpd', context: ['models/attach/arm-fixed.mpd'],
+    axleZ: AXLE_Z, wheel: '5.6', track: 11.2, ports: { left: 'C', right: 'D' },
+    footprint: { x0: -6.8, x1: 6.0, z0: -8.4, z1: 8.4 }, hub: { p: [0, -100, 0], r: [-1, 0, 0, 0, 1, 0, 0, 0, -1] },
+    attachments: true, tools: [],
+  },
+  advanced: {
+    label: 'Advanced Driving Base', model: 'models/advanced-driving-base.mpd', wheels: 'models/attach/advanced-wheels.mpd', context: [],
+    axleZ: 80, wheel: '8.8', track: 14.48, ports: { left: 'A', right: 'E' },
+    footprint: { x0: -8.0, x1: 11.6, z0: -9.6, z1: 9.6 }, hub: { p: [0, -161.7646, -40], r: [0, 0, -1, 0, 1, 0, 1, 0, 0] },
+    attachments: false, tools: [{ port: 'D', label: 'Front tool motor' }, { port: 'C', label: 'Back tool motor' }],
+  },
+};
+
 export const WHEELS = { '5.6': { diameter: 5.6, calibration: 17.5, label: 'Small (5.6 cm)' }, '8.8': { diameter: 8.8, calibration: 27.6, label: 'Large (8.8 cm)' } };
 export const MOUNTS = ['front', 'left', 'right', 'back'];
 export const MODULES = {
@@ -33,6 +52,10 @@ export const SENSOR_PARTS = {
 const COLOR_AT_FRONT_RIGHT = '1 15 -100 -90 -160 0 -1 0 0 0 -1 1 0 0 37308.dat';
 // A distance sensor low at the front, between the wheels, looking forward 2 cm above the mat.
 const DISTANCE_AT_FRONT = '1 15 0 -50 -92 1 0 0 0 1 0 0 0 1 37316.dat';
+/** The Advanced Driving Base's two color sensors at the front, looking down: B on the left, F on the right. */
+export function advancedBody() {
+  return { ldr: '1 15 80 -68.7646 -180 1 0 0 0 0 -1 0 1 0 37308.dat\n1 15 -80 -68.7646 -180 1 0 0 0 0 -1 0 1 0 37308.dat\n', ports: { 0: 'B', 1: 'F' } };
+}
 /** A robot body with the usual sensors: the color sensor and the distance sensor, on these ports. */
 export function standardBody(colorPort = 'B', distancePort = 'F') {
   const lines = [], ports = {};
@@ -69,6 +92,12 @@ export const PRESETS = {
     body: standardBody('B', 'F'),
     attachment: { module: 'arm', mount: 'front' },
   },
+  advanced: {
+    name: 'Advanced Driving Base (drive motors A and E, color sensors on B and F, tool motors D and C)', chassis: 'advanced',
+    ports: { left: 'A', right: 'E', attachment: null },
+    body: advancedBody(),
+    attachment: { module: 'none', mount: 'front' },
+  },
   'training-camp': {
     name: 'Training Camp Driving Base',
     wheel: '5.6', track: 11.2, hub: 'flat',
@@ -83,14 +112,16 @@ export function defaultBuild() { return normalizeBuild({ ...PRESETS['training-ca
 export function normalizeBuild(b) {
   const src = b || {};
   const base = PRESETS['training-camp'];
-  const ports = Object.assign({}, base.ports, src.ports || {});
+  const chassis = CHASSIS[src.chassis] ? src.chassis : 'driving-base';
+  const ch = CHASSIS[chassis];
+  const ports = Object.assign({}, base.ports, ch.ports, src.ports || {});
   // the robot's own parts: its sensors (with their ports) and what holds them. Saves from before sensors were parts
   // had a color sensor and a distance sensor at fixed places, on the ports they named.
   let body;
   if (src.body && typeof src.body.ldr === 'string') {
     body = { ldr: src.body.ldr.slice(0, 300000), ports: {} };
     for (const [k, v] of Object.entries(src.body.ports || {})) if (/^\d+$/.test(k) && isPort(v)) body.ports[k] = v;
-  } else body = standardBody(isPort(ports.color) ? ports.color : 'B', isPort(ports.distance) ? ports.distance : 'F');
+  } else body = chassis === 'advanced' ? advancedBody() : standardBody(isPort(ports.color) ? ports.color : 'B', isPort(ports.distance) ? ports.distance : 'F');
   delete ports.color; delete ports.distance;
   const attachment = Object.assign({}, base.attachment, src.attachment || {});
   // a custom attachment keeps its parts (an .ldr in the Driving Base's frame) and what the builder measured of it
@@ -99,7 +130,7 @@ export function normalizeBuild(b) {
     attachment.length = Number(attachment.length) || 0; attachment.tipAngle = Number(attachment.tipAngle) || 0;
     attachment.stops = Array.isArray(attachment.stops) && attachment.stops.length === 2 ? attachment.stops.map(Number) : [-180, 180];
   } else { delete attachment.ldr; delete attachment.length; delete attachment.tipAngle; delete attachment.stops; }
-  if (!MODULES[attachment.module] || MODULES[attachment.module].hidden) attachment.module = 'none';
+  if (!MODULES[attachment.module] || MODULES[attachment.module].hidden || !ch.attachments) attachment.module = 'none';
   // Attachments always go on the front and their motor is always on port E, like the Guided Mission robot:
   // one less thing for kids to decide. Whatever else was on E moves to its usual port.
   attachment.mount = 'front';
@@ -116,10 +147,11 @@ export function normalizeBuild(b) {
   return {
     preset: src.preset || null,
     name: String(src.name || base.name),
-    // Every robot is the Training Camp Driving Base (small wheels, 11.2 cm track, hub flat): older saves with
-    // other wheels or an upright hub fold back onto it.
-    wheel: base.wheel,
-    track: base.track,
+    // The chassis sets the wheels and track: older saves with other wheels or an upright hub fold back onto the
+    // Driving Base.
+    chassis,
+    wheel: ch.wheel,
+    track: ch.track,
     hub: 'flat',
     ports,
     body,
@@ -129,13 +161,16 @@ export function normalizeBuild(b) {
 
 /** Geometry (cm) derived from a build; x forward, lat positive = robot's right. */
 export function geometryFor(build) {
+  const ch = CHASSIS[build.chassis] || CHASSIS['driving-base'];
   const wheel = WHEELS[build.wheel];
   const r = wheel.diameter / 2;
-  const lift = r - 2.8; // everything rides higher on big wheels
+  const lift = 0;                          // the LEGO models are measured from the mat already
+  const axleFwd = ch.axleZ * 0.04;         // where the LDraw origin is, forward of the axles (cm)
   const mountPoints = { front: [8, 0, 0], right: [1, 7.5, 90], back: [-8, 0, 180], left: [1, -7.5, -90] };
   const [af, al, aa] = mountPoints[build.attachment.mount];
   // LDraw (x left, y down, z back; LDU) -> robot (fwd, up, right; cm)
-  const toRobot = (v) => [-v[2] * 0.04 + AXLE_FWD, -v[1] * 0.04 + lift, -v[0] * 0.04];
+  const toRobot = (v) => [-v[2] * 0.04 + axleFwd, -v[1] * 0.04 + lift, -v[0] * 0.04];
+  const dirToRobot = (d) => [-d[2], -d[1], -d[0]];
   const turn = (r, v) => [r[0] * v[0] + r[1] * v[1] + r[2] * v[2], r[3] * v[0] + r[4] * v[1] + r[5] * v[2], r[6] * v[0] + r[7] * v[1] + r[8] * v[2]];
   const sensors = sensorsOf(build).filter((x) => x.port).map((x) => {
     const lens = toRobot(turn(x.q.r, x.lens).map((v, k) => v + x.q.p[k]));
@@ -143,13 +178,16 @@ export function geometryFor(build) {
     return { port: x.port, type: x.type, pos: lens, dir };
   });
   const bodyLdr = build.body && ldrParts(build.body.ldr).length ? build.body.ldr : '';
-  // The LEGO Driving Base (small wheels, 11.2 cm track, flat hub) has a known footprint, measured from its model:
-  // 6.8 cm behind the axle (the caster) to 6.0 ahead (the motor and color sensor), 16.8 wide. Other builds are a circle.
-  const drivingBase = build.wheel === '5.6' && Math.abs(build.track - 11.2) < 0.05 && build.hub !== 'upright';
+  // the hub's light matrix: its middle 79 LDU above the hub's origin, rows along the hub's z, columns along its x
+  const hp = ch.hub.p, hr = ch.hub.r;
+  const led = { pos: toRobot(turn(hr, [0, -79, 0]).map((v, k) => v + hp[k])), x: dirToRobot(turn(hr, [1, 0, 0])), y: dirToRobot(turn(hr, [0, 0, 1])) };
   return {
+    chassis: build.chassis || 'driving-base', model: ch.model, axleFwd, led,
     wheelDiameter: wheel.diameter, wheelRadius: r, calibration: wheel.calibration, track: build.track,
     lift, radius: Math.max(9, build.track / 2 + 2.5),
-    footprint: drivingBase ? { x0: -5.2 + AXLE_FWD, x1: 7.6 + AXLE_FWD, z0: -8.4, z1: 8.4 } : null,
+    // measured from the model: the Driving Base reaches 6.8 cm behind its axles (the caster) to 6.0 ahead and is
+    // 16.8 wide; the Advanced Driving Base 8.0 behind to 11.6 ahead, 19.2 wide
+    footprint: ch.footprint,
     // each sensor's lens (fwd, up, right; cm) and the way it looks (a unit vector in the same axes)
     sensors,
     // the robot's own LEGO parts (sensors and their mounts), and everything built from parts the physics and the
@@ -163,7 +201,7 @@ export function geometryFor(build) {
     // axle, which stands at the front left, so it swings about a vertical axis there.
     attachment: (() => {
       const m = build.attachment.module;
-      const ARM_FWD = 6.4 + AXLE_FWD;      // the arm bracket's axle (and motor E's), LDraw z = -160
+      const ARM_FWD = 6.4 + axleFwd;       // the arm bracket's axle (and motor E's), LDraw z = -160
       if (m === 'arm') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 7.15, tipAngle: -23.5, height: 5.2 + lift, drop: 0 };
       if (m === 'plow') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 4.5, tipAngle: -30, height: 5.2 + lift, drop: 0 };
       if (m === 'basket') return { module: m, mount: 'front', fwd: ARM_FWD, lat: 0, angle: 0, length: 6.4, height: 5.2 + lift, drop: 0 };
@@ -197,14 +235,15 @@ export function portsOf(build) {
   const p = build.ports;
   const sensors = {};
   for (const x of sensorsOf(build)) if (x.port && !sensors[x.port]) sensors[x.port] = x.type;
-  return { left: p.left, right: p.right, attachment: MODULES[build.attachment.module].motor ? p.attachment : null, sensors };
+  const tools = ((CHASSIS[build.chassis] || {}).tools || []).map((t) => t.port);
+  return { left: p.left, right: p.right, attachment: MODULES[build.attachment.module].motor ? p.attachment : null, sensors, tools };
 }
 
 /** Problems a build has (duplicate ports etc.), as kid-readable sentences. */
 export function validateBuild(build) {
   const issues = [];
   const sensors = sensorsOf(build);
-  const used = [build.ports.left, build.ports.right, ...sensors.filter((x) => x.port).map((x) => x.port)];
+  const used = [build.ports.left, build.ports.right, ...((CHASSIS[build.chassis] || {}).tools || []).map((t) => t.port), ...sensors.filter((x) => x.port).map((x) => x.port)];
   const unplugged = sensors.filter((x) => !x.port).length;
   if (unplugged) issues.push(`${unplugged === 1 ? 'A sensor is' : `${unplugged} sensors are`} not plugged into a port.`);
   if (MODULES[build.attachment.module].motor) {

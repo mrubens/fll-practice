@@ -8,7 +8,9 @@ import { LDrawConditionalLineMaterial } from 'three/addons/materials/LDrawCondit
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { LDU } from './lego.js';
 
-export const LD_TO_ROBOT = new THREE.Matrix4().set(0, 0, -LDU, AXLE_FWD, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+/** The LDraw-to-robot matrix for a chassis whose LDraw origin is `axleFwd` cm forward of its drive axles. */
+export const ldToRobot = (axleFwd = AXLE_FWD) => new THREE.Matrix4().set(0, 0, -LDU, axleFwd, 0, -LDU, 0, 0, -LDU, 0, 0, 0, 0, 0, 0, 1);
+export const LD_TO_ROBOT = ldToRobot();     // the Driving Base's
 
 let loader = null, materials = null;
 function ldraw() {

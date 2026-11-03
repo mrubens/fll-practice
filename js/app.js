@@ -433,6 +433,7 @@ const legoBuilder = new AttachmentBuilder({
   presets: {
     'guided-mission': { ...PRESETS['guided-mission'], label: 'Guided Mission robot' },
     'training-camp': { ...PRESETS['training-camp'], label: 'Training Camp robot' },
+    advanced: { ...PRESETS.advanced, label: 'Advanced Driving Base' },
   },
   onChange: (b, customLdr) => {
     if (customLdr !== null && customLdr !== undefined) store.lastCustom = { module: 'custom', ldr: customLdr };

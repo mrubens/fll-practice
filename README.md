@@ -53,6 +53,11 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
   shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
   frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
+- **Two robots.** The robot builder starts from the Guided Mission robot or the Training Camp robot (the LEGO
+  Driving Base) or the **Advanced Driving Base**: large motors on A (left) and E (right) with 88 mm wheels, two color
+  sensors at the front on B and F, ball casters in front, and two tool motors, D at the front and C at the back, that
+  programs can run. The built-in attachments are made for the Driving Base's arm bracket, so the Advanced Driving Base
+  has none yet.
 - **Place your sensors.** The robot builder's parts box starts with the SPIKE color, distance and force sensors: snap one
   onto any hole or pin of the robot (add beams to hold it where you want it), and it plugs into the next free hub
   port; the Hub ports panel on the right (or the bar over a selected part) changes ports, and Move and Remove take it
