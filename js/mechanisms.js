@@ -30,6 +30,7 @@ export const FIELD = {
   homeStripX: 100,   // past the mat edge (|x| > 100) is also home (the table strip beside the mat)
   tokens: { start: 6, points: [0, 10, 15, 25, 35, 50, 50] },
   inspectionBonus: 20,
+  heightLimit: 30.5,             // cm (12 in.): the equipment inspection's height limit
   matchSeconds: 150,
 };
 
@@ -38,6 +39,14 @@ export function inLaunchArea(x, y, margin = 0) {
 }
 export function inHome(x, y) {
   return !!inLaunchArea(x, y) || Math.abs(x) > FIELD.homeStripX;
+}
+/** The launch area the whole outline (points on the mat, sim cm) fits in completely, or null. */
+export function outlineInLaunchArea(pts) {
+  return FIELD.launch.find((a) => pts.every(([x, y]) => Math.hypot(x - a.cx, y - a.cy) <= a.r && y <= a.cy + 0.01)) || null;
+}
+/** Whether the whole outline is in home (a launch area or the strips beside the mat). */
+export function outlineInHome(pts) {
+  return !!outlineInLaunchArea(pts) || pts.every(([x, y]) => inHome(x, y));
 }
 
 // M06: a leaf launches when the rack is pushed in faster than about 15 cm/s while the gears are engaged.
@@ -120,13 +129,17 @@ export const MECHANISMS = {
   // chevron around the leaf habitat's cut corner. Two plain leaves and the katydid just sit in the recesses (book
   // 11.6: "These do not actually connect to anything"); lift one by its loop or body and it is free. In our model
   // the katydid is in the right (+x) recess. The pieces sit a hair higher so they do not start sunk into the nest.
+  // Since FIRST's update 01 (September 2, 2026) the leaves are randomized in the nest before the match: `nest` lists
+  // the three recesses (left, middle, right) by the plain leaf each piece sits on (o.parts index), and the odd one out
+  // (the katydid) can start in any of them, the leaves filling the other two.
   'M04 Lucky Leaves': {
+    nest: { slots: [48, 68, 88], odd: 'katydid' },
     pieces: {
-      leafL: { kind: 'loose', anchor: [-6.7, 1.0, -1.7], shift: [0, 0.06, 0], mass: 0.008, friction: 0.8, contact: true, outline: true,
+      leafL: { kind: 'loose', slot: 0, anchor: [-6.7, 1.0, -1.7], shift: [0, 0.06, 0], mass: 0.008, friction: 0.8, contact: true, outline: true,
         parts: (p) => p.i >= 48 && p.i <= 67 },
-      leafM: { kind: 'loose', anchor: [0, 1.0, 1.0], shift: [0, 0.06, 0], mass: 0.008, friction: 0.8, contact: true, outline: true,
+      leafM: { kind: 'loose', slot: 1, anchor: [0, 1.0, 1.0], shift: [0, 0.06, 0], mass: 0.008, friction: 0.8, contact: true, outline: true,
         parts: (p) => p.i >= 68 && p.i <= 87 },
-      katydid: { kind: 'loose', anchor: [6.7, 0.81, -1.7], shift: [0, 0.06, 0], mass: 0.009, friction: 0.8, contact: true, outline: true,
+      katydid: { kind: 'loose', slot: 2, anchor: [6.7, 0.81, -1.7], shift: [0, 0.06, 0], mass: 0.009, friction: 0.8, contact: true, outline: true,
         parts: (p) => p.i >= 88 && p.i <= 110 },
     },
   },

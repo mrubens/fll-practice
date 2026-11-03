@@ -141,15 +141,20 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 
 ## How accurate is it
 
-- The drive uses the SPIKE math exactly: 5.6 cm wheels (17.59 cm per rotation), 11.2 cm track, the same
-  17.5 cm/rotation calibration the hub uses, the same steering rule. There is no wheel slip, acceleration
-  overshoot or battery sag, so real runs drift a few percent and a few degrees; expect to retune numbers on the
-  real table.
-- Mission-model positions and footprints come from the FIRST wireframe PDF (measured by the fll-sim project);
-  the mat image is the Robot Game Rulebook's render, since FIRST does not publish the print file. Scoring zones
-  are built from the model positions and are approximate; adjust them in `js/missions.js`.
-- Not simulated: pitch/roll (the table is flat), sound files, broadcasts, light-matrix pixel
-  blocks, precision tokens and inspection points. Mission models do not articulate.
+A practice tool, not a predictor: a program that works here is a good start, and the numbers still need tuning on
+the real table. What is modelled, and how well:
+
+| | Status |
+|---|---|
+| Drive | Exact SPIKE math: wheel size, track, the hub's cm-per-rotation calibration, the steering rule; encoders and chassis move by the same wheel turns. No wheel slip, acceleration overshoot or battery sag, so real runs drift a few percent and a few degrees. |
+| Pushing and lifting | Approximated. The robot and its motors are as strong as they need to be (no torque or traction limit); pieces pressed into a model jam the robot, and an attachment stalls on what it cannot move. |
+| Collisions | Real-part colliders for the robot, attachments and mission models (Rapier physics), with a 2.5 mm skin round the robot. Turning checks the whole robot against walls and models. |
+| Mission models | Built from their LEGO models and articulated (hinges, sliders, latches, loose pieces), positioned from the FIRST field PDFs. Some releases are simplified: hanging seeds come off when touched rather than only when lifted along their bar. |
+| Scoring | The rulebook's tasks, bonuses and penalties, including FIRST's challenge updates (M04's katydid and shuffled nest), the equipment inspection (all of the robot in one launch area, under 30.5 cm), precision tokens, and the no-equipment constraint judged model by model at the end of the match. Zones are measured from the mat and approximate. |
+| Sensors | Ideal: color reads the mat image under the sensor, distance is one ray, the gyro is the true heading. No noise, latency or calibration error. |
+| Motors | A program start keeps the shafts where they are (home your attachment in your program); Launch and Reset position set them back by hand. Encoders are ideal (no backlash). |
+| Python export | Behaves like the simulator (same speed scale, color codes, event hats, random numbers); not yet tried on a physical hub. |
+| Not simulated | Pitch and roll (the table is flat), sound files, broadcasts, light-matrix pixel blocks, motor load and traction limits, sensor noise. |
 
 ## Run or host it yourself
 

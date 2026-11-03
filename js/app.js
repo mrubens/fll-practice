@@ -13,7 +13,7 @@ import { PRESETS, defaultBuild, normalizeBuild } from './build.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
-import { EQUIPMENT_PIECES, inLaunchArea } from './mechanisms.js';
+import { EQUIPMENT_PIECES, FIELD } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 import { AttachmentBuilder } from './legobuilder.js';
 
@@ -111,9 +111,23 @@ scoring.on((ev) => {
   if (ev.type === 'token') toast(`Robot interrupted outside home: one precision token lost (${ev.tokens} left).`, 'warn');
   if (ev.type === 'end') toast(`Match over. Final score: ${ev.score} pts.`);
 });
+// M04's nest: since FIRST's update 01 the leaves are shuffled before each match and teams are not told where the
+// katydid is. 'shuffle' picks a recess for every fresh field (Run, Launch); 0-2 fixes it (left, middle, right).
+const NEST_DEFAULT = 2;
+let nestNow = NEST_DEFAULT;
+function pickNest() {
+  const v = store.nest ?? 'shuffle';
+  nestNow = v === 'shuffle' ? Math.floor(Math.random() * 3) : v;
+  if (world.physics) world.physics.nestOdd = nestNow;
+}
 const modelCard = new ModelCard($('#modelCard'), $('#scoreChip'), {
   scoring,
   onClose: () => { sim.flyHome(); },
+  nest: {
+    get: () => store.nest ?? 'shuffle',
+    set: (v) => { store.nest = v; saveStore(); if (!runtime.running) { pickNest(); world.resetObstacles(); scoring.reset(); } },
+    current: () => nestNow,
+  },
 });
 // Where the cursor is on the mat, measured the way teams measure on the real table: from the left wall and
 // from the near (south) wall, plus how far and which way from the robot. A shift-drag ruler shows its length.
@@ -148,11 +162,12 @@ function startRun() {
   sim.endChase();
   if (scoring.match.launched && !scoring.match.ended) { relaunch(); return; }
   hub.matchLeft = null;
+  pickNest();
   world.resetObstacles();
   scoring.reset();
   sim.resetEffects();
   hub.ensureAudio();
-  replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading } };
+  replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading }, shafts: robot.shaftAngles() };
   replay.snaps.clear();
   runtime.start();
 }
@@ -174,7 +189,7 @@ function placeEquipment() {
 /** A launch under match rules: the robot must be completely inside a launch area. */
 function relaunch() {
   const r = robot;
-  if (!inLaunchArea(r.x, r.y, r.geom.radius)) { toast('To launch, the robot must be completely inside a launch area (the quarter circles in home).', 'warn'); return false; }
+  if (!scoring.fit().area) { toast('To launch, the robot and its attachments must be completely inside a launch area (the quarter circles in home).', 'warn'); return false; }
   const res = scoring.launch();
   hub.ensureAudio();
   runtime.start();
@@ -185,16 +200,18 @@ function relaunch() {
 function startMatch() {
   if (!world.matReady) { toast('The field is still loading. Try again in a moment.', 'warn'); return; }
   runtime.stop();
+  pickNest();
   world.resetObstacles();
   scoring.reset();
   sim.resetEffects();
   robot.resetPose();
+  robot.homeTools();
   placeEquipment();
   hub.matchLeft = MATCH_SECONDS;
   replay.start = { kind: 'match' };
   replay.snaps.clear();
   const res = relaunch();
-  if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : 'Match started. Inspection failed (robot not in one launch area): no bonus.', res.inspection ? undefined : 'warn');
+  if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : `Match started. Inspection failed (${res.top > FIELD.heightLimit ? `the robot is ${res.top.toFixed(1)} cm tall, over the 30.5 cm limit` : 'robot not in one launch area'}): no bonus.`, res.inspection ? undefined : 'warn');
   else hub.matchLeft = null;
 }
 
@@ -244,8 +261,8 @@ async function stepBack(toStart) {
   updateRunState();
   runtime.stop();
   world.resetObstacles(); scoring.reset(); sim.resetEffects();
-  if (start.kind === 'match') { robot.resetPose(); placeEquipment(); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
-  else { hub.matchLeft = null; robot.resetPose(start.pose); }
+  if (start.kind === 'match') { robot.resetPose(); robot.homeTools(); placeEquipment(); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
+  else { hub.matchLeft = null; robot.resetPose(start.pose); robot.setShaftAngles(start.shafts); }
   runtime.setStepMode(true);
   runtime.start();
   await drain();
@@ -470,7 +487,7 @@ $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 
 // ---------- sim view tools ----------
 // a running program stops first, as you'd stop the real robot before picking it up
-$('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); world.resetObstacles(); });
+$('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); robot.homeTools(); world.resetObstacles(); });
 $('#btnLaunch').addEventListener('click', () => {
   if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
   startMatch();

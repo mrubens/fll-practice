@@ -212,6 +212,8 @@ select.vt { cursor: pointer; color: var(--fg); }
 .spike-steer-editor .row button:active { background: rgba(255,255,255,.2); }
 .spike-steer-editor .readout { color: #fff; font-weight: 600; font-size: 20px; }
 .model-card .note { margin: 4px 0 0; font-size: 11px; color: var(--muted, #667); }
+.model-card .nest-setup { display: flex; align-items: center; gap: 6px; margin: 6px 0; font-size: 12px; font-weight: 600; }
+.model-card .nest-setup select { flex: 1; min-width: 0; font: inherit; font-weight: 500; }
 .spike-matrix-editor .tools button { flex: 1; border: 0; border-radius: 8px; padding: 6px 4px; background: rgba(255,255,255,.9); font-size: 12px; font-weight: 700; }
 
 /* ---- narrow screens: sim on top, blocks below ---- */

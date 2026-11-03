@@ -448,7 +448,8 @@ const REPORTERS = {
     const want = this.str(b, 'VALUE');
     return s ? s.code === want : want === '-1';
   },
-  flippersensors_color(b) { const s = this.robot.colorSample(this.str(b, 'PORT')); return s ? s.name : 'none'; },
+  // the color code (9 red ... -1 none), as the SPIKE App's reporter and the hub's Python give it
+  flippersensors_color(b) { const s = this.robot.colorSample(this.str(b, 'PORT')); return s ? Number(s.code) : -1; },
   flippersensors_reflectivity(b) { const s = this.robot.colorSample(this.str(b, 'PORT')); return s ? s.reflect : 0; },
   flippersensors_isReflectivity(b) {
     const s = this.robot.colorSample(this.str(b, 'PORT'));

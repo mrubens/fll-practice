@@ -36,6 +36,12 @@ function overlaps(outline, poly) {
 const LEAF_HABITAT = [[-90.31, -44.0], [-86.88, -47.44], [-82.34, -47.44], [-82.34, -39.31], [-90.31, -39.31]];
 const inNest = (c, pt) => { const l = c.local('M04 Lucky Leaves', [pt[0], 0, pt[1]]); return Math.abs(l[0]) < 9.1 && l[2] > -6.5 && l[2] < 2.7; };
 const leafOut = (s) => !!s && !s.touchesBase && s.moved > 2;
+/** The katydid completely outside the leaf habitat: no part of it over the marked area or the nest. */
+function katydidGone(c) {
+  const k = c.p('M04 Lucky Leaves').katydid;
+  if (!k || !k.outline || !k.outline.length) return false;
+  return !k.outline.some((pt) => inPoly(pt, LEAF_HABITAT) || inNest(c, pt)) && !overlaps(k.outline, LEAF_HABITAT);
+}
 /** M05: the root arm's far end (its hole-7 crossbar) is back across the boundary wall: past its far face and above it. */
 function rootAcross(c) {
   const a = c.p('M05 Reaching Roots').arm;
@@ -69,24 +75,24 @@ export const MISSIONS = [
       { id: 'back', label: 'Bonus: the rock has been returned to its original starting position', points: 10, bonusOf: 'flag',
         met: (c) => c.p('M03 Flip the Rock').rock.angle < 15 },
     ] },
-  { id: 'M04', name: 'Lucky Leaves', models: ['M04 Lucky Leaves'], noEquipment: true,
+  { id: 'M04', name: 'Lucky Leaves', models: ['M04 Lucky Leaves'], noEquipment: true, setup: 'nest',
     text: 'Collect as many leaves as you can without disturbing the katydid.',
     tasks: [
       { id: 'leaf1', label: 'One leaf is completely removed, no longer touching the nest', points: 10,
         met: (c) => { const s = c.p('M04 Lucky Leaves'); return leafOut(s.leafL) || leafOut(s.leafM); } },
-      { id: 'leaf2', label: 'Bonus: the second leaf is removed too, with the katydid in its starting position', points: 20, bonusOf: 'leaf1',
+      { id: 'leaf2', label: 'Bonus: the second leaf is removed too, with the katydid in its original position and in the leaf habitat throughout', points: 20, bonusOf: 'leaf1',
         met: (c) => { const s = c.p('M04 Lucky Leaves'), k = s.katydid; return leafOut(s.leafL) && leafOut(s.leafM) && k.touchesBase && k.moved < 0.5 && k.rotated < 5 && !c.flag('M04.katydidOut'); } },
     ],
-    // the katydid outside the leaf habitat (the nest and the marked square) at the end, even partly: zero for the mission
-    zeroIf: (c) => { const k = c.p('M04 Lucky Leaves').katydid; return !!k.outline && k.outline.some((pt) => !inPoly(pt, LEAF_HABITAT) && !inNest(c, pt)); },
-    // completely removed from the nest at any time: the bonus is gone
-    watch: (c) => { const k = c.p('M04 Lucky Leaves').katydid; if (k.moved > 1 && !k.touchesBase) c.setFlag('M04.katydidOut'); } },
+    // FIRST's update 01 (September 2, 2026) replaced the constraints: the katydid completely outside the leaf habitat
+    // (the nest and the marked area around it) at the end scores zero for the mission, and at any time loses the bonus
+    zeroIf: (c) => katydidGone(c),
+    watch: (c) => { if (katydidGone(c)) c.setFlag('M04.katydidOut'); } },
   { id: 'M05', name: 'Reaching Roots', models: ['M05 Reaching Roots'], noEquipment: true,
     text: 'Help this plant cross the forest boundary in search of symbiosis.',
     tasks: [
       { id: 'partial', label: 'The plant root is partially extended', points: 10,
         met: (c) => { const s = c.p('M05 Reaching Roots'); return !!s.extension && s.extension.angle > 110 && !rootAcross(c); } },
-      { id: 'full', label: 'OR the plant root is completely extended', points: 20,
+      { id: 'full', label: 'OR the plant root is completely extended', points: 20, or: 'partial',
         met: (c) => { const s = c.p('M05 Reaching Roots'); return !!s.extension && s.extension.angle > 110 && rootAcross(c); } },
     ] },
   { id: 'M06', name: 'Leafcutter Frenzy', models: ['M06-07 Leafcutter Frenzy / Humongous Fungus'],
@@ -124,9 +130,9 @@ export const MISSIONS = [
   { id: 'M10', name: 'Fragile Microhabitats', models: ['M10 Fragile Microhabitat A', 'M10 Fragile Microhabitat B'], noEquipment: true,
     text: 'Move through the area without damaging these tiny creatures’ homes.',
     tasks: [
-      { id: 'spider', label: 'The spider habitat is in its original starting position', points: 10,
+      { id: 'spider', label: 'The spider habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat B',
         met: (c) => { const w = c.p('M10 Fragile Microhabitat B').webB; return !!w && w.angle < 5; } },
-      { id: 'snail', label: 'The snail habitat is in its original starting position', points: 10,
+      { id: 'snail', label: 'The snail habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat A',
         met: (c) => { const n = c.p('M10 Fragile Microhabitat A').neck; return !!n && n.angle < 5; } },
     ] },
   { id: 'M11', name: 'Window to the Past', models: ['M11 Window to the Past'],
@@ -153,10 +159,11 @@ export const MISSIONS = [
   { id: 'M14', name: 'Seeds of Renewal', models: ['Dock mine (M13-15)'],
     text: 'Place the seeds your team has collected in the soil and watch them take root.',
     tasks: [
-      { id: 'seeds', label: 'Seeds are contained within the replantation station (5 each)', points: 25, each: 5,
-        count: (c) => seedsIn(c).length },
-      { id: 'seedsMat', label: 'Bonus: and are touching the mat (5 added each)', points: 25, each: 5,
-        count: (c) => seedsIn(c).filter((s) => s.bottom < 0.6).length },
+      // the official software scoresheet counts 0-4 seeds on each line (six are on the field)
+      { id: 'seeds', label: 'Seeds are contained within the replantation station (5 each, up to 4)', points: 20, each: 5,
+        count: (c) => Math.min(4, seedsIn(c).length) },
+      { id: 'seedsMat', label: 'Bonus: and are touching the mat (5 added each, up to 4)', points: 20, each: 5,
+        count: (c) => Math.min(4, seedsIn(c).filter((s) => s.bottom < 0.6).length) },
     ] },
   { id: 'M15', name: 'Biocentric Architecture', models: ['Dock farm (M13-15)'], noEquipment: true,
     text: 'Modify the building to create homes for wildlife, restore soil health and bring in natural light.',

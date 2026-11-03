@@ -2,9 +2,20 @@
 // Robot Game Rulebook does. Mission points are "what you would get if the match ended now"; a launched match
 // adds the equipment-inspection bonus and the precision tokens, and freezes everything when 2:30 is up.
 import { MISSIONS } from './missions.js';
-import { FIELD, inLaunchArea, inHome } from './mechanisms.js';
+import { FIELD, inLaunchArea, inHome, outlineInLaunchArea, outlineInHome } from './mechanisms.js';
 
 const DEG = Math.PI / 180;
+
+/** A mission's most points: one of each set of alternatives (M05's partly OR completely extended root), all the rest. */
+export function maxPoints(m) {
+  let total = 0;
+  for (const t of m.tasks) {
+    if (t.or) continue;
+    const alts = m.tasks.filter((x) => x.or === t.id);
+    total += Math.max(t.points, ...alts.map((x) => x.points));
+  }
+  return total;
+}
 
 export class Scoring {
   constructor(robot, world) {
@@ -32,21 +43,27 @@ export class Scoring {
 
   /** A launch from a launch area. The first launch of a match also runs the equipment inspection. */
   launch() {
-    const r = this.robot;
-    const area = inLaunchArea(r.x, r.y, r.geom.radius);
+    const { area, top } = this.fit();
     if (!this.match.launched) {
       this.match.launched = true;
-      this.match.inspection = area ? FIELD.inspectionBonus : 0;
+      this.match.inspection = area && top <= FIELD.heightLimit ? FIELD.inspectionBonus : 0;
     }
     this.recompute();
-    return { area, inspection: this.match.inspection };
+    return { area, top, inspection: this.match.inspection };
   }
 
   /** Technicians touched the robot while it was running: outside home that costs a precision token. */
+  /** The robot as built (attachment and tools too): the launch area it fits completely in, how tall it is, whether all of it is in home. */
+  fit() {
+    const r = this.robot, ol = this.world.physics && this.world.physics.robotOutline();
+    if (!ol) return { area: inLaunchArea(r.x, r.y, r.geom.radius), top: 0, home: inHome(r.x, r.y) };
+    return { area: outlineInLaunchArea(ol.pts), top: ol.top, home: outlineInHome(ol.pts) };
+  }
+
   interrupt() {
     if (!this.match.launched || this.match.ended) return null;
-    const r = this.robot;
-    const outside = !inHome(r.x, r.y);
+    // the robot (or anything it carries) even partly outside home costs a token
+    const outside = !this.fit().home;
     if (outside && this.match.tokens > 0) { this.match.tokens--; this.match.interruptions++; this.recompute(); this.emit({ type: 'token', tokens: this.match.tokens }); }
     return outside;
   }
@@ -81,6 +98,8 @@ export class Scoring {
         return [v.x * c + v.z * s, v.y, -v.x * s + v.z * c];
       },
       touching: (id) => { const o = this.world.obstacles.find((x) => x.id === id); return !!(o && o.touched !== undefined && self.robot.time - o.touched < 0.3); },
+      // the robot or the team's equipment touching the model right now (the no-equipment constraint)
+      touchingNow: (id) => !!(ph && ph.equipmentTouching(id)),
       flag: (k) => !!self.flags[k],
       setFlag: (k) => { self.flags[k] = true; },
     };
@@ -98,6 +117,8 @@ export class Scoring {
     for (const m of MISSIONS) {
       if (!this.inPlay(m)) continue;
       try { if (m.watch) m.watch(c); } catch { /* model not loaded yet */ }
+      // a mission-wide zero can come and go while no task changes (the katydid leaves the habitat)
+      if (m.zeroIf) { let z = false; try { z = !!m.zeroIf(c); } catch { z = false; } if (z !== !!(this.missionPoints[m.id] && this.missionPoints[m.id].zero)) changed = true; }
       for (const t of m.tasks) {
         const s = this.state[m.id + '.' + t.id];
         let met = false, count = 0;
@@ -126,10 +147,16 @@ export class Scoring {
       let pts = 0;
       let zero = false;
       try { zero = !!(m.zeroIf && m.zeroIf(c)); } catch { zero = false; }
-      if (final && m.noEquipment && m.models.some((id) => c.touching(id))) zero = true;
+      // the no-equipment constraint, judged model by model when the match ends: a task tied to one model (M10's two
+      // habitats) is lost only if that model is touched; the others if any of the mission's models is
+      let touched = null;
+      if (final && m.noEquipment) touched = new Set(m.models.filter((id) => c.touchingNow(id)));
+      const lost = (t) => !!touched && (t.model ? touched.has(t.model) : touched.size > 0);
+      if (touched && m.tasks.every(lost)) zero = true;
       if (!zero) {
         for (const t of m.tasks) {
           const s = this.state[m.id + '.' + t.id];
+          if (lost(t)) continue;
           if (t.bonusOf && !this.isDone(m.id, t.bonusOf)) continue;
           if (t.count) pts += s.count * t.each;
           else if (s.met) pts += t.points;
@@ -152,7 +179,7 @@ export class Scoring {
       tasks: m.tasks.map((t) => { const s = this.state[m.id + '.' + t.id]; return { task: t, done: s.met && (!t.bonusOf || this.isDone(m.id, t.bonusOf)), count: s.count }; }),
       points: (this.missionPoints[m.id] || { points: 0 }).points,
       zero: (this.missionPoints[m.id] || { zero: false }).zero,
-      max: m.tasks.reduce((s, t) => s + t.points, 0),
+      max: maxPoints(m),
     }));
   }
 

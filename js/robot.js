@@ -58,8 +58,11 @@ export class Robot {
   /** Program state (motors, hub, goals). Called when a program starts and when the robot is reset. */
   reset() {
     this.time = 0;
+    // a program start resets what the hub resets, not the shafts: an arm stays where the last run (or a hand) left
+    // it, so a program must home its attachment itself, as on the real robot
+    const was = this.motors || {};
     this.motors = {};
-    for (const p of PORT_LETTERS) this.motors[p] = { velocity: 0, target: 0, angle: 0, speedPct: 75, goal: null };
+    for (const p of PORT_LETTERS) this.motors[p] = { velocity: 0, target: 0, angle: was[p] ? was[p].angle : 0, speedPct: 75, goal: null };
     this.movement = { pair: null, speedPct: 50, cmPerRotation: this.geom ? this.geom.calibration : 17.5, goal: null, hint: null };
     this.hub = {
       yawOffset: 0, timerStart: 0,
@@ -69,6 +72,16 @@ export class Robot {
       sound: { note: null, goal: null, version: 0 },
     };
   }
+
+  /** The technicians set the attachment and tools back by hand (field setup, Reset position). */
+  homeTools() {
+    for (const p of [this.config && this.config.attachment, ...((this.config && this.config.tools) || [])]) if (p && this.motors[p]) Object.assign(this.motors[p], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });
+    this._syncPhysicsPose();
+  }
+
+  /** Every shaft's angle, to put back for a replay. */
+  shaftAngles() { return Object.fromEntries(PORT_LETTERS.map((p) => [p, this.motors[p].angle])); }
+  setShaftAngles(a) { for (const p of PORT_LETTERS) if (a && Number.isFinite(a[p])) this.motors[p].angle = a[p]; this._syncPhysicsPose(); }
 
   resetPose(pose = this.world.startPose || START_POSE) {
     this.x = pose.x; this.y = pose.y; this.heading = pose.heading;

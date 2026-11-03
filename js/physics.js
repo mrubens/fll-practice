@@ -100,6 +100,24 @@ const grp = (member, filter) => ((member & 0xFFFF) << 16) | (filter & 0xFFFF);
 const SHARED = grp(1, ALL);
 const MODEL_BIT = {};   // assigned as the models are built
 const modelGroup = (id, ground = true) => { if (!(id in MODEL_BIT)) { const n = Object.keys(MODEL_BIT).length; MODEL_BIT[id] = 2 + (n % 12); } const b = 1 << MODEL_BIT[id]; return grp(b, ALL & ~b & (ground ? ALL : ~MAT_BIT)); };
+/**
+ * Give each mission model its bit so that no two models that could meet share one (twelve bits, more models): models
+ * whose footprints come within 30 cm of each other get different bits; only far-apart models share.
+ */
+function assignModelBits(obstacles) {
+  if (!obstacles.length) return;
+  for (const k of Object.keys(MODEL_BIT)) delete MODEL_BIT[k];
+  const near = (a, b) => Math.abs(a.x - b.x) < ((a.w || 0) + (b.w || 0)) / 2 + 30 && Math.abs(a.y - b.y) < ((a.d || 0) + (b.d || 0)) / 2 + 30;
+  const done = [];
+  for (const o of obstacles) {
+    const used = new Set(done.filter((p) => near(p, o)).map((p) => MODEL_BIT[p.id]));
+    let bit = 2;
+    while (bit <= 13 && used.has(bit)) bit++;
+    if (bit > 13) { console.warn('collision groups: no free bit near', o.id); bit = 2 + (done.length % 12); }
+    MODEL_BIT[o.id] = bit;
+    done.push(o);
+  }
+}
 // two spare bits let a piece touch chosen pieces of its own model (the M10 catch leaning on the web's upright)
 const PAIR_A = 1 << 14, PAIR_B = 1 << 15;
 // The robot never touches the parts of its own attachment that hang on pins (members of PAIR_B only, see legophysics.js)
@@ -109,6 +127,21 @@ const MAT_BIT = 2;   // the table (mat and walls) has a group of its own: a piec
 
 const yawQuat = (headingDeg) => { const a = -headingDeg * DEG / 2; return { x: 0, y: Math.sin(a), z: 0, w: Math.cos(a) }; };
 const yawOf = (q) => Math.atan2(2 * (q.w * q.y + q.x * q.z), 1 - 2 * (q.y * q.y + q.z * q.z)) / DEG;   // degrees, counter-clockwise from above
+
+/** A piece's own state for a snapshot: plain values copied, joints kept by handle; the body, colliders, its
+ * definition and fixed geometry are left out (they survive a restore or never change). */
+const FIXED_FIELDS = new Set(['o', 'name', 'def', 'body', 'colliders', 'collider', 'hull', 'baseHandles', 'axisW', 'anchor', 'q0', 'equipment']);
+function pieceFields(pc) {
+  const out = {};
+  for (const [k, v] of Object.entries(pc)) {
+    if (FIXED_FIELDS.has(k) || typeof v === 'function') continue;
+    if (v && typeof v === 'object' && typeof v.handle === 'number' && typeof v.body1 === 'function') out[k] = { jointHandle: v.handle };
+    else if (v === null || v === undefined || typeof v !== 'object') out[k] = v;
+    else if (v.isVector3 || v.isQuaternion) out[k] = v.clone();
+    else { try { out[k] = structuredClone(v); } catch { /* not plain data */ } }
+  }
+  return out;
+}
 
 export class Physics {
   constructor(R, world) {
@@ -146,12 +179,15 @@ export class Physics {
 
   /** Everything about the physics world at this instant: the Rapier world's bytes plus the pieces' bookkeeping. */
   snapshot() {
+    const c = this.custom;
     return {
       bytes: this.world.takeSnapshot(),
       lastArmAngle: this.lastArmAngle,
-      pieces: this.pieces.map((pc) => ({ locked: pc.locked, released: pc.released, latched: pc.latched, touched: pc.touched, carried: !!pc.carried, angle: pc.angle, ext: pc.ext, height: pc.height,
-        joint: pc.joint ? pc.joint.handle : null, carryJoint: pc.carryJoint ? pc.carryJoint.handle : null })),
+      // every piece's own bookkeeping (freed, propped, floor, range, easing, the last drive...) and its joints by handle
+      pieces: this.pieces.map((pc) => pieceFields(pc)),
       obstacles: this.obstacleBodies.map((ob) => ({ touched: ob.o.touched, impact: ob.o.impact, x: ob.o.x, y: ob.o.y, angle: ob.o.angle })),
+      jams: structuredClone({ jam: this.jam ?? null, armJam: this.armJam ?? null, armDepth: this.armDepth ?? 0, toolJam: this.toolJam ?? {}, toolDepth: this.toolDepth ?? {}, blocked: this.blocked ?? null }),
+      custom: c ? { joints: (c.joints || []).map((j) => ({ hold: j.hold, angle: j.angle })), geared: (c.geared || []).map((g) => g.last) } : null,
     };
   }
 
@@ -176,12 +212,20 @@ export class Physics {
       const s = snap.pieces[i];
       pc.body = body(pc.body);
       pc.colliders = pc.colliders.map(col); pc.collider = pc.colliders[0];
-      pc.joint = s.joint !== null ? this.world.getImpulseJoint(s.joint) : null;
-      pc.carryJoint = s.carryJoint !== null ? this.world.getImpulseJoint(s.carryJoint) : null;
-      Object.assign(pc, { locked: s.locked, released: s.released, latched: s.latched, touched: s.touched, carried: s.carried, angle: s.angle, ext: s.ext, height: s.height });
+      // fields the piece has now but did not have then (a joint made since) go; the rest come back as they were
+      for (const k of Object.keys(pieceFields(pc))) if (!(k in s)) delete pc[k];
+      for (const [k, v] of Object.entries(s)) {
+        if (v && typeof v === 'object' && 'jointHandle' in v) pc[k] = this.world.getImpulseJoint(v.jointHandle);
+        else pc[k] = v && (v.isVector3 || v.isQuaternion) ? v.clone() : v && typeof v === 'object' ? structuredClone(v) : v;
+      }
     });
     this.obstacleBodies.forEach((ob, i) => { const s = snap.obstacles[i]; ob.o.touched = s.touched; ob.o.impact = s.impact; ob.o.x = s.x; ob.o.y = s.y; ob.o.angle = s.angle; });
     this.lastArmAngle = snap.lastArmAngle;
+    if (snap.jams) Object.assign(this, structuredClone(snap.jams));
+    if (snap.custom && this.custom) {
+      (this.custom.joints || []).forEach((j, i) => { const v = snap.custom.joints[i]; if (v) { j.hold = v.hold; j.angle = v.angle; } });
+      (this.custom.geared || []).forEach((g, i) => { if (snap.custom.geared[i] !== undefined) g.last = snap.custom.geared[i]; });
+    }
     this.readPieces(0);
   }
 
@@ -218,6 +262,7 @@ export class Physics {
 
   rebuildObstacles() {
     const { R } = this;
+    assignModelBits(this.sim.obstacles.filter((o) => MECHANISMS[o.id] && o.model));
     for (const ob of this.obstacleBodies) this.world.removeRigidBody(ob.body);
     this.obstacleBodies = [];
     this.colliderTop = new Map();
@@ -267,8 +312,34 @@ export class Physics {
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, false); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
       pc.start = new THREE.Vector3(p.t.x / S, p.t.y / S, p.t.z / S);
       pc.qStart = new THREE.Quaternion(p.r.x, p.r.y, p.r.z, p.r.w);
+      this._toNestSlot(pc);
       pc.body.sleep();
     }
+  }
+
+  /** Which recess of its nest a piece starts in: the odd piece (the katydid) where `nestOdd` says (0 left, 1 middle,
+   * 2 right; null: where the model has it), the others in the remaining recesses in their own order. */
+  _nestSlot(pc) {
+    const nest = MECHANISMS[pc.o.id] && MECHANISMS[pc.o.id].nest;
+    if (!nest || pc.def.slot === undefined) return null;
+    const pcs = Object.entries(MECHANISMS[pc.o.id].pieces).filter(([, d]) => d.slot !== undefined);
+    const oddSlot = pcs.find(([n]) => n === nest.odd)[1].slot;
+    const odd = Number.isInteger(this.nestOdd) ? this.nestOdd : oddSlot;
+    if (pc.name === nest.odd) return odd;
+    const others = pcs.filter(([n]) => n !== nest.odd).sort((a, b) => a[1].slot - b[1].slot).map(([n]) => n);
+    const free = [0, 1, 2].filter((k) => k !== odd);
+    return free[others.indexOf(pc.name)];
+  }
+
+  /** Move a settled piece from the recess it was modelled in to the one it starts in this time (same leaf, same fit). */
+  _toNestSlot(pc) {
+    const to = this._nestSlot(pc), F = this.nestFrames && this.nestFrames.get(pc.o.id);
+    if (to === null || to === pc.def.slot || !F) return;
+    const A = F[pc.def.slot], B = F[to], dq = B.q.clone().multiply(A.q.clone().invert());
+    pc.start = pc.start.clone().sub(A.p).applyQuaternion(dq).add(B.p);
+    pc.qStart = dq.multiply(pc.qStart);
+    pc.body.setTranslation({ x: pc.start.x * S, y: pc.start.y * S, z: pc.start.z * S }, false);
+    pc.body.setRotation({ x: pc.qStart.x, y: pc.qStart.y, z: pc.qStart.z, w: pc.qStart.w }, false);
   }
 
   // ---------------- mission mechanisms ----------------
@@ -287,6 +358,11 @@ export class Physics {
     const rq = { x: frame.q.x, y: frame.q.y, z: frame.q.z, w: frame.q.w };
     // fixed base
     const base = this.world.createRigidBody(R.RigidBodyDesc.fixed().setTranslation(frame.p.x * S, 0, frame.p.z * S).setRotation(rq));
+    // a nest whose pieces can start in any of its recesses (M04): each recess's frame on the table
+    if (def.nest && o.parts) {
+      this.nestFrames ||= new Map();
+      this.nestFrames.set(o.id, def.nest.slots.map((i) => { const e = o.parts[i]; return { p: toWorld(e.p), q: frame.q.clone().multiply(new THREE.Quaternion(...e.q)) }; }));
+    }
     const groups = modelGroup(o.id);
     const colliders = [];
     // which measured part belongs to which piece (the same split the 3D view draws)
@@ -496,6 +572,58 @@ export class Physics {
       pc.body.setLinvel({ x: v.x + k.x * S, y: v.y + k.y * S, z: v.z + k.z * S }, true);   // kick in cm/s
     }
     pc.body.wakeUp();
+  }
+
+  /**
+   * Whether the robot or any of the team's equipment is touching a mission model right now (its base or any of its
+   * pieces): the no-equipment constraint at the end of the match. The robot counts within its controller skin (it
+   * never quite meets what it leans on); loose equipment when its shapes meet.
+   */
+  equipmentTouching(obstacleId) {
+    if (!this.world) return false;
+    const own = [];
+    for (const ob of this.obstacleBodies) if (ob.o.id === obstacleId) own.push(...(ob.colliders || []), ...(ob.collider ? [ob.collider] : []));
+    for (const pc of this.pieces) if (pc.o && pc.o.id === obstacleId) own.push(...pc.colliders);
+    if (!own.length) return false;
+    const robotBodies = new Set([this.robotBody, this.armBody, ...((this.custom && this.custom.bodies) || []).map((b) => b && b.body), ...((this.custom && this.custom.geared) || []).map((g) => g && g.body)].filter(Boolean).map((b) => b.handle));
+    const touchers = [];
+    this.world.forEachCollider((c) => { const p = c.parent(); if (p && robotBodies.has(p.handle)) touchers.push({ c, reach: (SKIN + 0.1) * S }); });
+    for (const pc of this.pieces) if (pc.equipment) for (const c of pc.colliders) touchers.push({ c, reach: 0.05 * S });
+    for (const a of own) for (const t of touchers) {
+      const hit = a.contactCollider(t.c, t.reach);
+      if (hit && hit.distance <= t.reach) return true;
+    }
+    return false;
+  }
+
+  /**
+   * The robot as built, attachment and tools included: the corners of its colliders on the mat (sim cm) and how tall
+   * it stands. Launch areas, home and the equipment inspection check these, not just a circle round the robot.
+   */
+  robotOutline() {
+    if (!this.world || !this.robotBody) return null;
+    const bodies = new Set([this.robotBody, this.armBody, ...((this.custom && this.custom.bodies) || []).map((b) => b && b.body), ...((this.custom && this.custom.geared) || []).map((g) => g && g.body)].filter(Boolean).map((b) => b.handle));
+    const pts = [];
+    let top = 0;
+    this.world.forEachCollider((c) => {
+      const p = c.parent();
+      if (!p || !bodies.has(p.handle)) return;
+      // from the body's pose (set at once) and the collider's place on it: a collider's own pose waits for a step
+      const bt = p.translation(), br = p.rotation(), bq = new THREE.Quaternion(br.x, br.y, br.z, br.w);
+      const lt = c.translationWrtParent ? c.translationWrtParent() : null, lr = c.rotationWrtParent ? c.rotationWrtParent() : null;
+      let t, q;
+      if (lt && lr) { const v = new THREE.Vector3(lt.x, lt.y, lt.z).applyQuaternion(bq); t = { x: bt.x + v.x, y: bt.y + v.y, z: bt.z + v.z }; q = bq.clone().multiply(new THREE.Quaternion(lr.x, lr.y, lr.z, lr.w)); }
+      else { t = c.translation(); const r = c.rotation(); q = new THREE.Quaternion(r.x, r.y, r.z, r.w); }
+      let h = null;
+      try { h = c.halfExtents(); } catch { h = null; }
+      if (!h || !Number.isFinite(h.x)) { let rad = 0, hh = 0; try { rad = c.radius(); } catch { rad = 0; } try { hh = c.halfHeight(); } catch { hh = 0; } h = { x: rad, y: hh + rad, z: rad }; }
+      for (const sx of [-1, 1]) for (const sy of [-1, 1]) for (const sz of [-1, 1]) {
+        const v = new THREE.Vector3(sx * h.x, sy * h.y, sz * h.z).applyQuaternion(q);
+        pts.push([(t.x + v.x) / S, (t.z + v.z) / S]);
+        top = Math.max(top, (t.y + v.y) / S);
+      }
+    });
+    return pts.length ? { pts, top } : null;
   }
 
   /** Current state of every piece of a model, for the scoring rules. */

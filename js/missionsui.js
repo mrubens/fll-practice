@@ -6,9 +6,10 @@ export function missionsForObstacle(obstacle) {
 }
 
 export class ModelCard {
-  constructor(card, chip, { scoring, onClose }) {
+  constructor(card, chip, { scoring, onClose, nest }) {
     this.card = card; this.chip = chip; this.scoring = scoring;
     this.onClose = onClose;
+    this.nest = nest;          // M04's field setup: {get(), set(v), current()}
     this.obstacle = null;
     this.sheet = document.getElementById('scoreSheet');
     this.log = [];
@@ -71,10 +72,11 @@ export class ModelCard {
         const pts = t.task.count ? `${t.count * t.task.each}` : `${t.task.points}`;
         return `<div class="task${t.done ? ' done' : ''}"><span>${t.done ? '&#10003;' : '&#9675;'}</span><span>${t.task.label}</span><span class="pts">${pts}</span></div>`;
       }).join('') + (row.zero ? '<div class="task lost"><span>&#10007;</span><span>This mission scores zero right now (see the rulebook note on the card).</span><span class="pts">0</span></div>' : '') +
-        (m.noEquipment ? '<p class="note">No equipment constraint: nothing scores if the model is touching the robot when the match ends.</p>' : '');
+        (m.noEquipment ? '<p class="note">No equipment constraint: a model the robot or your equipment is touching when the match ends scores nothing.</p>' : '');
       return `<div class="mission-block" data-mission="${m.id}">
         <div class="head"><span class="num">${m.id.slice(1)}</span><span class="title">${m.name}</span></div>
         <p class="text">${m.text}</p>
+        ${m.setup === 'nest' && this.nest ? this._nestSetup() : ''}
         ${tasks}
         <div class="foot"><span class="total">${row.points} / ${row.max} pts</span></div>
       </div>`;
@@ -82,5 +84,16 @@ export class ModelCard {
     this.card.innerHTML = `<button type="button" class="close" aria-label="Close">&times;</button>` +
       (blocks.length ? blocks.join('<hr>') : `<div class="head"><span class="title">${this.obstacle.id}</span></div><p class="text">No scored tasks for this model.</p>`);
     this.card.querySelector('.close').addEventListener('click', () => this.close());
+    const sel = this.card.querySelector('.nest-setup select');
+    if (sel) sel.addEventListener('change', () => { this.nest.set(sel.value === 'shuffle' ? 'shuffle' : Number(sel.value)); this.render(); });
+  }
+
+  /** M04: where the katydid starts. At events the leaves are shuffled in the nest and teams are not told where. */
+  _nestSetup() {
+    const v = this.nest.get(), now = this.nest.current();
+    const where = ['on the left', 'in the middle', 'on the right'];
+    const opt = (val, label) => `<option value="${val}"${String(v) === String(val) ? ' selected' : ''}>${label}</option>`;
+    return `<label class="nest-setup">Katydid starts <select>${opt('shuffle', 'shuffled each run')}${opt(0, 'on the left')}${opt(1, 'in the middle')}${opt(2, 'on the right')}</select></label>` +
+      `<p class="note">${v === 'shuffle' ? `At events the leaves are shuffled and you are not told where the katydid is. This run it is ${where[now]}.` : 'At events it could be in any of the three.'}</p>`;
   }
 }
