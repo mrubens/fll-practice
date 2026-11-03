@@ -122,6 +122,8 @@ select.vt { cursor: pointer; color: var(--fg); }
 .hub-btn.hub-center.lit { box-shadow: 0 0 10px 2px currentColor; }
 .hub-readouts { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; justify-content: center; }
 .ro-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; }
+/* the top row stops short of the fold caret in the panel's corner */
+#hubPanel .ro-row { margin-right: 26px; }
 .ro-row .ro.hide { display: none; }
 .ro.match .v { color: #1B7F3B; }
 .ro.match.late .v { color: #B7791F; }
