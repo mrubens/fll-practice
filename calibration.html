@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Calibration Strip</title>
+<style>
+  :root { --fg: #1E2430; --muted: #5B6474; --line: #D9DDE5; --paper: #FFFFFF; --bg: #F5F2EA; --accent: #0B5FC4; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 Nunito, "Segoe UI", Arial, sans-serif; }
+  main { max-width: 860px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 19px; margin: 28px 0 8px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 15px; margin: 16px 0 4px; }
+  p, li { max-width: 72ch; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; }
+  svg { width: 100%; height: auto; display: block; }
+  ul, ol { padding-left: 22px; }
+  code { background: #EEF1F6; border-radius: 4px; padding: 0 4px; font-size: 13px; }
+  table { width: 100%; border-collapse: collapse; background: var(--paper); font-size: 13px; }
+  th, td { border: 1px solid #B9C0CC; padding: 6px 6px; text-align: left; vertical-align: top; }
+  th { background: #EEF1F6; }
+  td.blank { height: 30px; }
+  .tests { display: grid; gap: 10px; }
+  .test b.n { display: inline-block; min-width: 22px; height: 22px; border-radius: 11px; background: var(--fg); color: #fff; text-align: center; line-height: 22px; font-size: 12px; margin-right: 6px; }
+  .prog { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; background: #F3F5F9; border-radius: 8px; padding: 6px 10px; margin: 6px 0; white-space: pre-wrap; }
+  .tip { color: var(--muted); font-size: 13.5px; }
+  .back { display: inline-block; margin-bottom: 12px; color: var(--accent); font-weight: 700; text-decoration: none; }
+  @media print {
+    body { background: #fff; font-size: 12px; }
+    main { padding: 0; max-width: none; }
+    .back, .noprint { display: none; }
+    h2 { break-after: avoid; }
+    .sheet { break-before: page; }
+    .card, table, .test { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <a class="back noprint" href="javascript:window.print()">Print this page</a>
+  <h1>Calibration strip</h1>
+  <p class="lead">A lane you can tape onto the floor in 20 minutes. Run the same short programs on it in FLL Practice
+    (pick <b>Calibration strip</b> in the table menu) and on the real robot, then compare. The differences tell you
+    what to adjust before trusting the simulator on the full table.</p>
+
+  <div class="card">
+    <svg viewBox="-36 -36 196 72" role="img" aria-label="Top view of the calibration strip with measurements">
+      <defs>
+        <marker id="ar" viewBox="0 0 6 6" refX="3" refY="3" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L6,3 L0,6 z" fill="#5B6474"/></marker>
+      </defs>
+      <rect x="-30" y="-30" width="170" height="60" fill="#fff" stroke="#C9C4B6" stroke-width="0.4"/>
+      <!-- turn star -->
+      <g stroke="#9AA3B2" stroke-width="0.3">
+        <line x1="0" y1="0" x2="25" y2="0"/><line x1="0" y1="0" x2="-25" y2="0"/><line x1="0" y1="0" x2="0" y2="25"/><line x1="0" y1="0" x2="0" y2="-25"/>
+        <line x1="0" y1="0" x2="17.7" y2="17.7"/><line x1="0" y1="0" x2="-17.7" y2="17.7"/><line x1="0" y1="0" x2="17.7" y2="-17.7"/><line x1="0" y1="0" x2="-17.7" y2="-17.7"/>
+      </g>
+      <line x1="0" y1="-20" x2="0" y2="20" stroke="#111" stroke-width="2"/>
+      <line x1="20" y1="-15" x2="135" y2="-15" stroke="#4A90D9" stroke-width="2"/>
+      <line x1="20" y1="15" x2="135" y2="15" stroke="#4A90D9" stroke-width="2"/>
+      <g stroke="#111" stroke-width="0.4">
+        <line x1="10" y1="-16" x2="10" y2="-21"/><line x1="10" y1="16" x2="10" y2="21"/>
+        <line x1="20" y1="-16" x2="20" y2="-21"/><line x1="20" y1="16" x2="20" y2="21"/>
+        <line x1="30" y1="-16" x2="30" y2="-21"/><line x1="30" y1="16" x2="30" y2="21"/>
+        <line x1="40" y1="-16" x2="40" y2="-21"/><line x1="40" y1="16" x2="40" y2="21"/>
+        <line x1="50" y1="-16" x2="50" y2="-21"/><line x1="50" y1="16" x2="50" y2="21"/>
+        <line x1="60" y1="-16" x2="60" y2="-21"/><line x1="60" y1="16" x2="60" y2="21"/>
+        <line x1="70" y1="-16" x2="70" y2="-21"/><line x1="70" y1="16" x2="70" y2="21"/>
+        <line x1="80" y1="-16" x2="80" y2="-21"/><line x1="80" y1="16" x2="80" y2="21"/>
+        <line x1="90" y1="-16" x2="90" y2="-21"/><line x1="90" y1="16" x2="90" y2="21"/>
+        <line x1="100" y1="-16" x2="100" y2="-21"/><line x1="100" y1="16" x2="100" y2="21"/>
+        <line x1="110" y1="-16" x2="110" y2="-21"/><line x1="110" y1="16" x2="110" y2="21"/>
+        <line x1="120" y1="-16" x2="120" y2="-21"/><line x1="120" y1="16" x2="120" y2="21"/>
+        <line x1="130" y1="-16" x2="130" y2="-21"/><line x1="130" y1="16" x2="130" y2="21"/>
+      </g>
+      <g font-size="3" font-weight="700" fill="#5B6474" text-anchor="middle">
+        <text x="10" y="-23">10</text><text x="20" y="-23">20</text><text x="30" y="-23">30</text><text x="40" y="-23">40</text><text x="50" y="-23">50</text><text x="60" y="-23">60</text><text x="70" y="-23">70</text><text x="80" y="-23">80</text><text x="90" y="-23">90</text><text x="100" y="-23">100</text><text x="110" y="-23">110</text><text x="120" y="-23">120</text><text x="130" y="-23">130</text>
+      </g>
+      <line x1="40" y1="-14" x2="40" y2="14" stroke="#111" stroke-width="2"/>
+      <rect x="57.5" y="-13" width="5" height="26" fill="#E3000B"/>
+      <rect x="72.5" y="-13" width="5" height="26" fill="#00A845"/>
+      <rect x="87.5" y="-13" width="5" height="26" fill="#0B5FC4"/>
+      <rect x="140" y="-25" width="10" height="50" fill="#C49A6C" stroke="#8B6A43" stroke-width="0.4"/>
+      <text x="145" y="1" font-size="3.2" font-weight="700" fill="#5B2E00" text-anchor="middle" transform="rotate(90 145 0)">CARDBOARD WALL</text>
+      <!-- robot outline at the start -->
+      <rect x="-8" y="-9" width="20" height="18" rx="2" fill="none" stroke="#E3000B" stroke-width="0.5" stroke-dasharray="1.2 1"/>
+      <circle cx="0" cy="0" r="1" fill="#E3000B"/>
+      <!-- dimensions -->
+      <g font-size="3" fill="#5B6474" font-weight="700">
+        <line x1="0" y1="28" x2="140" y2="28" stroke="#5B6474" stroke-width="0.3" marker-start="url(#ar)" marker-end="url(#ar)"/>
+        <text x="70" y="33" text-anchor="middle">140 cm from the start line to the wall</text>
+        <text x="-15" y="-24" text-anchor="middle">START LINE</text>
+        <text x="40" y="18.8" text-anchor="middle" font-size="2.6">stop line</text>
+        <text x="-28" y="33" font-size="2.6">white paper 170 × 60 cm</text>
+      </g>
+    </svg>
+    <p class="tip">Top view, to scale. The robot (red dashed outline) starts with the middle of its wheels on the start
+      line, pointing at the wall. Everything is measured from the start line along the lane.</p>
+  </div>
+
+  <h2>What you need</h2>
+  <ul>
+    <li>White paper about 170 × 60 cm: a roll of butcher paper, or 3 poster boards taped together. Brown cardboard or a wooden floor confuses the color sensor.</li>
+    <li>Black electrical tape (19 mm), for the start line and the stop line.</li>
+    <li>Blue painter's tape, for the two lane edges.</li>
+    <li>Red, green and blue construction paper (or colored tape), cut into 5 × 26 cm strips.</li>
+    <li>A cardboard box at least 50 cm wide and 15 cm tall, for the wall. A piece of cardboard propped up with books works too.</li>
+    <li>A tape measure, a ruler, a marker and a pencil.</li>
+  </ul>
+
+  <h2>Build it</h2>
+  <ol>
+    <li>Tape the white paper flat on a hard floor or a long table. Tape every edge so the wheels don't lift it.</li>
+    <li>About 30 cm from one end, put down the <b>start line</b>: black tape straight across, 40 cm long. Mark its middle.</li>
+    <li>With a pencil, draw the <b>lane's middle</b> from that mark to the far end, at right angles to the start line. Use the corner of a poster board or a big book to get the right angle.</li>
+    <li>Put the two <b>lane edges</b> in blue tape, from 20 to 135 cm. The inside edge of each tape is 14 cm from the middle, so the lane is 28 cm wide.</li>
+    <li>Outside each edge, draw a short <b>tick every 10 cm</b> from 10 to 130 and write the number next to it.</li>
+    <li>At 40 cm, put the <b>stop line</b> across the lane in black tape, 28 cm long.</li>
+    <li>Glue or tape the colors across the lane, centered at <b>red 60 cm, green 75 cm, blue 90 cm</b>.</li>
+    <li>Stand the <b>wall</b> across the lane with its face exactly 140 cm from the start line.</li>
+    <li>Optional: around the start, draw thin pencil lines every 45° (a star), 25 cm long. It shows how far a turn went.</li>
+  </ol>
+  <p class="tip">In FLL Practice, <b>Reset position</b> puts the robot on the start line in the same place. The box at the
+    top right of the 3D view gives the numbers you would measure with a tape measure.</p>
+
+  <h2>The tests</h2>
+  <p>Use the same robot build in the simulator as on the table. Write each program once in FLL Practice, run it there,
+    then export it (<b>Save .llsp3</b>) and run the same file on the real robot. Do every real test 3 times: the real
+    robot changes a little each run.</p>
+  <div class="tests">
+    <div class="card test"><b class="n">1</b><b>Distance and drift</b>
+      <div class="prog">move forward 100 cm   (speed 50)
+write  timer</div>
+      Measure how far past the start line the middle of the wheels stopped (read the ticks beside the wheels), and how far the robot is
+      off the lane's middle. The timer shows how long it took. Try speed 100 too.</div>
+    <div class="card test"><b class="n">2</b><b>Spin by wheel turns</b>
+      <div class="prog">move with steering 100 for N rotations</div>
+      In the simulator, find the N that turns the robot exactly once (the box says "straight down the lane"). Run the same N
+      on the real robot and see where it points. Real tires slip in a spin, so it usually turns less.</div>
+    <div class="card test"><b class="n">3</b><b>Turn with the gyro</b>
+      <div class="prog">set yaw angle to 0
+start moving with steering 100   (speed 30)
+wait until yaw &gt; 89
+stop moving
+move forward 100 cm</div>
+      Repeat the turn 4 times before the drive, so the robot comes back to straight. A 1° error moves it 1.7 cm sideways after 100 cm,
+      so measure how far off the lane's middle it ends up. Try speed 60 too: faster turns overshoot more.</div>
+    <div class="card test"><b class="n">4</b><b>Stop on the line</b>
+      <div class="prog">start moving   (speed 30)
+wait until color sensor is black
+stop moving</div>
+      Measure where the wheels stopped. The line is at 40 cm, but the sensor is ahead of the wheels, so the wheels stop before it.
+      Then try speed 70: how much further does it coast?</div>
+    <div class="card test"><b class="n">5</b><b>Colors</b>
+      Same as test 4 with red, then green, then blue. Does the real sensor see each color? If not, find out what it does see (write the color sensor's color on the light matrix).</div>
+    <div class="card test"><b class="n">6</b><b>Stop before the wall</b>
+      <div class="prog">start moving   (speed 30)
+wait until distance &lt; 20 cm
+stop moving</div>
+      Measure where the wheels stopped. Try 10 cm and speed 70 as well.</div>
+  </div>
+
+  <h2>What to change when they differ</h2>
+  <ul>
+    <li><b>Distance:</b> if the real robot went 97 cm instead of 100, change the <code>set 1 motor rotation to … cm moved</code> block in its program: new value = old value × 97 ÷ 100. Then test 1 again.</li>
+    <li><b>Drift:</b> a robot that curls one way needs its tires checked (same tires, pushed on all the way) before anything else.</li>
+    <li><b>Turns:</b> use the gyro (test 3) for turns that matter. For wheel-turn spins, use the real robot's N, not the simulator's.</li>
+    <li><b>Line, colors, wall:</b> if the real robot coasts further, slow down before the line or the wall. If a color doesn't read, pick another color or use reflected light.</li>
+  </ul>
+
+  <h2 class="sheet">Results sheet</h2>
+  <p class="tip">Robot build: ______________________ &nbsp; Batteries charged? ☐ &nbsp; Date: __________</p>
+  <table>
+    <thead><tr><th style="width:30%">Test</th><th>Simulator</th><th>Real 1</th><th>Real 2</th><th>Real 3</th><th>Difference</th></tr></thead>
+    <tbody>
+      <tr><td>1. 100 cm at speed 50: wheels past start</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. … off the middle (cm, L/R)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. … time (s)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 100 cm at speed 100: wheels past start</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>2. Spin N = ____ rotations: where it points</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3. 4 gyro turns + 100 cm: off the middle</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4. Stop on black, speed 30: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4. Stop on black, speed 70: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>5. Red / green / blue seen?</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>6. Distance &lt; 20 cm, speed 30: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>6. Distance &lt; 10 cm, speed 70: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+    </tbody>
+  </table>
+</main>
+</body>
+</html>

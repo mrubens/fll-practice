@@ -113,7 +113,11 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
-  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The arm has a fork: lower it
+  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The calibration strip is a lane you can
+  tape onto the floor (white paper, black and blue tape, colored paper, a cardboard box for a wall) to compare the
+  simulator with the real robot: [calibration.html](calibration.html) shows how to build it, six short tests and a
+  results sheet, and a box on the 3D view gives the numbers you would measure (how far the wheels are past the start
+  line, how far off the middle, which way the robot points, how long the program took). The arm has a fork: lower it
   about 12 degrees, drive into a cube, lift a little (lift too far and it dangles), carry, lower, back out. Match rules and scoring only apply on the
   season table.
 - **One scrolling palette.** Like the SPIKE app, the block palette is one continuous list with a header per

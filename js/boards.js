@@ -72,6 +72,45 @@ function drawTraining(canvas, board) {
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
+/**
+ * The calibration strip: one long lane anyone can tape onto a floor (white paper under it) with a cardboard box for
+ * a wall, to run the same little programs in the simulator and on the real robot and compare. Distances are along
+ * the lane from the start line (the wheels' axle sits on it), sideways from the lane's middle.
+ */
+export const LANE = { x0: -70, y: 0, half: 14, wall: 140, stop: 40, bands: [{ at: 60, color: '#E3000B', name: 'red' }, { at: 75, color: '#00A845', name: 'green' }, { at: 90, color: '#0B5FC4', name: 'blue' }] };
+function drawCalibration(canvas) {
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  paper(ctx, canvas);
+  const L = LANE, at = (d) => L.x0 + d;
+  // the white paper strip under the lane
+  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(at(-30)), Y(L.y - 30), 170 * s, 60 * s);
+  ctx.strokeStyle = '#D9D4C7'; ctx.lineWidth = 1; ctx.strokeRect(X(at(-30)), Y(L.y - 30), 170 * s, 60 * s);
+  // the turn star round the start (thin pencil lines every 45 degrees, ticks every 10)
+  ctx.strokeStyle = '#9AA3B2'; ctx.lineWidth = 0.4 * s;
+  for (let a = 0; a < 360; a += 45) {
+    const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180);
+    ctx.beginPath(); ctx.moveTo(X(at(0)), Y(L.y)); ctx.lineTo(X(at(25 * c)), Y(L.y + 25 * sn)); ctx.stroke();
+  }
+  for (let a = 0; a < 360; a += 10) {
+    const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180), r0 = a % 45 ? 23 : 21;
+    ctx.beginPath(); ctx.moveTo(X(at(r0 * c)), Y(L.y + r0 * sn)); ctx.lineTo(X(at(25 * c)), Y(L.y + 25 * sn)); ctx.stroke();
+  }
+  line(ctx, [[at(0), L.y - 20], [at(0), L.y + 20]], 2);                          // start line (the axle goes on it)
+  for (const side of [-1, 1]) line(ctx, [[at(20), L.y + side * (L.half + 1)], [at(135), L.y + side * (L.half + 1)]], 2, '#4A90D9');   // lane edges
+  ctx.fillStyle = '#4B5563'; ctx.font = `bold ${3.2 * s}px Nunito, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let d = 10; d <= 130; d += 10) {
+    for (const side of [-1, 1]) {
+      line(ctx, [[at(d), L.y + side * (L.half + 2)], [at(d), L.y + side * (L.half + 7)]], 0.5, '#111111');
+      ctx.fillText(String(d), X(at(d)), Y(L.y + side * (L.half + 10)));
+    }
+  }
+  line(ctx, [[at(L.stop), L.y - L.half], [at(L.stop), L.y + L.half]], 2);         // stop line
+  for (const b of L.bands) { ctx.fillStyle = b.color; ctx.fillRect(X(at(b.at - 2.5)), Y(L.y - L.half + 1), 5 * s, (2 * L.half - 2) * s); }
+  ctx.fillStyle = '#8A93A3'; ctx.font = `bold ${5 * s}px Nunito, Arial, sans-serif`;
+  ctx.fillText('START', X(at(-12)), Y(L.y - 24));
+  return ctx.getImageData(0, 0, canvas.width, canvas.height);
+}
+
 export const BOARDS = [
   { id: 'season', name: 'BIOGLOW season table', kind: 'season', url: 'mat/season.json' },
   {
@@ -87,6 +126,13 @@ export const BOARDS = [
       { id: 'Training marker', x: -50, y: 36, w: 3.2, d: 3.2, h: 9.6, color: '#FFD500', movable: false, model: 'models/training/marker.mpd', modelPose: { x: -50, y: 36, heading: 0 } },
       { id: 'Training cube', x: 10, y: 0, w: 4, d: 4, h: 5.6, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: 0, heading: 0 } },
       { id: 'Training cube 2', x: 10, y: -30, w: 4, d: 4, h: 5.6, color: '#E3000B', movable: false, model: 'models/training/cube.mpd', modelPose: { x: 10, y: -30, heading: 0 } },
+    ],
+  },
+  {
+    id: 'calibration', name: 'Calibration strip', kind: 'drawn', draw: drawCalibration, guide: 'calibration.html', lane: LANE,
+    start: { x: LANE.x0, y: LANE.y, heading: 0 },
+    obstacles: [
+      { id: 'Cardboard wall', x: LANE.x0 + LANE.wall + 5, y: LANE.y, w: 10, d: 50, h: 15, color: '#C49A6C', movable: false },
     ],
   },
 ];

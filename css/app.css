@@ -94,6 +94,9 @@ select.vt { cursor: pointer; color: var(--fg); }
 .mat-readout { position: absolute; left: 10px; top: 92px; z-index: 4; pointer-events: none; background: rgba(30,36,48,.82); color: #fff; border-radius: 8px; padding: 5px 9px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.35; backdrop-filter: blur(4px); }
 .mat-readout small { display: block; font-weight: 600; color: #D6DAE3; }
 .mat-readout b { color: #FFD500; }
+.cal-readout { position: absolute; right: 10px; top: 52px; z-index: 3; pointer-events: none; background: rgba(255,255,255,.94); border: 1px solid var(--line); border-radius: 10px; padding: 6px 10px; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.4; box-shadow: 0 4px 14px rgba(30,36,48,.12); }
+.cal-readout small { display: block; font-weight: 600; color: #4B5563; }
+a.vt { text-decoration: none; display: inline-flex; align-items: center; }
 .view-hint { position: absolute; left: 10px; right: 10px; bottom: 6px; margin: 0; font-size: 11px; color: #4B5563; background: rgba(255,255,255,.75); border-radius: 8px; padding: 4px 8px; pointer-events: none; }
 
 /* ---- hub panel ---- */

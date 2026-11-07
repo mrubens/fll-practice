@@ -506,6 +506,26 @@ function applyBoardUi() {
   $('#btnModels').hidden = !season;
   if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); modelsPanel.hidden = true; }
   boardSelect.value = (world.board && world.board.id) || 'season';
+  const b = world.board || {};
+  $('#btnGuide').hidden = !b.guide;
+  if (b.guide) $('#btnGuide').href = b.guide;
+  calReadout.hidden = !b.lane;
+  calShown = '';
+}
+// The calibration strip measures the robot the way you would with a tape measure on the real one: how far its
+// wheels' axle is past the start line, how far it is off the lane's middle, which way it points, and the time the
+// program took. Write these next to what the real robot did.
+const calReadout = $('#calReadout');
+let calShown = '';
+function updateCalReadout() {
+  const lane = world.board && world.board.lane;
+  if (!lane || calReadout.hidden) return;
+  const along = robot.x - lane.x0, side = robot.y - lane.y;
+  const turn = ((robot.heading % 360) + 540) % 360 - 180;
+  const sideTxt = Math.abs(side) < 0.05 ? 'on the middle' : `${Math.abs(side).toFixed(1)} cm ${side > 0 ? 'right' : 'left'} of the middle`;
+  const turnTxt = Math.abs(turn) < 0.05 ? 'straight down the lane' : `${Math.abs(turn).toFixed(1)}° ${turn > 0 ? 'right' : 'left'}`;
+  const html = `<b>Wheels ${along.toFixed(1)} cm past the start line</b><small>${sideTxt} · pointing ${turnTxt}</small><small>Program time ${robot.time.toFixed(2)} s</small>`;
+  if (html !== calShown) { calReadout.innerHTML = html; calShown = html; }
 }
 
 // ---------- which mission models are on the table ----------
@@ -797,6 +817,7 @@ async function frame(now) {
     if (scoring.match.launched && !scoring.match.ended) { scoring.update(dt); matchTick(dt); }
   }
   hub.update(now);
+  updateCalReadout();
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
   frameBusy = false;
   requestAnimationFrame(frame);
