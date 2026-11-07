@@ -512,9 +512,9 @@ function applyBoardUi() {
   calReadout.hidden = !b.lane;
   calShown = '';
 }
-// The calibration strip measures the robot the way you would with a tape measure on the real one: where its
-// wheels' axle is on the tape (0 at the start line), how far it is off the lane's middle, which way it points, and the time the
-// program took. Write these next to what the real robot did.
+// The calibration strip measures the robot the way you would on the real one: where the middle of its wheels is on
+// the tape measure (0 at the start line), which line of sheet 2's fan its front is on (the angle from the start
+// point), which way it points, how far off the middle it is, and how long the program took.
 const calReadout = $('#calReadout');
 let calShown = '';
 function updateCalReadout() {
@@ -522,9 +522,15 @@ function updateCalReadout() {
   if (!lane || calReadout.hidden) return;
   const along = robot.x - lane.x0, side = robot.y - lane.y;
   const turn = ((robot.heading % 360) + 540) % 360 - 180;
+  const deg = (v) => (Math.abs(v) < 0.05 ? '0°' : `${Math.abs(v).toFixed(1)}° ${v > 0 ? 'right' : 'left'}`);
+  // the middle of the robot's front, as far ahead of the wheels as its furthest part
+  const h = robot.heading * DEG;
+  const o = world.physics && world.physics.robotOutline();
+  const front = o ? Math.max(...o.pts.map(([x, y]) => (x - robot.x) * Math.cos(h) + (y - robot.y) * Math.sin(h))) : 0;
+  const fx = along + front * Math.cos(h), fy = side + front * Math.sin(h);
+  const fan = Math.atan2(fy, fx) / DEG;
   const sideTxt = Math.abs(side) < 0.05 ? 'on the middle' : `${Math.abs(side).toFixed(1)} cm ${side > 0 ? 'right' : 'left'} of the middle`;
-  const turnTxt = Math.abs(turn) < 0.05 ? 'straight down the lane' : `${Math.abs(turn).toFixed(1)}° ${turn > 0 ? 'right' : 'left'}`;
-  const html = `<b>Wheels at ${along.toFixed(1)} cm on the tape measure</b><small>${sideTxt} · pointing ${turnTxt}</small><small>Program time ${robot.time.toFixed(2)} s</small>`;
+  const html = `<b>Wheels at ${along.toFixed(1)} cm on the tape measure</b><small>Front on the ${deg(fan)} line · pointing ${deg(turn)}</small><small>${sideTxt} · program time ${robot.time.toFixed(2)} s</small>`;
   if (html !== calShown) { calReadout.innerHTML = html; calShown = html; }
 }
 

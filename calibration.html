@@ -41,113 +41,111 @@
 <body>
 <main>
   <h1>Calibration strip</h1>
-  <p class="lead">Two printed sheets, a tape measure and a cardboard box on any table about 1.4 m long. Run the same
-    short programs on it in FLL Practice (pick <b>Calibration strip</b> in the table menu) and on the real robot, then
-    compare. The differences tell you what to adjust before trusting the simulator.</p>
+  <p class="lead">Two printed sheets and a tape measure on any table about 1.2 m long, to check how far the robot
+    really drives and how far it really turns. Run the same short programs in FLL Practice (pick <b>Calibration
+    strip</b> in the table menu) and on the real robot, then compare.</p>
   <div class="actions noprint">
     <a class="btn" href="calibration-mat.pdf" target="_blank" rel="noopener">The 2 sheets to print (PDF)</a>
     <a class="btn alt" href="javascript:window.print()">Print this page (with the results sheet)</a>
   </div>
 
   <div class="card">
-    <svg viewBox="-16 -22 150 44" role="img" aria-label="Top view of the calibration strip: two sheets, a tape measure along their right edges and a box for a wall">
-      <!-- sheets: along the lane (x) from the start line, across (y) from the middle; the robot's right is down -->
+    <svg viewBox="-16 -22 130 44" role="img" aria-label="Top view of the calibration strip: two sheets and a tape measure along their right edges">
+      <!-- along the lane (x) from the start line, across (y) from the middle; the robot's right is down -->
       <rect x="-9" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
-      <rect x="36" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
+      <rect x="28" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
       <rect x="-0.6" y="-12.67" width="1.2" height="25.34" fill="#000"/>
       <line x1="-7.6" y1="0" x2="11.2" y2="0" stroke="#7A8191" stroke-width="0.25" stroke-dasharray="0.8 0.6"/>
-      <rect x="41.4" y="-11" width="1.2" height="22" fill="#000"/>
-      <rect x="44.5" y="-11" width="2.5" height="22" fill="#E3000B"/>
-      <rect x="48" y="-11" width="2.5" height="22" fill="#00A845"/>
-      <rect x="51.5" y="-11" width="2.5" height="22" fill="#0B5FC4"/>
-      <rect x="-2" y="13.97" width="112" height="2.5" fill="#F2C500"/>
-      <rect x="110" y="-20" width="10" height="40" fill="#C49A6C" stroke="#8B6A43" stroke-width="0.3"/>
-      <rect x="-7" y="-9" width="19" height="18" rx="2" fill="none" stroke="#E3000B" stroke-width="0.4" stroke-dasharray="1.2 1"/>
+      <line x1="29.40" y1="-10.70" x2="34.54" y2="-12.57" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="-7.88" x2="46.91" y2="-12.57" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="-5.18" x2="48.19" y2="-8.50" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="-2.57" x2="48.19" y2="-4.22" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="0.00" x2="48.19" y2="0.00" stroke="#1F2430" stroke-width="0.35"/>
+      <line x1="29.40" y1="2.57" x2="48.19" y2="4.22" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="5.18" x2="48.19" y2="8.50" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="7.88" x2="46.91" y2="12.57" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="29.40" y1="10.70" x2="34.54" y2="12.57" stroke="#1F2430" stroke-width="0.15"/>
+      <line x1="0" y1="0" x2="29" y2="0" stroke="#E3000B" stroke-width="0.2" stroke-dasharray="0.6 0.6"/>
+      <rect x="-2" y="13.97" width="102" height="2.5" fill="#F2C500"/>
+      <rect x="-6" y="-8" width="18.4" height="16" rx="2" fill="none" stroke="#E3000B" stroke-width="0.4" stroke-dasharray="1.2 1"/>
       <circle cx="0" cy="0" r="0.9" fill="#E3000B"/>
       <g font-size="2.6" font-weight="700" fill="#5B6474">
-        <text x="1.6" y="-15.5" text-anchor="middle">Sheet 1</text>
-        <text x="46.8" y="-15.5" text-anchor="middle">Sheet 2</text>
-        <text x="80" y="20.8" text-anchor="middle">tape measure: 0 at the start line, along the sheets' right edges</text>
-        <text x="115" y="-21" text-anchor="middle" font-size="2.4">box</text>
+        <text x="1.6" y="-15.5" text-anchor="middle">Sheet 1: start</text>
+        <text x="38.8" y="-15.5" text-anchor="middle">Sheet 2: angle fan</text>
+        <text x="75" y="20.8" text-anchor="middle">tape measure: 0 at the start line, along the sheets' right edges</text>
         <text x="0" y="20.8" text-anchor="middle">0</text>
-        <text x="36" y="20.8" text-anchor="middle">36</text>
-        <text x="110" y="20.8" text-anchor="middle">110</text>
+        <text x="28" y="20.8" text-anchor="middle">28</text>
+        <text x="100" y="20.8" text-anchor="middle">100</text>
       </g>
-      <g font-size="2.2" fill="#5B6474"><text x="-15" y="-16" >start line</text></g>
     </svg>
     <p class="tip">Top view, to scale. The robot (red dashed outline) starts with the middle of its wheels on sheet 1's
-      black line and drives toward the box. Every distance is read off the tape measure.</p>
+      black line. Every line on sheet 2 starts at that point, so whatever turn the robot makes there, a short drive
+      afterwards puts its front on the line for the angle it really turned to.</p>
   </div>
 
   <h2>What you need</h2>
   <ul>
-    <li>The 2 sheets from the PDF, printed in color on US letter paper.</li>
-    <li>A tape measure in cm, at least 1.2 m (a metal one stays straight best).</li>
-    <li>Masking tape, a ruler, and a cardboard box at least 25 cm wide and 10 cm tall for the wall.</li>
-    <li>A table at least 1.4 m long. No cutting or joining.</li>
+    <li>The 2 sheets from the PDF, printed on US letter paper (black and white is fine).</li>
+    <li>A tape measure in cm, at least 1 m (a metal one stays straight best), masking tape and a ruler.</li>
+    <li>A table at least 1.2 m long. No cutting or joining.</li>
   </ul>
 
-  <h2>Set it up (10 minutes)</h2>
+  <h2>Set it up (5 minutes)</h2>
   <ol>
-    <li>Print the PDF at <b>100% / Actual size</b>, not "Fit to page". Check the 10 cm bar on each sheet with a ruler.</li>
+    <li>Print the PDF at <b>100% / Actual size</b>, not "Fit to page". Check the 10 cm bar on sheet 1 with a ruler.</li>
     <li>Tape <b>sheet 1</b> near one end of the table, the robot driving "up the page" along the table.</li>
-    <li>Lay the <b>tape measure</b> along sheet 1's right edge, with its <b>0 at the start line</b> (the "tape measure 0 here" mark). Pull it out to about 120 cm, straight along the table, and tape it down at the start, the middle and the end.</li>
-    <li>Put <b>sheet 2</b> with its near edge at <b>36 cm</b> and its right edge touching the tape measure. Tape it down. Its black line is now at 42 cm.</li>
-    <li>Stand the <b>box</b> across the lane with its face at <b>110 cm</b>, square to the tape measure. Tape it down.</li>
+    <li>Lay the <b>tape measure</b> along sheet 1's right edge, with its <b>0 at the start line</b> (the "tape measure 0 here" mark). Pull it out to 1 m, straight along the table, and tape it down at the start, the middle and the end.</li>
+    <li>Put <b>sheet 2</b> with its near edge at <b>28 cm</b> and its right edge touching the tape measure. Tape it down flat.</li>
   </ol>
-  <p class="tip">Because both sheets touch the tape measure, they are in line without measuring sideways. In FLL Practice,
-    <b>Reset position</b> puts the robot on the start line, and the box at the top right of the 3D view gives the same
-    numbers you would read off the tape measure.</p>
+  <p class="tip">Both sheets touch the tape measure, so they are in line without measuring sideways. In FLL Practice,
+    <b>Reset position</b> puts the robot on the start line, and the box at the top right of the 3D view shows the same
+    readings: where the wheels are on the tape measure and which fan line the front is on.</p>
 
   <h2>The tests</h2>
   <p>Use the same robot build in the simulator as on the table. Write each program once in FLL Practice, run it there,
     then export it (<b>Save .llsp3</b>) and run the same file on the real robot. Do every real test 3 times: the real
-    robot changes a little from run to run. Start every run with the wheels' middle on the start line and the
-    robot's middle on the dashed line.</p>
+    robot changes a little from run to run. Start every run with the middle of the wheels on the start line and the
+    robot's middle on the dashed line, and put any arm in the same place each time.</p>
   <div class="tests">
-    <div class="card test"><b class="n">1</b><b>Distance and drift</b>
-      <div class="prog">move forward 80 cm   (speed 50)
-write  timer</div>
-      Read where the middle of the wheels stopped on the tape measure. For drift, measure the gap between the robot's
-      right side and the tape measure at the start and at the end: the difference is how far it drifted. The timer
-      shows how long it took. Try speed 100 too.</div>
-    <div class="card test"><b class="n">2</b><b>Stop on the line</b>
-      <div class="prog">start moving   (speed 30)
-wait until color sensor is black
-stop moving</div>
-      Read where the wheels stopped on the tape measure, and where the robot's middle is on sheet 2's scale (read
-      both sides of the robot and take the halfway point). Then try speed 70: how much further does it coast?</div>
-    <div class="card test"><b class="n">3</b><b>Colors</b>
-      Same as test 2 with red, then green, then blue. Does the real sensor see each color? If not, find out what it
-      does see (write the color sensor's color on the light matrix).</div>
-    <div class="card test"><b class="n">4</b><b>Spin by wheel turns</b>
-      <div class="prog">move with steering 100 for N rotations
-then test 2's three blocks</div>
-      In the simulator, find the N that turns the robot exactly once (the box says "straight down the lane"). Run the
-      same N on the real robot. Compare where the robot's middle crosses sheet 2's scale with test 2: every 1° the
-      spin is off moves it about 0.7 cm sideways. Real tires slip in a spin, so it usually turns less.</div>
-    <div class="card test"><b class="n">5</b><b>Turn with the gyro</b>
+    <div class="card test"><b class="n">1</b><b>Distance</b>
+      <div class="prog">move forward 20 cm   (speed 50)</div>
+      Read where the middle of the wheels (the wheel hubs, seen from the side) stopped on the tape measure. Then 40 cm
+      and 80 cm, and 80 cm at speed 100. Short moves show how the robot starts and stops; long ones show the wheel
+      size.</div>
+    <div class="card test"><b class="n">2</b><b>Straight</b>
+      <div class="prog">move forward 30 cm</div>
+      Read the fan line under the middle of the robot's front. It should be 0. This is your baseline: a robot that
+      reads 1° right here will read 1° right in every turn test too.</div>
+    <div class="card test"><b class="n">3</b><b>Small turns</b>
       <div class="prog">set yaw angle to 0
-start moving with steering 100   (speed 30)
-wait until yaw &gt; 89
+start moving with steering 100   (speed 20)
+wait until yaw &gt; 9
 stop moving
-(4 times, then test 2's three blocks)</div>
-      Four quarter turns bring the robot back to straight. Compare where it crosses sheet 2's scale with test 2.
-      Try speed 60 too: faster turns overshoot more.</div>
-    <div class="card test"><b class="n">6</b><b>Stop before the wall</b>
-      <div class="prog">start moving   (speed 30)
-wait until distance &lt; 20 cm
-stop moving</div>
-      Read where the wheels stopped on the tape measure, and measure the gap between the robot's front and the box with
-      a ruler. Try 10 cm and speed 70 as well.</div>
+move forward 30 cm</div>
+      It should read 10° right. Try 10° left (steering -100, wait until yaw &lt; -9) and speed 50: faster turns
+      overshoot more.</div>
+    <div class="card test"><b class="n">4</b><b>Quarter turns</b>
+      <div class="prog">four times:
+  set yaw angle to 0
+  start moving with steering 100   (speed 30)
+  wait until yaw &gt; 89
+  stop moving
+then move forward 30 cm</div>
+      Four quarter turns make a full turn, so it should read 0. Whatever it reads, divided by 4, is how far off each
+      quarter turn is. Try two half turns (wait until yaw &gt; 179) the same way.</div>
+    <div class="card test"><b class="n">5</b><b>Turns by wheel rotations</b>
+      <div class="prog">move with steering 100 for N rotations   (four times)
+move forward 30 cm</div>
+      In the simulator, find the N that makes each one a quarter turn (four of them read 0). Run the same N on the real
+      robot. Real tires slip in a spin, so it usually turns less: the reading divided by 4 is how much per turn.</div>
   </div>
 
   <h2>What to change when they differ</h2>
   <ul>
     <li><b>Distance:</b> if the real robot went 78 cm instead of 80, change the <code>set 1 motor rotation to … cm moved</code> block in its program: new value = old value × 78 ÷ 80. Then test 1 again.</li>
-    <li><b>Drift:</b> a robot that curls one way needs its tires checked (same tires, pushed on all the way) before anything else.</li>
-    <li><b>Turns:</b> use the gyro (test 5) for turns that matter. For wheel-turn spins, use the real robot's N, not the simulator's.</li>
-    <li><b>Line, colors, wall:</b> if the real robot coasts further, slow down before the line or the wall. If a color doesn't read, pick another color or use reflected light.</li>
+    <li><b>Straight:</b> a robot that drifts needs its tires checked (same tires, pushed on all the way) before anything else.</li>
+    <li><b>Gyro turns:</b> if each quarter turn goes 2° too far, wait until yaw &gt; 87 instead of 89, or turn slower. Use the real robot's number in programs for the real robot.</li>
+    <li><b>Wheel-rotation turns:</b> use the real robot's N, not the simulator's, or switch to gyro turns for turns that matter.</li>
   </ul>
 
   <h2 class="sheet">Results sheet</h2>
@@ -155,17 +153,17 @@ stop moving</div>
   <table>
     <thead><tr><th style="width:32%">Test</th><th>Simulator</th><th>Real 1</th><th>Real 2</th><th>Real 3</th><th>Difference</th></tr></thead>
     <tbody>
-      <tr><td>1. 80 cm at speed 50: wheels at (cm)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>1. … drift (cm, left or right)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>1. … time (s)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 20 cm at speed 50: wheels at (cm)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 40 cm at speed 50: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 80 cm at speed 50: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>1. 80 cm at speed 100: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>2. Black, speed 30: wheels at / middle on scale</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>2. Black, speed 70: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>3. Red / green / blue seen? wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>4. Spin N = ____: middle on scale</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>5. 4 gyro turns: middle on scale</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>6. Distance &lt; 20 cm, speed 30: wheels at / gap</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>6. Distance &lt; 10 cm, speed 70: wheels at / gap</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>2. Straight 30 cm: fan line (° L/R)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3. 10° right, speed 20: fan line</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3. 10° left, speed 20: fan line</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>3. 10° right, speed 50: fan line</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4. 4 quarter turns (gyro): fan line ÷ 4</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>4. 2 half turns (gyro): fan line ÷ 2</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>5. 4 × N = ____ rotations: fan line ÷ 4</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
     </tbody>
   </table>
 </main>

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Make calibration-mat.pdf: the two US letter sheets of the calibration strip (landscape).
 
-Sheet 1 is the start: a start line and a dashed middle line. Sheet 2 has a black line, red, green and blue strips and
-a sideways scale. Nothing is cut or joined: a tape measure taped down along both sheets' right edges keeps them in
-line and gives every distance. The layout must match LANE in js/boards.js.
+Sheet 1 is the start: a start line and a dashed middle line. Sheet 2 is an angle fan: a line for every degree from
+the robot's start point (the middle of its wheels on the start line), so after a turn and a short drive the line under
+the robot's front says which way it really went. Nothing is cut or joined: a tape measure taped down along both
+sheets' right edges keeps them in line and gives every distance. The layout must match LANE in js/boards.js.
 Run: python3 tools/calibration_mat.py
 """
 import math
@@ -14,11 +15,8 @@ PW, PH = 27.94, 21.59               # letter, landscape (cm)
 MID = PW / 2                        # the lane's middle runs up the page; the robot drives from the bottom edge up
 # along the lane, from the start line (cm)
 S1_BACK = -9.0                      # sheet 1's bottom edge
-S2_NEAR = 36.0                      # sheet 2's bottom edge
-BLACK = 42.0                        # black line (middle)
-BANDS = [('RED', 44.5, (0.890, 0.0, 0.043)), ('GREEN', 48, (0.0, 0.659, 0.271)), ('BLUE', 51.5, (0.043, 0.373, 0.769))]   # from, 2.5 cm deep
-BAND = 2.5
-HALF = 11.0                         # half the width of the lines and strips
+S2_NEAR = 28.0                      # sheet 2's bottom edge
+EDGE = 1.4                          # keep the fan this far inside the paper (printer margins)
 GREY = (0.45, 0.48, 0.55)
 INK = (0.12, 0.14, 0.19)
 
@@ -92,25 +90,37 @@ def sheet1():
 
 def sheet2():
     p = Page(S2_NEAR)
-    # sideways scale just before the black line: cm left and right of the middle
-    ys = p.y(S2_NEAR + 2.8)
-    p.line(MID - 12, ys, MID + 12, ys, 0.04, INK)
-    for i in range(-12, 13):
-        h = 1.0 if i % 5 == 0 else 0.5
-        p.line(MID + i, ys - h, MID + i, ys, 0.05, INK)
-        if i % 5 == 0:
-            p.text(MID + i, ys + 0.6, str(abs(i)), 0.4, INK, anchor='middle')
-    p.text(MID - 12, ys + 1.25, '< cm left of the middle', 0.32)
-    p.text(MID + 6.2, ys + 1.25, 'cm right of the middle >', 0.32)
-    p.rect(MID - HALF, p.y(BLACK + 0.6), MID + HALF, p.y(BLACK - 0.6), (0, 0, 0))   # black line
-    for name, d, rgb in BANDS:
-        p.rect(MID - HALF, p.y(d + BAND), MID + HALF, p.y(d), rgb)
-        p.text(MID + HALF + 0.3, p.y(d + BAND / 2 - 0.15), name, 0.36, INK)
-    p.text(MID + HALF + 0.3, p.y(BLACK - 0.15), 'BLACK', 0.36, INK)
-    p.text(1.5, 1.95, 'CALIBRATION STRIP   Sheet 2 of 2: LINE AND COLORS', 0.45, INK)
-    p.text(1.5, PH - 0.75, f'Put this edge at {S2_NEAR:.0f} cm on the tape measure, the right edge against it.', 0.34)
-    p.tape_note(BLACK, f'black line: {BLACK:.0f} cm >')
-    p.check_bar(1.5, 2.45)
+    # a line for every degree from the start point (the lane's middle at the start line), right of the robot positive
+    lo, hi = S2_NEAR + EDGE, S2_NEAR + PH - EDGE
+    side = MID - EDGE
+    for a in range(-30, 31):
+        r = math.radians(a)
+        r0 = lo / math.cos(r)
+        r1 = min(hi / math.cos(r), side / abs(math.sin(r)) if a else 1e9)
+        if r1 <= r0 + 0.5:
+            continue
+        w = 0.14 if a == 0 else 0.07 if a % 5 == 0 else 0.03
+        p.line(MID + r0 * math.sin(r), p.y(r0 * math.cos(r)), MID + r1 * math.sin(r), p.y(r1 * math.cos(r)), w, INK)
+        if a % 5 == 0:
+            rl = r1 - 0.9
+            lab = '0' if a == 0 else f'{abs(a)}'
+            x, y = MID + rl * math.sin(r), p.y(rl * math.cos(r))
+            if r1 < hi / math.cos(r) - 0.01:          # leaves by a side: put the number just inside it
+                x = MID + math.copysign(side - 1.0, a)
+            p.rect(x - 0.55, y - 0.45, x + 0.55, y + 0.25, (1, 1, 1))
+            p.text(x, y + 0.12, lab, 0.42, INK, anchor='middle')
+    for k in range(4):                                 # arcs every 5 cm from the start point, to help read along a line
+        rr = 30 + 5 * k
+        pts = [(MID + rr * math.sin(math.radians(t / 2)), p.y(rr * math.cos(math.radians(t / 2)))) for t in range(-60, 61)]
+        pts = [q for q in pts if EDGE < q[0] < PW - EDGE and EDGE < q[1] < PH - EDGE]
+        for (x0, y0), (x1, y1) in zip(pts, pts[1:]):
+            p.line(x0, y0, x1, y1, 0.02, GREY)
+    p.rect(MID - 2.6, 2.75, MID + 2.6, 3.45, (1, 1, 1))
+    p.text(MID - 2.45, 3.25, '< left', 0.36, INK)
+    p.text(MID + 0.95, 3.25, 'right >', 0.36, INK)
+    p.rect(1.3, PH - 1.95, PW - 1.3, PH - 0.5, (1, 1, 1))
+    p.text(1.5, PH - 1.45, 'CALIBRATION STRIP   Sheet 2 of 2: ANGLES', 0.36, INK)
+    p.text(1.5, PH - 0.8, f'Put this edge at {S2_NEAR:.0f} cm on the tape measure, the right edge against it. Read the line under the middle of the robot\'s front.', 0.3)
     return p
 
 
