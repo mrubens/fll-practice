@@ -530,7 +530,7 @@ function updateCalReadout() {
   const fx = along + front * Math.cos(h), fy = side + front * Math.sin(h);
   const fan = Math.atan2(fy, fx) / DEG;
   const sideTxt = Math.abs(side) < 0.05 ? 'on the middle' : `${Math.abs(side).toFixed(1)} cm ${side > 0 ? 'right' : 'left'} of the middle`;
-  const html = `<b>Wheels at ${along.toFixed(1)} cm on the tape measure</b><small>Front on the ${deg(fan)} line · pointing ${deg(turn)}</small><small>${sideTxt} · program time ${robot.time.toFixed(2)} s</small>`;
+  const html = `<b>Wheels at ${along.toFixed(1)} cm from the start line</b><small>Front on the ${deg(fan)} line · pointing ${deg(turn)}</small><small>${sideTxt} · program time ${robot.time.toFixed(2)} s</small>`;
   if (html !== calShown) { calReadout.innerHTML = html; calShown = html; }
 }
 

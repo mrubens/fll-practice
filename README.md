@@ -113,12 +113,12 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
 - **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
   table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
   SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
-  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The calibration strip is two printed letter sheets and a
+  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The calibration strip is three printed letter sheets and a
   tape measure on any table about 1.2 m long, to check distances and turns against the real robot:
   [calibration.html](calibration.html) shows how to set it up, five short tests and a results sheet
-  ([calibration-mat.pdf](calibration-mat.pdf) is the two sheets, made by tools/calibration_mat.py). Sheet 2 is a fan
+  ([calibration-mat.pdf](calibration-mat.pdf) is the sheets, made by tools/calibration_mat.py). Sheet 2 is a fan
   with a line for every degree from the start point, so after a turn and a short drive the robot's front shows the
-  angle it really turned to. A box on the 3D view gives the same readings (where the wheels are on the tape
+  angle it really turned to; sheet 3 is a distance ruler for where the wheels stop after 70 to 87 cm. A box on the 3D view gives the same readings (where the wheels are on the tape
   measure, which fan line the front is on, which way the robot points, how long the program took). The arm has a fork: lower it
   about 12 degrees, drive into a cube, lift a little (lift too far and it dangles), carry, lower, back out. Match rules and scoring only apply on the
   season table.

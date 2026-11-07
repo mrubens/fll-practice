@@ -41,7 +41,7 @@
 <body>
 <main>
   <h1>Calibration strip</h1>
-  <p class="lead">Two printed sheets and a tape measure on any table about 1.2 m long, to check how far the robot
+  <p class="lead">Three printed sheets and a tape measure on any table about 1.2 m long, to check how far the robot
     really drives and how far it really turns. Run the same short programs in FLL Practice (pick <b>Calibration
     strip</b> in the table menu) and on the real robot, then compare.</p>
   <div class="actions noprint">
@@ -50,10 +50,12 @@
   </div>
 
   <div class="card">
-    <svg viewBox="-16 -22 130 44" role="img" aria-label="Top view of the calibration strip: two sheets and a tape measure along their right edges">
+    <svg viewBox="-16 -22 130 48" role="img" aria-label="Top view of the calibration strip: two sheets and a tape measure along their right edges">
       <!-- along the lane (x) from the start line, across (y) from the middle; the robot's right is down -->
       <rect x="-9" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
       <rect x="28" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
+      <rect x="68" y="-13.97" width="21.59" height="27.94" fill="#fff" stroke="#B9C0CC" stroke-width="0.3"/>
+      <g stroke="#1F2430" stroke-width="0.12"><line x1="70" y1="-12.67" x2="70" y2="12.67"/><line x1="75" y1="-12.67" x2="75" y2="12.67"/><line x1="80" y1="-12.67" x2="80" y2="12.67" stroke-width="0.3"/><line x1="85" y1="-12.67" x2="85" y2="12.67"/></g>
       <rect x="-0.6" y="-12.67" width="1.2" height="25.34" fill="#000"/>
       <line x1="-7.6" y1="0" x2="11.2" y2="0" stroke="#7A8191" stroke-width="0.25" stroke-dasharray="0.8 0.6"/>
       <line x1="29.40" y1="-10.70" x2="34.54" y2="-12.57" stroke="#1F2430" stroke-width="0.15"/>
@@ -72,20 +74,23 @@
       <g font-size="2.6" font-weight="700" fill="#5B6474">
         <text x="1.6" y="-15.5" text-anchor="middle">Sheet 1: start</text>
         <text x="38.8" y="-15.5" text-anchor="middle">Sheet 2: angle fan</text>
-        <text x="75" y="20.8" text-anchor="middle">tape measure: 0 at the start line, along the sheets' right edges</text>
+        <text x="78.8" y="-15.5" text-anchor="middle">Sheet 3: distance</text>
+        <text x="48" y="24.5" text-anchor="middle">tape measure: 0 at the start line, along the sheets' right edges</text>
         <text x="0" y="20.8" text-anchor="middle">0</text>
         <text x="28" y="20.8" text-anchor="middle">28</text>
+        <text x="68" y="20.8" text-anchor="middle">68</text>
         <text x="100" y="20.8" text-anchor="middle">100</text>
       </g>
     </svg>
     <p class="tip">Top view, to scale. The robot (red dashed outline) starts with the middle of its wheels on sheet 1's
       black line. Every line on sheet 2 starts at that point, so whatever turn the robot makes there, a short drive
-      afterwards puts its front on the line for the angle it really turned to.</p>
+      afterwards puts its front on the line for the angle it really turned to. Sheet 3 has a line for every cm from
+      the start line, from 70 to 87, to read where the wheels stopped after a long drive.</p>
   </div>
 
   <h2>What you need</h2>
   <ul>
-    <li>The 2 sheets from the PDF, printed on US letter paper (black and white is fine).</li>
+    <li>The 3 sheets from the PDF, printed on US letter paper (black and white is fine).</li>
     <li>A tape measure in cm, at least 1 m (a metal one stays straight best), masking tape and a ruler.</li>
     <li>A table at least 1.2 m long. No cutting or joining.</li>
   </ul>
@@ -96,10 +101,11 @@
     <li>Tape <b>sheet 1</b> near one end of the table, the robot driving "up the page" along the table.</li>
     <li>Lay the <b>tape measure</b> along sheet 1's right edge, with its <b>0 at the start line</b> (the "tape measure 0 here" mark). Pull it out to 1 m, straight along the table, and tape it down at the start, the middle and the end.</li>
     <li>Put <b>sheet 2</b> with its near edge at <b>28 cm</b> and its right edge touching the tape measure. Tape it down flat.</li>
+    <li>Put <b>sheet 3</b> with its near edge at <b>68 cm</b> the same way. Check: its 70 line is at 70 cm on the tape measure.</li>
   </ol>
-  <p class="tip">Both sheets touch the tape measure, so they are in line without measuring sideways. In FLL Practice,
+  <p class="tip">All three sheets touch the tape measure, so they are in line without measuring sideways. In FLL Practice,
     <b>Reset position</b> puts the robot on the start line, and the box at the top right of the 3D view shows the same
-    readings: where the wheels are on the tape measure and which fan line the front is on.</p>
+    readings: where the wheels are (in cm from the start line) and which fan line the front is on.</p>
 
   <h2>The tests</h2>
   <p>Use the same robot build in the simulator as on the table. Write each program once in FLL Practice, run it there,
@@ -108,10 +114,11 @@
     robot's middle on the dashed line, and put any arm in the same place each time.</p>
   <div class="tests">
     <div class="card test"><b class="n">1</b><b>Distance</b>
-      <div class="prog">move forward 20 cm   (speed 50)</div>
-      Read where the middle of the wheels (the wheel hubs, seen from the side) stopped on the tape measure. Then 40 cm
-      and 80 cm, and 80 cm at speed 100. Short moves show how the robot starts and stops; long ones show the wheel
-      size.</div>
+      <div class="prog">move forward 80 cm   (speed 50)</div>
+      Look at the robot from the side and read the line on sheet 3 beside the middle of the wheels (the hubs). Each
+      line is 1 cm; the little marks at the edges are millimetres. Then try speed 30 and speed 100, and 75 and 85 cm.
+      For short moves (20 and 40 cm), read the tape measure beside the hubs instead: they show how the robot starts
+      and stops.</div>
     <div class="card test"><b class="n">2</b><b>Straight</b>
       <div class="prog">move forward 30 cm</div>
       Read the fan line under the middle of the robot's front. It should be 0. This is your baseline: a robot that
@@ -153,10 +160,10 @@ move forward 30 cm</div>
   <table>
     <thead><tr><th style="width:32%">Test</th><th>Simulator</th><th>Real 1</th><th>Real 2</th><th>Real 3</th><th>Difference</th></tr></thead>
     <tbody>
-      <tr><td>1. 20 cm at speed 50: wheels at (cm)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>1. 40 cm at speed 50: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
-      <tr><td>1. 80 cm at speed 50: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 80 cm at speed 50: wheels at (sheet 3)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 80 cm at speed 30: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>1. 80 cm at speed 100: wheels at</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
+      <tr><td>1. 20 cm and 40 cm: wheels at (tape)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>2. Straight 30 cm: fan line (° L/R)</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>3. 10° right, speed 20: fan line</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>
       <tr><td>3. 10° left, speed 20: fan line</td><td class="blank"></td><td></td><td></td><td></td><td></td></tr>

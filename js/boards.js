@@ -73,15 +73,16 @@ function drawTraining(canvas, board) {
 }
 
 /**
- * The calibration strip: two US letter sheets (calibration-mat.pdf, made by tools/calibration_mat.py) and a tape
+ * The calibration strip: three US letter sheets (calibration-mat.pdf, made by tools/calibration_mat.py) and a tape
  * measure on any table, to check distances and turns in the simulator and on the real robot and compare. Sheet 1 has
  * the start line (the middle of the wheels goes on it); sheet 2 is a fan with a line for every degree from that start
- * point, so after a turn and a short drive the line under the robot's front gives the angle it really went at.
+ * point, so after a turn and a short drive the line under the robot's front gives the angle it really went at;
+ * sheet 3 is a distance ruler with a line for every cm from 70 to 87.
  * Distances are along the lane from the start line, sideways from the lane's middle. These numbers must match
  * tools/calibration_mat.py.
  */
 const SHEET_L = 21.59, SHEET_W = 27.94, EDGE = 1.4;
-export const LANE = { x0: -60, y: 0, sheet1: -9, sheet2: 28, tape: 100 };
+export const LANE = { x0: -60, y: 0, sheet1: -9, sheet2: 28, sheet3: 68, tape: 100 };
 function drawCalibration(canvas) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   paper(ctx, canvas);
@@ -90,7 +91,7 @@ function drawCalibration(canvas) {
     ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(at(d0)), Y(L.y - W), SHEET_L * s, SHEET_W * s);
     ctx.strokeStyle = '#D9D4C7'; ctx.lineWidth = 1; ctx.strokeRect(X(at(d0)), Y(L.y - W), SHEET_L * s, SHEET_W * s);
   };
-  sheet(L.sheet1); sheet(L.sheet2);
+  sheet(L.sheet1); sheet(L.sheet2); sheet(L.sheet3);
   // sheet 1: the start line and the dashed middle
   ctx.fillStyle = '#000000'; ctx.fillRect(X(at(-0.6)), Y(L.y - W + 1.3), 1.2 * s, (SHEET_W - 2.6) * s);
   ctx.strokeStyle = '#7A8191'; ctx.lineWidth = 0.06 * s; ctx.setLineDash([0.6 * s, 0.4 * s]);
@@ -103,6 +104,16 @@ function drawCalibration(canvas) {
     if (r1 <= r0 + 0.5) continue;
     ctx.lineWidth = (a === 0 ? 0.14 : a % 5 ? 0.03 : 0.07) * s;
     ctx.beginPath(); ctx.moveTo(X(at(r0 * Math.cos(r))), Y(L.y + r0 * Math.sin(r))); ctx.lineTo(X(at(r1 * Math.cos(r))), Y(L.y + r1 * Math.sin(r))); ctx.stroke();
+  }
+  // sheet 3: a line across for every cm, labelled at both sides
+  ctx.strokeStyle = '#1F2430'; ctx.fillStyle = '#1F2430'; ctx.font = `bold ${0.42 * s}px Nunito, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let d = Math.ceil(L.sheet3 + 1.5); d <= Math.floor(L.sheet3 + SHEET_L - 2); d++) {
+    ctx.lineWidth = (d % 5 ? 0.03 : 0.07) * s;
+    ctx.beginPath(); ctx.moveTo(X(at(d)), Y(L.y - W + 1.3)); ctx.lineTo(X(at(d)), Y(L.y + W - 1.3)); ctx.stroke();
+    for (const off of [-W + 3.3, W - 3.3]) {
+      ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(at(d - 0.34)), Y(L.y + off - 0.8), 0.68 * s, 1.6 * s);
+      ctx.fillStyle = '#1F2430'; ctx.save(); ctx.translate(X(at(d)), Y(L.y + off)); ctx.rotate(Math.PI / 2); ctx.fillText(String(d), 0, 0); ctx.restore();
+    }
   }
   // the tape measure along the sheets' right edges (the robot's right), 0 at the start line
   ctx.fillStyle = '#F2C500'; ctx.fillRect(X(at(-2)), Y(L.y + W), (L.tape + 2) * s, 2.5 * s);

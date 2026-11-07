@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
-"""Make calibration-mat.pdf: the two US letter sheets of the calibration strip (landscape).
+"""Make calibration-mat.pdf: the three US letter sheets of the calibration strip (landscape).
 
 Sheet 1 is the start: a start line and a dashed middle line. Sheet 2 is an angle fan: a line for every degree from
 the robot's start point (the middle of its wheels on the start line), so after a turn and a short drive the line under
-the robot's front says which way it really went. Nothing is cut or joined: a tape measure taped down along both
-sheets' right edges keeps them in line and gives every distance. The layout must match LANE in js/boards.js.
+the robot's front says which way it really went. Sheet 3 is a distance ruler, a line for every cm from 70 to 88
+cm, to read where the wheels stopped. Nothing is cut or joined: a tape measure taped down along the sheets' right
+edges keeps them in line. The layout must match LANE in js/boards.js.
 Run: python3 tools/calibration_mat.py
 """
 import math
@@ -16,6 +17,7 @@ MID = PW / 2                        # the lane's middle runs up the page; the ro
 # along the lane, from the start line (cm)
 S1_BACK = -9.0                      # sheet 1's bottom edge
 S2_NEAR = 28.0                      # sheet 2's bottom edge
+S3_NEAR = 68.0                      # sheet 3's bottom edge
 EDGE = 1.4                          # keep the fan this far inside the paper (printer margins)
 GREY = (0.45, 0.48, 0.55)
 INK = (0.12, 0.14, 0.19)
@@ -75,7 +77,7 @@ def sheet1():
         p.line(MID - 0.8, y + 0.8, MID, y, 0.08, GREY)
         p.line(MID + 0.8, y + 0.8, MID, y, 0.08, GREY)
     p.text(1.5, 2.2, 'CALIBRATION STRIP', 0.6, INK)
-    p.text(1.5, 3.0, 'Sheet 1 of 2: START', 0.45, INK)
+    p.text(1.5, 3.0, 'Sheet 1 of 3: START', 0.45, INK)
     p.text(1.5, 4.2, 'Put the middle of the wheels on', 0.34)
     p.text(1.5, 4.7, 'the black line and the middle of', 0.34)
     p.text(1.5, 5.2, 'the robot on the dashed line.', 0.34)
@@ -119,13 +121,36 @@ def sheet2():
     p.text(MID - 2.45, 3.25, '< left', 0.36, INK)
     p.text(MID + 0.95, 3.25, 'right >', 0.36, INK)
     p.rect(1.3, PH - 1.95, PW - 1.3, PH - 0.5, (1, 1, 1))
-    p.text(1.5, PH - 1.45, 'CALIBRATION STRIP   Sheet 2 of 2: ANGLES', 0.36, INK)
+    p.text(1.5, PH - 1.45, 'CALIBRATION STRIP   Sheet 2 of 3: ANGLES', 0.36, INK)
     p.text(1.5, PH - 0.8, f'Put this edge at {S2_NEAR:.0f} cm on the tape measure, the right edge against it. Read the line under the middle of the robot\'s front.', 0.3)
     return p
 
 
+def sheet3():
+    p = Page(S3_NEAR)
+    # a line across for every cm from the start line, mm ticks along both sides
+    first, last = math.ceil(S3_NEAR + 1.5), math.floor(S3_NEAR + PH - 2.0)
+    for d in range(first, last + 1):
+        y = p.y(d)
+        five = d % 5 == 0
+        p.line(1.3, y, PW - 1.3, y, 0.07 if five else 0.03, INK)
+        for x in (3.3, PW - 3.3):
+            p.rect(x - 0.8, y - 0.34, x + 0.8, y + 0.34, (1, 1, 1))
+            p.text(x, y + 0.17, str(d), 0.46 if five else 0.38, INK, anchor='middle')
+    for k in range(first * 10 - 5, last * 10 + 6):     # millimetres along the sides
+        if k % 10 == 0:
+            continue
+        y = p.y(k / 10)
+        h = 0.55 if k % 5 == 0 else 0.35
+        for x0, x1 in ((1.3, 1.3 + h), (PW - 1.3 - h, PW - 1.3)):
+            p.line(x0, y, x1, y, 0.02, INK)
+    p.text(1.5, 1.45, 'CALIBRATION STRIP   Sheet 3 of 3: DISTANCE (cm from the start line)', 0.36, INK)
+    p.text(1.5, PH - 0.75, f'Put this edge at {S3_NEAR:.0f} cm on the tape measure, the right edge against it. Read the line beside the middle of the wheels (the hubs).', 0.3)
+    return p
+
+
 def build(path, sheets=None):
-    pages = ['\n'.join(f().ops) for f in (sheets or (sheet1, sheet2))]
+    pages = ['\n'.join(f().ops) for f in (sheets or (sheet1, sheet2, sheet3))]
     objs = ['<< /Type /Catalog /Pages 2 0 R >>', None, '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>']
     kids = []
     for content in pages:
@@ -152,6 +177,6 @@ if __name__ == '__main__':
     here = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     build(os.path.join(here, 'calibration-mat.pdf'))
     if len(sys.argv) > 1:           # a folder: also each sheet on its own, for previews
-        for i, f in enumerate((sheet1, sheet2), 1):
+        for i, f in enumerate((sheet1, sheet2, sheet3), 1):
             build(os.path.join(sys.argv[1], f'sheet{i}.pdf'), [f])
     print('wrote calibration-mat.pdf')
