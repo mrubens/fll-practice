@@ -73,41 +73,46 @@ function drawTraining(canvas, board) {
 }
 
 /**
- * The calibration strip: one long lane anyone can tape onto a floor (white paper under it) with a cardboard box for
- * a wall, to run the same little programs in the simulator and on the real robot and compare. Distances are along
- * the lane from the start line (the wheels' axle sits on it), sideways from the lane's middle.
+ * The calibration strip: two US letter sheets (calibration-mat.pdf, made by tools/calibration_mat.py) and a tape
+ * measure on any table, with a cardboard box for a wall, to run the same little programs in the simulator and on the
+ * real robot and compare. Sheet 1 has the start line (the wheels' axle goes on it), sheet 2 a black line and red,
+ * green and blue strips. Distances are along the lane from the start line, sideways from the lane's middle. These
+ * numbers must match tools/calibration_mat.py.
  */
-export const LANE = { x0: -70, y: 0, half: 14, wall: 140, stop: 40, bands: [{ at: 60, color: '#E3000B', name: 'red' }, { at: 75, color: '#00A845', name: 'green' }, { at: 90, color: '#0B5FC4', name: 'blue' }] };
+const SHEET_L = 21.59, SHEET_W = 27.94;
+export const LANE = {
+  x0: -60, y: 0, wall: 110, sheet1: -9, sheet2: 36, black: 42, half: 11,
+  bands: [{ at: 44.5, color: '#E3000B' }, { at: 48, color: '#00A845' }, { at: 51.5, color: '#0B5FC4' }], band: 2.5,
+};
 function drawCalibration(canvas) {
   const ctx = canvas.getContext('2d', { willReadFrequently: true });
   paper(ctx, canvas);
-  const L = LANE, at = (d) => L.x0 + d;
-  // the white paper strip under the lane
-  ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(at(-30)), Y(L.y - 30), 170 * s, 60 * s);
-  ctx.strokeStyle = '#D9D4C7'; ctx.lineWidth = 1; ctx.strokeRect(X(at(-30)), Y(L.y - 30), 170 * s, 60 * s);
-  // the turn star round the start (thin pencil lines every 45 degrees, ticks every 10)
-  ctx.strokeStyle = '#9AA3B2'; ctx.lineWidth = 0.4 * s;
-  for (let a = 0; a < 360; a += 45) {
-    const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180);
-    ctx.beginPath(); ctx.moveTo(X(at(0)), Y(L.y)); ctx.lineTo(X(at(25 * c)), Y(L.y + 25 * sn)); ctx.stroke();
+  const L = LANE, at = (d) => L.x0 + d, W = SHEET_W / 2;
+  const sheet = (d0) => {
+    ctx.fillStyle = '#FFFFFF'; ctx.fillRect(X(at(d0)), Y(L.y - W), SHEET_L * s, SHEET_W * s);
+    ctx.strokeStyle = '#D9D4C7'; ctx.lineWidth = 1; ctx.strokeRect(X(at(d0)), Y(L.y - W), SHEET_L * s, SHEET_W * s);
+  };
+  sheet(L.sheet1); sheet(L.sheet2);
+  // sheet 1: the start line and the dashed middle
+  ctx.fillStyle = '#000000'; ctx.fillRect(X(at(-0.6)), Y(L.y - W + 1.3), 1.2 * s, (SHEET_W - 2.6) * s);
+  ctx.strokeStyle = '#7A8191'; ctx.lineWidth = 0.06 * s; ctx.setLineDash([0.6 * s, 0.4 * s]);
+  ctx.beginPath(); ctx.moveTo(X(at(L.sheet1 + 1.4)), Y(L.y)); ctx.lineTo(X(at(L.sheet1 + SHEET_L - 1.4)), Y(L.y)); ctx.stroke(); ctx.setLineDash([]);
+  // sheet 2: the sideways scale, the black line and the colors
+  ctx.strokeStyle = '#1F2430'; ctx.lineWidth = 0.05 * s;
+  for (let i = -12; i <= 12; i++) {
+    const h = i % 5 ? 0.5 : 1;
+    ctx.beginPath(); ctx.moveTo(X(at(L.sheet2 + 2.8)), Y(L.y + i)); ctx.lineTo(X(at(L.sheet2 + 2.8 + h)), Y(L.y + i)); ctx.stroke();
   }
-  for (let a = 0; a < 360; a += 10) {
-    const c = Math.cos(a * Math.PI / 180), sn = Math.sin(a * Math.PI / 180), r0 = a % 45 ? 23 : 21;
-    ctx.beginPath(); ctx.moveTo(X(at(r0 * c)), Y(L.y + r0 * sn)); ctx.lineTo(X(at(25 * c)), Y(L.y + 25 * sn)); ctx.stroke();
+  ctx.fillStyle = '#000000'; ctx.fillRect(X(at(L.black - 0.6)), Y(L.y - L.half), 1.2 * s, 2 * L.half * s);
+  for (const b of L.bands) { ctx.fillStyle = b.color; ctx.fillRect(X(at(b.at)), Y(L.y - L.half), L.band * s, 2 * L.half * s); }
+  // the tape measure along the sheets' right edges (the robot's right), 0 at the start line
+  ctx.fillStyle = '#F2C500'; ctx.fillRect(X(at(-2)), Y(L.y + W), (L.wall + 2) * s, 2.5 * s);
+  ctx.strokeStyle = '#1F2430'; ctx.fillStyle = '#1F2430'; ctx.font = `bold ${1.2 * s}px Nunito, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  for (let d = 0; d < L.wall; d++) {
+    ctx.lineWidth = (d % 10 ? 0.06 : 0.12) * s;
+    ctx.beginPath(); ctx.moveTo(X(at(d)), Y(L.y + W)); ctx.lineTo(X(at(d)), Y(L.y + W + (d % 10 ? 0.5 : d % 5 ? 0.7 : 0.9))); ctx.stroke();
+    if (d % 10 === 0) ctx.fillText(String(d), X(at(d)), Y(L.y + W + 1.7));
   }
-  line(ctx, [[at(0), L.y - 20], [at(0), L.y + 20]], 2);                          // start line (the axle goes on it)
-  for (const side of [-1, 1]) line(ctx, [[at(20), L.y + side * (L.half + 1)], [at(135), L.y + side * (L.half + 1)]], 2, '#4A90D9');   // lane edges
-  ctx.fillStyle = '#4B5563'; ctx.font = `bold ${3.2 * s}px Nunito, Arial, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  for (let d = 10; d <= 130; d += 10) {
-    for (const side of [-1, 1]) {
-      line(ctx, [[at(d), L.y + side * (L.half + 2)], [at(d), L.y + side * (L.half + 7)]], 0.5, '#111111');
-      ctx.fillText(String(d), X(at(d)), Y(L.y + side * (L.half + 10)));
-    }
-  }
-  line(ctx, [[at(L.stop), L.y - L.half], [at(L.stop), L.y + L.half]], 2);         // stop line
-  for (const b of L.bands) { ctx.fillStyle = b.color; ctx.fillRect(X(at(b.at - 2.5)), Y(L.y - L.half + 1), 5 * s, (2 * L.half - 2) * s); }
-  ctx.fillStyle = '#8A93A3'; ctx.font = `bold ${5 * s}px Nunito, Arial, sans-serif`;
-  ctx.fillText('START', X(at(-12)), Y(L.y - 24));
   return ctx.getImageData(0, 0, canvas.width, canvas.height);
 }
 
@@ -132,7 +137,7 @@ export const BOARDS = [
     id: 'calibration', name: 'Calibration strip', kind: 'drawn', draw: drawCalibration, guide: 'calibration.html', lane: LANE,
     start: { x: LANE.x0, y: LANE.y, heading: 0 },
     obstacles: [
-      { id: 'Cardboard wall', x: LANE.x0 + LANE.wall + 5, y: LANE.y, w: 10, d: 50, h: 15, color: '#C49A6C', movable: false },
+      { id: 'Cardboard wall', x: LANE.x0 + LANE.wall + 5, y: LANE.y, w: 10, d: 40, h: 15, color: '#C49A6C', movable: false },
     ],
   },
 ];

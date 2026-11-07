@@ -512,8 +512,8 @@ function applyBoardUi() {
   calReadout.hidden = !b.lane;
   calShown = '';
 }
-// The calibration strip measures the robot the way you would with a tape measure on the real one: how far its
-// wheels' axle is past the start line, how far it is off the lane's middle, which way it points, and the time the
+// The calibration strip measures the robot the way you would with a tape measure on the real one: where its
+// wheels' axle is on the tape (0 at the start line), how far it is off the lane's middle, which way it points, and the time the
 // program took. Write these next to what the real robot did.
 const calReadout = $('#calReadout');
 let calShown = '';
@@ -524,7 +524,7 @@ function updateCalReadout() {
   const turn = ((robot.heading % 360) + 540) % 360 - 180;
   const sideTxt = Math.abs(side) < 0.05 ? 'on the middle' : `${Math.abs(side).toFixed(1)} cm ${side > 0 ? 'right' : 'left'} of the middle`;
   const turnTxt = Math.abs(turn) < 0.05 ? 'straight down the lane' : `${Math.abs(turn).toFixed(1)}° ${turn > 0 ? 'right' : 'left'}`;
-  const html = `<b>Wheels ${along.toFixed(1)} cm past the start line</b><small>${sideTxt} · pointing ${turnTxt}</small><small>Program time ${robot.time.toFixed(2)} s</small>`;
+  const html = `<b>Wheels at ${along.toFixed(1)} cm on the tape measure</b><small>${sideTxt} · pointing ${turnTxt}</small><small>Program time ${robot.time.toFixed(2)} s</small>`;
   if (html !== calShown) { calReadout.innerHTML = html; calShown = html; }
 }
 
