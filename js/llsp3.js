@@ -111,7 +111,7 @@ export async function exportLlsp3(workspace, name, extras = {}) {
   const now = new Date().toISOString();
   const manifest = {
     type: 'word-blocks', autoDelete: false, created: now, id: nano(12), lastsaved: now, size: sb3Data.length,
-    name: String(name || 'Project'), slotIndex: 0, workspaceX: 0, workspaceY: 0, zoomLevel: 0.675, showAllBlocks: false, version: 38,
+    name: String(name || 'Project'), slotIndex: Number.isInteger(extras.slot) ? extras.slot : 0, workspaceX: 0, workspaceY: 0, zoomLevel: 0.675, showAllBlocks: false, version: 38,
     hardware: { [nano(20)]: { type: 'flipper' } },
     extensions,
     state: { playMode: 'download', canvasDrawerTab: 'monitorTab', canvasDrawerOpen: false, hasMonitors: false },
@@ -145,7 +145,8 @@ export async function importLlsp3(data) {
   let build = null;
   const buildFile = zip.file('spikesim-build.json');
   if (buildFile) { try { build = JSON.parse(await buildFile.async('string')); } catch { build = null; } }
-  return { name: manifest.name || 'Project', state, warnings, build };
+  const slot = Number.isInteger(manifest.slotIndex) && manifest.slotIndex >= 0 && manifest.slotIndex <= 19 ? manifest.slotIndex : 0;
+  return { name: manifest.name || 'Project', state, warnings, build, slot };
 }
 
 export function projectToState(project, warnings = []) {

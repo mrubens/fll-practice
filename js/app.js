@@ -326,6 +326,7 @@ function loadProject(id) {
   if (hub.updatePortTypes) hub.updatePortTypes();
   if (!runtime.running) robot.resetPose();
   nameInput.value = p.name;
+  syncSlot();
   saveStore();
   document.title = `${p.name} · FLL Practice`;
 }
@@ -400,7 +401,7 @@ $('#btnSave').addEventListener('click', async () => {
   const p = currentProject();
   persistWorkspace();
   try {
-    const blob = await exportLlsp3(workspace, p.name, { build: robot.build });
+    const blob = await exportLlsp3(workspace, p.name, { build: robot.build, slot: p.slot || 0 });
     const base = p.name.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'Project';
     const downloads = window.claude && typeof window.claude.use === 'function' ? await window.claude.use('downloads') : null;
     if (downloads) {
@@ -437,8 +438,9 @@ document.addEventListener('drop', (e) => { e.preventDefault(); const f = e.dataT
 
 async function openFile(file) {
   try {
-    const { name, state, warnings, build } = await importLlsp3(await file.arrayBuffer());
+    const { name, state, warnings, build, slot } = await importLlsp3(await file.arrayBuffer());
     createProject(name || file.name.replace(/\.llsp3$/i, ''), state, build);
+    currentProject().slot = slot; saveStore(); syncSlot();
     if (warnings.length) toast(warnings.slice(0, 3).join(' '), 'warn');
     else toast(`Opened ${file.name}`);
   } catch (err) {
@@ -607,14 +609,22 @@ $('#btnPython').addEventListener('click', () => {
 });
 
 // ---------- hub over Web Bluetooth ----------
-const hubBtn = $('#btnHub'), sendBtn = $('#btnSendHub'), stopHubBtn = $('#btnStopHub');
+const hubBtn = $('#btnHub'), sendBtn = $('#btnSendHub'), stopHubBtn = $('#btnStopHub'), slotSel = $('#hubSlot');
 let hubLink = null;
+// The hub keeps 20 programs (slots 0-19), like the SPIKE App's slot picker. Each project remembers its slot, which
+// also goes into its .llsp3.
+slotSel.innerHTML = Array.from({ length: 20 }, (_, i) => `<option value="${i}">Slot ${i}</option>`).join('');
+function hubSlot() { const p = currentProject(); return p && Number.isInteger(p.slot) ? p.slot : 0; }
+function syncSlot() { const el = $('#hubSlot'); if (el && el.options.length) el.value = String(hubSlot()); }   // also from loadProject, which can run before this point
+slotSel.addEventListener('change', () => { const p = currentProject(); if (p) { p.slot = Number(slotSel.value); saveStore(); } });
 function hubUi() {
   const on = !!(hubLink && hubLink.connected);
   hubBtn.textContent = on ? hubLink.name : 'Connect hub';
   hubBtn.classList.toggle('connected', on);
   sendBtn.hidden = !on;
   stopHubBtn.hidden = !on;
+  slotSel.hidden = !on;
+  syncSlot();
 }
 if (!bleSupported()) {
   hubBtn.addEventListener('click', () => toast('This browser cannot talk to the hub over Bluetooth. Use Chrome or Edge on a laptop or Android, or save the .llsp3 and open it in the SPIKE App.', 'warn'));
@@ -637,7 +647,7 @@ sendBtn.addEventListener('click', async () => {
   const code = currentPython();
   sendBtn.disabled = true;
   try {
-    await hubLink.uploadProgram(code, 0, { start: true, onProgress: (p) => { sendBtn.textContent = `Sending ${Math.round(p * 100)}%`; } });
+    await hubLink.uploadProgram(code, hubSlot(), { start: true, onProgress: (p) => { sendBtn.textContent = `Sending ${Math.round(p * 100)}%`; } });
   } catch (err) {
     toast('Sending failed: ' + (err.message || err), 'error');
   } finally {
@@ -647,7 +657,7 @@ sendBtn.addEventListener('click', async () => {
 });
 stopHubBtn.addEventListener('click', async () => {
   if (!hubLink || !hubLink.connected) return;
-  try { await hubLink.stopProgram(0); } catch (err) { toast('Could not stop: ' + (err.message || err), 'error'); }
+  try { await hubLink.stopProgram(hubSlot()); } catch (err) { toast('Could not stop: ' + (err.message || err), 'error'); }
 });
 hubUi();
 
@@ -866,4 +876,4 @@ async function fastRun(maxSeconds = 600) {
   replay.active = false; sim.render(); updateRunState();
   return { steps, seconds: +(steps / 200).toFixed(1), score: scoring.score, met: Object.entries(scoring.state).filter(([, v]) => v.met).map(([k]) => k) };
 }
-window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, modelCard, fastRun, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build }), importLlsp3, loadProject, createProject };
+window.spikeApp = { workspace, robot, world, runtime, sim, hub, store, scoring, modelCard, fastRun, compilePython: () => compilePython(workspace, { ...robot.config, calibration: robot.geom.calibration, hub: robot.build.hub }), exportLlsp3: (name) => exportLlsp3(workspace, name || currentProject().name, { build: robot.build, slot: hubSlot() }), importLlsp3, loadProject, createProject };
