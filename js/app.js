@@ -634,8 +634,12 @@ if (!bleSupported()) {
     hubLink = new SpikeHub();
     hubLink.on('status', (s) => toast(s));
     hubLink.on('console', (t) => toast('Hub: ' + t, /Error|Traceback|Exception/.test(t) ? 'error' : 'info'));
-    hubLink.on('disconnect', () => { toast('Hub disconnected.', 'warn'); hubUi(); });
-    try { await hubLink.connect(); } catch (err) {
+    hubLink.on('disconnect', () => { toast('Hub disconnected.', 'warn'); hub.setReal(null); hubUi(); });
+    hubLink.on('devices', (d) => hub.setReal(d));   // live readings: the hub panel can show the real robot's
+    try {
+      await hubLink.connect();
+      try { await hubLink.startLive(100); } catch (err) { toast('The hub would not send live readings: ' + (err.message || err), 'warn'); }
+    } catch (err) {
       if (err && err.name === 'NotFoundError') toast('No hub chosen. Turn the hub on and make sure Bluetooth is enabled, then try again.', 'warn');
       else toast('Could not connect: ' + (err.message || err), 'error');
     }

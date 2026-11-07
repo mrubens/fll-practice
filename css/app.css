@@ -143,6 +143,14 @@ a.vt { text-decoration: none; display: inline-flex; align-items: center; }
 .port .v { font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; align-items: center; gap: 4px; flex: none; }
 .port .sw { display: inline-block; width: 10px; height: 10px; border-radius: 3px; border: 1px solid rgba(0,0,0,.2); }
 .port[data-type="color sensor"] b { background: #3DB7E8; }
+.hub-source { display: inline-flex; align-self: flex-start; border: 1px solid var(--line); border-radius: 7px; overflow: hidden; margin-right: 26px; }
+.hub-source[hidden] { display: none; }
+.hub-source button { border: 0; background: #fff; font: 700 10px var(--font); padding: 3px 8px; color: var(--muted); cursor: pointer; }
+.hub-source button.on { background: #1E2430; color: #fff; }
+#hubPanel.real .hub-source button.on { background: #1B7F3B; }
+.port.mismatch { border-color: #E3A008; background: #FFF8E6; }
+.port.mismatch b { background: #E3A008; }
+#hubPanel.real .ro.match .v { color: var(--fg); }
 .port[data-type="distance"] b { background: #3DB7E8; }
 .port[data-type="force sensor"] b { background: #3DB7E8; }
 .port[data-type="left wheel"] b, .port[data-type="right wheel"] b { background: #FF4FA8; }

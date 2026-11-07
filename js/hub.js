@@ -22,10 +22,13 @@ export class HubPanel {
           </div>
         </div>
         <div class="hub-readouts">
+          <div class="hub-source" role="group" aria-label="Whose readings to show" hidden>
+            <button type="button" data-src="sim" class="on">Simulator</button><button type="button" data-src="real">Real hub</button>
+          </div>
           <div class="ro-row">
             <div class="ro"><span class="k">yaw</span><span class="v" data-ro="yaw">0°</span></div>
-            <div class="ro"><span class="k">timer</span><span class="v" data-ro="timer">0.00</span></div>
-            <div class="ro match"><span class="k">match</span><span class="v" data-ro="match">2:30</span></div>
+            <div class="ro"><span class="k" data-k="timer">timer</span><span class="v" data-ro="timer">0.00</span></div>
+            <div class="ro match"><span class="k" data-k="match">match</span><span class="v" data-ro="match">2:30</span></div>
           </div>
           <div class="ports">${PORT_LETTERS.map((p) => `<div class="port" data-port="${p}"><b>${p}</b><span class="type"></span><span class="v"></span></div>`).join('')}</div>
         </div>
@@ -44,6 +47,11 @@ export class HubPanel {
     this.center = container.querySelector('.hub-center');
     this.ro = { yaw: container.querySelector('[data-ro="yaw"]'), timer: container.querySelector('[data-ro="timer"]'), match: container.querySelector('[data-ro="match"]') };
     this.matchLeft = null;
+    this.keys = { timer: container.querySelector('[data-k="timer"]'), match: container.querySelector('[data-k="match"]') };
+    // a connected hub's live readings (see setReal), shown instead of the simulator's when 'Real hub' is picked
+    this.real = null; this.realAt = 0; this.mode = 'sim';
+    this.source = container.querySelector('.hub-source');
+    for (const b of this.source.querySelectorAll('button')) b.addEventListener('click', () => this.setMode(b.dataset.src));
     this.ports = {};
     for (const p of PORT_LETTERS) this.ports[p] = container.querySelector(`.port[data-port="${p}"]`);
 
@@ -77,7 +85,67 @@ export class HubPanel {
     this.updatePortTypes();
   }
 
+  /** Live readings from a connected hub (ble.js parseDevices), or null when it is gone. */
+  setReal(data) {
+    const first = !this.real && data;
+    this.real = data; this.realAt = performance.now();
+    this.source.hidden = !data;
+    if (first) this.setMode('real');
+    if (!data && this.mode === 'real') this.setMode('sim');
+    this.lastText = 0;
+  }
+
+  setMode(mode) {
+    this.mode = mode === 'real' && this.real ? 'real' : 'sim';
+    for (const b of this.source.querySelectorAll('button')) b.classList.toggle('on', b.dataset.src === this.mode);
+    this.container.classList.toggle('real', this.mode === 'real');
+    this.keys.timer.textContent = this.mode === 'real' ? 'battery' : 'timer';
+    this.keys.match.textContent = this.mode === 'real' ? 'tilt' : 'match';
+    this.ro.match.parentElement.classList.remove('over', 'late');
+    if (this.mode === 'sim' && this.matchLeft === null) this.ro.match.textContent = '2:30';
+    if (this.mode === 'sim') { this.updatePortTypes(); this.drawMatrix(); for (const p of PORT_LETTERS) { this.ports[p].classList.remove('mismatch'); this.ports[p].title = ''; } }
+    this.lastText = 0;
+  }
+
+  /** What the simulator's robot has on each port: 'motor', a sensor type, or null for nothing in particular. */
+  simKind(p) {
+    const c = this.robot.config;
+    if (c.sensors[p]) return c.sensors[p];
+    return p === c.left || p === c.right || p === c.attachment || (c.tools || []).includes(p) ? 'motor' : null;
+  }
+
+  drawReal(now) {
+    const d = this.real, stale = now - this.realAt > 1500;
+    const imu = d.imu;
+    this.ro.yaw.textContent = stale ? 'no data' : imu ? `${Math.round(-imu.yaw / 10)}°` : '—';
+    this.ro.timer.textContent = d.battery === null ? '—' : `${d.battery}%`;
+    this.ro.match.textContent = imu ? `${Math.round(imu.pitch / 10)}° ${Math.round(imu.roll / 10)}°` : '—';
+    if (d.matrix) {
+      const top = Math.max(9, ...d.matrix);
+      this.pixels.forEach((px, i) => { const b = d.matrix[i] / top; px.style.opacity = b > 0 ? String(0.3 + 0.7 * b) : ''; px.classList.toggle('on', b > 0); });
+    }
+    for (const p of PORT_LETTERS) {
+      const el = this.ports[p], dev = d.ports[p], v = el.querySelector('.v');
+      el.querySelector('.type').textContent = dev ? dev.name : 'empty';
+      el.dataset.type = dev ? (dev.kind === 'color' ? 'color sensor' : dev.kind === 'distance' ? 'distance' : dev.kind === 'force' ? 'force sensor' : 'motor') : '';
+      if (!dev) v.textContent = '';
+      else if (dev.kind === 'motor') v.textContent = `${((dev.position % 360) + 360) % 360}° · ${dev.speed}%`;
+      else if (dev.kind === 'color') {
+        const m = Math.max(1, ...dev.rgb), sw = dev.rgb.map((c) => Math.round((c / m) * 255));
+        v.innerHTML = `<i class="sw" style="background:${rgb(sw)}"></i>${dev.colorName}`;
+      } else if (dev.kind === 'distance') v.textContent = dev.mm === null ? 'none' : `${(dev.mm / 10).toFixed(1)} cm`;
+      else if (dev.kind === 'force') v.textContent = `${(dev.value / 10).toFixed(1)} N${dev.pressed ? ' · pressed' : ''}`;
+      else v.textContent = '';
+      // the real robot is wired differently from the simulator's: say so on the port
+      const want = this.simKind(p), have = dev ? dev.kind : null;
+      const off = !!want && want !== have;
+      el.classList.toggle('mismatch', off);
+      el.title = off ? `The simulator's robot has a ${want === 'motor' ? 'motor' : want + ' sensor'} on port ${p}; the real hub has ${have ? (have === 'motor' ? 'a motor' : 'a ' + have + ' sensor') : 'nothing'} there.` : '';
+    }
+  }
+
   updatePortTypes() {
+    if (this.mode === 'real') return;
     const c = this.robot.config;
     for (const p of PORT_LETTERS) {
       const el = this.ports[p];
@@ -89,6 +157,7 @@ export class HubPanel {
   }
 
   drawMatrix() {
+    if (this.mode === 'real') return;
     const m = this.robot.hub.matrix;
     this.pixels.forEach((px, i) => {
       const b = m[i] / 9;
@@ -129,6 +198,7 @@ export class HubPanel {
     this.syncSound();
     if (now - this.lastText < 100) return;
     this.lastText = now;
+    if (this.mode === 'real' && this.real) { this.drawReal(now); return; }
     const r = this.robot;
     this.ro.yaw.textContent = `${r.yaw()}°`;
     this.ro.timer.textContent = r.timer().toFixed(2);

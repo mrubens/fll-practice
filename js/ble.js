@@ -99,6 +99,39 @@ export const messages = {
   deviceNotification: (intervalMs) => Uint8Array.from([MSG.DeviceNotificationRequest, ...u16(intervalMs)]),
 };
 
+// Live readings (DeviceNotification): a run of fixed-size device messages, little-endian.
+const PORTS = 'ABCDEF';
+const MOTOR_TYPES = { 0x30: 'medium motor', 0x31: 'large motor', 0x41: 'small motor' };
+const COLOR_NAMES = { 0: 'black', 1: 'magenta', 2: 'violet', 3: 'blue', 4: 'azure', 5: 'turquoise', 6: 'green', 7: 'yellow', 8: 'orange', 9: 'red', 10: 'white' };
+export function parseDevices(msg) {
+  const dv = new DataView(msg.buffer, msg.byteOffset, msg.byteLength);
+  const size = dv.getUint16(1, true);
+  const end = Math.min(msg.length, 3 + size);
+  const out = { battery: null, imu: null, matrix: null, ports: {} };
+  let i = 3;
+  while (i < end) {
+    const t = msg[i];
+    if (t === 0x00 && i + 2 <= end) { out.battery = msg[i + 1]; i += 2; }
+    else if (t === 0x01 && i + 21 <= end) {
+      const g = (k) => dv.getInt16(i + 3 + 2 * k, true);
+      out.imu = { up: msg[i + 1], yawFace: msg[i + 2], yaw: g(0), pitch: g(1), roll: g(2), accel: [g(3), g(4), g(5)], gyro: [g(6), g(7), g(8)] };
+      i += 21;
+    } else if (t === 0x02 && i + 26 <= end) { out.matrix = Array.from(msg.slice(i + 1, i + 26)); i += 26; }
+    else if (t === 0x0A && i + 12 <= end) {
+      out.ports[PORTS[msg[i + 1]]] = { kind: 'motor', name: MOTOR_TYPES[msg[i + 2]] || 'motor', absolute: dv.getInt16(i + 3, true), power: dv.getInt16(i + 5, true), speed: dv.getInt8(i + 7), position: dv.getInt32(i + 8, true) };
+      i += 12;
+    } else if (t === 0x0B && i + 4 <= end) { out.ports[PORTS[msg[i + 1]]] = { kind: 'force', name: 'force sensor', value: msg[i + 2], pressed: !!msg[i + 3] }; i += 4; }
+    else if (t === 0x0C && i + 9 <= end) {
+      const c = dv.getInt8(i + 2);
+      out.ports[PORTS[msg[i + 1]]] = { kind: 'color', name: 'color sensor', color: c, colorName: COLOR_NAMES[c] || 'none', rgb: [dv.getUint16(i + 3, true), dv.getUint16(i + 5, true), dv.getUint16(i + 7, true)] };
+      i += 9;
+    } else if (t === 0x0D && i + 4 <= end) { const mm = dv.getInt16(i + 2, true); out.ports[PORTS[msg[i + 1]]] = { kind: 'distance', name: 'distance sensor', mm: mm < 0 ? null : mm }; i += 4; }
+    else if (t === 0x0E && i + 11 <= end) { out.ports[PORTS[msg[i + 1]]] = { kind: 'matrix', name: 'light matrix' }; i += 11; }
+    else break;                                         // a type we do not know: its size is unknown, so stop here
+  }
+  return out;
+}
+
 function parseInfo(d) {
   const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
   return {
@@ -113,7 +146,10 @@ function parseInfo(d) {
 
 export const isSupported = () => typeof navigator !== 'undefined' && !!navigator.bluetooth && typeof navigator.bluetooth.requestDevice === 'function';
 
-/** One hub connection. Events: 'status' (string), 'console' (text), 'disconnect', 'programFlow' (running boolean). */
+/**
+ * One hub connection. Events: 'status' (string), 'console' (text), 'disconnect', 'programFlow' (running boolean),
+ * 'devices' (live readings, see parseDevices) once startLive() has asked for them.
+ */
 export class SpikeHub {
   constructor() {
     this.device = null; this.rx = null; this.tx = null; this.info = null;
@@ -174,6 +210,12 @@ export class SpikeHub {
       this.consoleTimer = setTimeout(() => { if (this.console && this.console.trim()) this.emit('console', this.console); this.console = ''; }, 400);
     }
     if (id === MSG.ProgramFlowNotification) this.emit('programFlow', msg[1] === 0);
+    if (id === MSG.DeviceNotification) { try { this.emit('devices', parseDevices(msg)); } catch { /* a short frame */ } }
+  }
+
+  /** Ask the hub to send its live readings every `intervalMs` (0 stops them). */
+  async startLive(intervalMs = 100) {
+    await this.status(messages.deviceNotification(intervalMs), MSG.DeviceNotificationResponse, 'Asking for live readings');
   }
 
   rejectAll(err) { for (const [, p] of this.pending) { clearTimeout(p.timer); p.reject(err); } this.pending.clear(); }
