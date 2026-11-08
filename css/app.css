@@ -361,6 +361,13 @@ body.building #hubPanel { display: none; }
 .lb-sel[hidden], .lb-sel [hidden], .lb-motor[hidden], .lb-hand[hidden], .lb-hand [hidden] { display: none; }
 .lb-hand { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 12px; padding: 6px 8px 6px 12px; box-shadow: 0 6px 18px rgba(30,36,48,.14); font-size: 12px; z-index: 2; white-space: nowrap; }
 .lb-hand .tb { padding: 5px 10px; font-size: 12px; }
+.lb-colours { display: inline-flex; gap: 4px; align-items: center; padding: 0 2px; }
+.lb-colours[hidden] { display: none; }
+.lb-colours button { width: 20px; height: 20px; border-radius: 50%; border: 2px solid rgba(30,36,48,.25); padding: 0; cursor: pointer; }
+.lb-colours button.on { border-color: var(--accent); box-shadow: 0 0 0 2px #fff inset; }
+.lb-part { position: relative; }
+.lb-dots { position: absolute; top: 6px; right: 8px; display: flex; flex-direction: column; gap: 2px; }
+.lb-dots b { width: 7px; height: 7px; border-radius: 50%; border: 1px solid rgba(30,36,48,.35); }
 .lb-hand-slide { display: inline-flex; align-items: center; gap: 3px; }
 .lb-hand-slide small { color: var(--muted); font-weight: 700; }
 .lb-hand-slide .tb { padding: 5px 7px; }

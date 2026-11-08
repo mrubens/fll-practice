@@ -130,13 +130,25 @@ const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr withou
 1 15 80 -58.8559 -324.1296 0 0 1 0.6428 -0.766 0 0.766 0.6428 0 32192.dat
 `;
 
-const shortName = (d) => d.replace(/^~?Technic\s+/i, '').replace(/\s+/g, ' ').trim();
+const shortName = (d) => d.replace(/^[~=]?(Technic\s+)?/i, '').replace(/\s+/g, ' ').trim();
+// the colours the SPIKE Prime sets come in (LDraw codes, values from LDConfig.ldr)
+const KIT_COLOURS = {
+  0: ['black', '#1B2A34'], 1: ['blue', '#1E5AA8'], 4: ['red', '#B40000'], 14: ['yellow', '#FAC80A'], 15: ['white', '#F4F4F4'],
+  19: ['tan', '#D7BA8C'], 26: ['magenta', '#901F76'], 43: ['clear light blue', '#AEE9EF'], 47: ['clear', '#FCFCFC'],
+  70: ['brown', '#5F3109'], 71: ['light grey', '#969696'], 72: ['dark grey', '#646464'], 288: ['dark green', '#00451A'],
+  322: ['light blue', '#68C3E2'],
+};
+const colourName = (c) => (KIT_COLOURS[c] || [`colour ${c}`])[0];
 // names that say what a child would call the part, where LDraw's description runs long
 const NAMES = {
   '39367p01': 'Wheel 56 mm', '49295p01': 'Wheel 88 mm', '18939': 'Turntable 60 base', '18938': 'Turntable 60 top',
   '99009': 'Turntable 28 base', '99010': 'Turntable 28 top', '39369': 'Panel 11 x 19', '65817': 'Panel 11 x 15',
   '45590': 'Rubber joiner', '6553': 'Catch', '69819': 'Fork cross block', '35185': 'Gear 20 angled', '99773': 'Triangle',
-  '39370': 'Ball caster cup', '50450': 'Axle 32',
+  '39370': 'Ball caster cup', '50450': 'Axle 32', '3167': 'Fork beam', '31511': 'Round connector', '49283': 'Cable clip',
+  '35327': 'Dish 6 x 6', '41750': 'Shell left', '41749': 'Shell right', '11215': 'Bracket 5 x 2', '6143': 'Round brick 2 x 2',
+  '4032a': 'Round plate 2 x 2', '18674': 'Round plate with stud', '15535': 'Round tile with hole', '14769': 'Round tile 2 x 2',
+  '98138': 'Round tile 1 x 1', '44126': 'Curved brick 6 x 2', '42022': 'Curved brick 6 x 1', '24309': 'Curved brick 3 x 2',
+  '85984': 'Slope 1 x 2', '39789': 'Brick 2 x 4 with holes', '3003': 'Brick 2 x 2',
 };
 
 // The attachments that come with the app: their physics is tuned for the missions, and the builder shows their parts.
@@ -533,12 +545,14 @@ export class AttachmentBuilder {
             <button type="button" class="tb" data-hand="turn" title="Turn it a quarter turn (R)">↻ Turn</button>
             <button type="button" class="tb" data-hand="flip" title="Flip it over (F)">⇅ Flip</button>
             <button type="button" class="tb" data-hand="hole" title="Hold it by another hole or pin (Tab)">Other hole</button>
+            <span class="lb-colours" data-for="hand" hidden></span>
             <span class="lb-hand-slide"><button type="button" class="tb" data-hand="back" title="Slide it along ([)" aria-label="Slide back">◀</button><small>slide</small><button type="button" class="tb" data-hand="fwd" title="Slide it along (])" aria-label="Slide forward">▶</button></span>
             <button type="button" class="lb-sel-x" data-hand="cancel" title="Put it back (Esc or right-click)" aria-label="Put it back">×</button>
           </div>
           <div class="lb-sel" hidden>
             <b class="lb-sel-name"></b>
             <label class="lb-sel-port" hidden>Port <select></select></label>
+            <span class="lb-colours" data-for="sel" hidden></span>
             <button type="button" class="tb" data-sel="move" title="Pick it up and put it somewhere else (M)">Move</button>
             <button type="button" class="tb" data-sel="delete" title="Take it off (Delete)">Remove</button>
             <button type="button" class="lb-sel-x" data-sel="close" title="Deselect (Esc, or click empty space)" aria-label="Deselect">×</button>
@@ -568,11 +582,12 @@ export class AttachmentBuilder {
     });
     // the selected part's bar: its port (a sensor), move it, take it off
     this.selEl = r.querySelector('.lb-sel');
-    this.selEl.addEventListener('click', (e) => { const b = e.target.closest('[data-sel]'); if (!b) return; if (b.dataset.sel === 'move') this.moveSelected(); else if (b.dataset.sel === 'close') this.deselect(); else this.removeSelected(); });
+    this.selEl.addEventListener('click', (e) => { const sw = e.target.closest('[data-colour]'); if (sw) { this.colourSelected(Number(sw.dataset.colour)); return; } const b = e.target.closest('[data-sel]'); if (!b) return; if (b.dataset.sel === 'move') this.moveSelected(); else if (b.dataset.sel === 'close') this.deselect(); else this.removeSelected(); });
     this.selEl.querySelector('select').addEventListener('change', (e) => { if (this.selected) this.setPort(this.selected.q, e.target.value); });
     // the part in hand's bar: the same moves as R, F, Tab and [ ]
     this.handEl = r.querySelector('.lb-hand');
     this.handEl.addEventListener('click', (e) => {
+      const sw = e.target.closest('[data-colour]'); if (sw) { this.colourHand(Number(sw.dataset.colour)); return; }
       const b = e.target.closest('[data-hand]'); if (!b) return;
       const a = b.dataset.hand;
       if (a === 'turn') this.turnHand(1); else if (a === 'flip') this.flipHand(); else if (a === 'hole') this.otherHole(1);
@@ -694,8 +709,10 @@ export class AttachmentBuilder {
         const info = this.D.parts.parts[f];
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'lb-part'; b.dataset.part = f;
-        b.title = `${info.d} (${f})`;
-        b.innerHTML = `<img alt=""><span>${SENSOR_PARTS[f] ? SENSOR_PARTS[f].label : NAMES[f] || shortName(info.d)}</span>`;
+        const cs = info.cs || [[info.c, 0]];
+        b.title = `${NAMES[f] || shortName(info.d)} (${f}). In the kit: ${cs.map(([c, n]) => `${n} ${colourName(c)}`).join(', ')}`;
+        b.innerHTML = `<img alt=""><span>${SENSOR_PARTS[f] ? SENSOR_PARTS[f].label : NAMES[f] || shortName(info.d)}</span>`
+          + (cs.length > 1 ? `<i class="lb-dots">${cs.map(([c]) => `<b style="background:${(KIT_COLOURS[c] || [0, '#999'])[1]}"></b>`).join('')}</i>` : '');
         b.addEventListener('click', () => this.pick(f));
         grid.appendChild(b);
       }
@@ -1019,6 +1036,7 @@ export class AttachmentBuilder {
     this.selEl.querySelector('.lb-sel-name').textContent = sp ? sp.label : (NAMES[it.q.f] || shortName(this.D.parts.parts[it.q.f].d));
     const portEl = this.selEl.querySelector('.lb-sel-port');
     portEl.hidden = !sp;
+    this._swatches(this.selEl.querySelector('.lb-colours'), it.q.f, it.q.c);
     if (sp) {
       const cur = this.ports.get(it.q) || '';
       portEl.querySelector('select').innerHTML = PORT_LETTERS.map((p) => `<option value="${p}"${p === cur ? ' selected' : ''}>${p}</option>`).join('') + (cur ? '' : '<option value="" selected>none</option>');
@@ -1091,12 +1109,10 @@ export class AttachmentBuilder {
     const tpl = this.tpl.get(f);
     if (!tpl) return;
     const own = this.D.snaps[f].s.filter((c) => c.k === 'cyl' && usable(c));
-    const mesh = tpl.clone();
-    // the part in hand is drawn over everything (it is often half inside the robot) and lit green where it fits
-    mesh.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
-    mesh.matrixAutoUpdate = false; mesh.visible = false;
-    this.three.ld.add(mesh);
-    this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false, carry };
+    this.lastColour = this.lastColour || {};
+    const colour = carry && carry.from ? carry.from.c : this.lastColour[f] ?? this.D.parts.parts[f].c;
+    const mesh = this._ghostMesh(f, colour);
+    this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false, carry, colour };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
     this._handBar();
     const sp = SENSOR_PARTS[f];
@@ -1106,6 +1122,50 @@ export class AttachmentBuilder {
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
       : `${name}: snap it onto the robot.`));
     this._guide();
+  }
+
+  /** The part in hand's look: see-through, drawn over everything (it is often half inside the robot), in its colour. */
+  _ghostMesh(f, colour) {
+    const m = partMesh(this.tpl.get(f), { f, c: colour, p: [0, 0, 0], r: I3 }, this.D.parts.parts[f].c);
+    m.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
+    m.visible = false;
+    this.three.ld.add(m);
+    return m;
+  }
+
+  /** Pick the colour of the part in hand (one of the colours the kit has it in). */
+  colourHand(c) {
+    const g = this.ghost;
+    if (!g) return;
+    g.colour = c;
+    this.lastColour[g.f] = c;
+    const old = g.mesh;
+    g.mesh = this._ghostMesh(g.f, c);
+    g.mesh.matrix.copy(old.matrix); g.mesh.visible = old.visible;
+    old.parent && old.parent.remove(old);
+    this._handBar();
+    this._snap();
+  }
+
+  /** Change a placed part's colour (undo puts it back). */
+  colourSelected(c) {
+    const it = this.selected;
+    if (!it || it.q.c === c) return;
+    this._push();
+    const q = { ...it.q, c };
+    for (const list of [this.body, this.parts]) { const i = list.indexOf(it.q); if (i >= 0) list[i] = q; }
+    if (this.ports.has(it.q)) { this.ports.set(q, this.ports.get(it.q)); this.ports.delete(it.q); }
+    this.lastColour = this.lastColour || {}; this.lastColour[q.f] = c;
+    this._rebuild(true);
+    this._selectQ(q);
+  }
+
+  /** Swatches for the colours the kit has a part in (none when it comes in one), the current one marked. */
+  _swatches(el, f, current) {
+    const cs = (this.D.parts.parts[f] || {}).cs || [];
+    const list = cs.some(([c]) => c === current) ? cs : [[current, 0], ...cs];
+    el.hidden = list.length < 2;
+    el.innerHTML = list.map(([c, n]) => `<button type="button" data-colour="${c}" class="${c === current ? 'on' : ''}" style="background:${(KIT_COLOURS[c] || [0, '#999'])[1]}" title="${colourName(c)}${n ? ` (${n} in the kit)` : ' (not in the kit)'}" aria-label="${colourName(c)}"></button>`).join('');
   }
 
   // the part in hand: turn it, flip it, hold it by another hole or pin, slide it along (keys R, F, Tab, [ ])
@@ -1124,6 +1184,7 @@ export class AttachmentBuilder {
     this.handEl.querySelector('.lb-hand-name').textContent = sp ? sp.label : (NAMES[g.f] || shortName(this.D.parts.parts[g.f].d));
     this.handEl.querySelector('[data-hand="hole"]').hidden = g.own.length < 2;
     this.handEl.querySelector('.lb-hand-slide').hidden = !(g.slides > 1);
+    this._swatches(this.handEl.querySelector('.lb-colours'), g.f, g.colour);
   }
 
   _dropGhost() {
@@ -1335,6 +1396,7 @@ export class AttachmentBuilder {
       this._snap();
       const g = this.ghost;
       if (!g.ok || !g.q) return;
+      g.q.c = g.colour;
       this._push();
       const sp = SENSOR_PARTS[g.f];
       // sensors and whatever is built while a built-in attachment (or none) is on are the robot's own parts

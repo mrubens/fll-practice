@@ -33,31 +33,48 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)
 OUT = os.path.join(ROOT, 'models', 'lego')
 
-# The palette: SPIKE Prime (45678) and its expansion set (45681), by builder category, with the colour the set has
-# (LEGO's parts lists, via Brickset; a part in several colours gets the core set's first).
+# The palette: every Technic part (and the bricks and tiles) of SPIKE Prime (45678) and its expansion set (45681), by
+# builder category, from LEGO's parts lists (via Brickset; LEGO's design numbers matched to LDraw's by name and picture).
+# Each part has the colours the two sets have it in, with how many: [(LDraw colour, count), ...], the most common
+# first (the colour a new part takes). LDraw colours: 0 black, 1 blue, 4 red, 14 yellow, 15 white, 19 tan, 26 magenta,
+# 43 trans light blue, 47 trans clear, 70 reddish brown, 71 light grey, 72 dark grey, 288 dark green, 322 medium azure.
+# Same-shape newer moulds count as the part LDraw has (42924 as 6558, 65304 as 32054, 44874 as 87082).
 PALETTE = [
-    ('Sensors', [('37308', 15), ('37316', 15), ('37312', 15)]),   # SPIKE color and distance sensors: placed parts with a port
-    ('Beams', [('60483', 322), ('32523', 14), ('32316', 26), ('32524', 322), ('40490', 0), ('32525', 26), ('41239', 322),
-               ('32278', 0), ('18654', 0)]),
-    ('Bent beams and frames', [('32140', 14), ('32526', 322), ('14720', 71), ('60484', 0), ('32348', 0), ('32271', 14),
-                                ('6629', 15), ('32009', 0), ('39793', 26), ('64179', 0), ('39794', 26), ('39790', 322),
-                                ('99773', 14), ('39370', 322)]),
-    ('Pins', [('61332', 0), ('3673', 71), ('6558', 1), ('32054', 71), ('43093', 1), ('3749', 19), ('11214', 4),
-              ('18651', 0), ('4274', 1), ('39888', 19), ('6628', 0)]),
-    ('Axles', [('32062', 4), ('4519', 14), ('3705', 0), ('32073', 71), ('3706', 4), ('44294', 14), ('3707', 0),
-               ('60485', 71), ('23948', 14), ('3708', 4), ('50450', 0), ('87083', 72), ('15462', 70), ('55013', 72)]),
-    ('Connectors', [('6536', 0), ('32184', 71), ('42003', 4), ('41678', 15), ('32291', 0), ('63869', 71),
-                    ('59443', 15), ('42135', 0), ('62462', 14), ('48989', 15), ('55615', 71), ('65489', 71),
-                    ('22961', 15), ('87082', 71), ('32013', 71), ('32034', 0), ('32016', 322), ('32192', 15),
-                    ('32015', 0), ('32014', 14), ('69819', 4), ('6553', 71), ('45590', 0)]),
-    ('Bushes', [('3713', 71), ('32123b', 14)]),
-    ('Gears and racks', [('32270', 0), ('18575', 19), ('46372', 71), ('32498', 0), ('6589', 19), ('32198a', 19),
-                         ('35185', 1), ('87761', 0), ('64781', 0), ('24121', 0)]),
-    ('Turntables', [('18939', 71), ('18938', 0), ('99009', 71), ('99010', 0)]),   # bottom, then the top that turns on it
-    ('Wheels and pulleys', [('39367p01', 0), ('49295p01', 322), ('56903', 15), ('4185a', 0)]),
-    ('Panels and plates', [('15458', 0), ('11954', 322), ('24119', 0), ('3738', 0), ('4282', 26), ('39789', 1),
-                           ('3941', 0), ('3003', 15),
-                           ('39369', 14), ('65817', 26)]),
+    ('Sensors', [('37308', [(15, 2)]), ('37316', [(15, 1)]), ('37312', [(15, 1)])]),
+    ('Beams', [('60483', [(322, 4)]), ('32523', [(14, 14), (15, 4)]), ('32316', [(26, 13)]), ('32524', [(322, 13)]),
+               ('40490', [(0, 13)]), ('32525', [(26, 11)]), ('41239', [(322, 10)]), ('32278', [(0, 12)]),
+               ('18654', [(0, 4)])]),
+    ('Bent beams and frames', [('32140', [(14, 13)]), ('32526', [(322, 9), (15, 6)]), ('14720', [(71, 10)]),
+                                ('60484', [(0, 5), (14, 4)]), ('32348', [(0, 9)]), ('32271', [(14, 8)]), ('6629', [(15, 2)]),
+                                ('32009', [(0, 9)]), ('3167', [(0, 2)]), ('99773', [(14, 4)]), ('39793', [(26, 12), (0, 6)]),
+                                ('64179', [(0, 10)]), ('39794', [(26, 6)]), ('39790', [(322, 4)]), ('39370', [(322, 2)])]),
+    ('Pins', [('61332', [(0, 172)]), ('3673', [(71, 12)]), ('6558', [(1, 64)]), ('32054', [(71, 26), (4, 6)]),
+              ('43093', [(1, 24)]), ('3749', [(19, 30)]), ('11214', [(4, 8)]), ('18651', [(0, 15)]), ('4274', [(1, 16)]),
+              ('39888', [(19, 8)]), ('6628', [(0, 6)])]),
+    ('Axles', [('32062', [(4, 20)]), ('4519', [(14, 24)]), ('3705', [(0, 8)]), ('32073', [(71, 10)]), ('3706', [(4, 4)]),
+               ('44294', [(14, 6)]), ('3707', [(0, 6)]), ('60485', [(71, 6)]), ('23948', [(14, 3)]), ('3708', [(4, 2)]),
+               ('50450', [(0, 2)]), ('87083', [(72, 4)]), ('15462', [(70, 2)]), ('55013', [(72, 2)])]),
+    ('Connectors', [('6536', [(0, 16)]), ('32184', [(15, 8)]), ('42003', [(4, 12)]), ('32291', [(0, 4)]),
+                    ('63869', [(71, 8)]), ('69819', [(4, 4)]), ('59443', [(15, 7), (4, 4)]), ('42135', [(0, 6)]),
+                    ('6553', [(71, 6)]), ('62462', [(14, 8)]), ('65489', [(71, 22)]), ('55615', [(71, 10)]),
+                    ('22961', [(15, 4)]), ('87082', [(71, 2)]), ('31511', [(0, 4)]), ('45590', [(0, 6)]),
+                    ('32013', [(71, 5)]), ('32034', [(0, 5)]), ('32016', [(322, 4)]), ('32192', [(15, 5)]),
+                    ('32015', [(0, 4)]), ('32014', [(14, 17)]),
+                    ('49283', [(4, 5), (14, 5), (322, 4), (1, 3), (26, 3), (288, 3)])]),
+    ('Bushes', [('3713', [(71, 22)]), ('32123b', [(14, 16)])]),
+    ('Gears and racks', [('32270', [(0, 5)]), ('18575', [(19, 5)]), ('46372', [(71, 5)]), ('32498', [(0, 5)]),
+                         ('6589', [(19, 4)]), ('32198a', [(19, 2)]), ('35185', [(1, 2)]), ('87761', [(0, 2)]),
+                         ('64781', [(0, 2)]), ('24121', [(0, 8)])]),
+    ('Turntables', [('18939', [(71, 2)]), ('18938', [(0, 4)]), ('99009', [(71, 2)]), ('99010', [(0, 2)])]),   # base, then the top that turns on it
+    ('Wheels and pulleys', [('39367p01', [(0, 8)]), ('49295p01', [(322, 4)]), ('56903', [(15, 3)]), ('4185a', [(0, 2)])]),
+    ('Panels and plates', [('15458', [(0, 2)]), ('11954', [(322, 2)]), ('24119', [(0, 4)]), ('39369', [(14, 2)]),
+                           ('65817', [(26, 1)]), ('3738', [(0, 4)]), ('4282', [(26, 2)]), ('4032a', [(322, 6)]),
+                           ('18674', [(322, 4), (15, 2)])]),
+    ('Bricks and tiles', [('39789', [(14, 5), (1, 5), (4, 5), (26, 5), (288, 5)]), ('3003', [(0, 2), (322, 2), (15, 2)]),
+                          ('6143', [(15, 6), (14, 4), (43, 2)]), ('44126', [(0, 4)]), ('42022', [(14, 4)]),
+                          ('24309', [(14, 4)]), ('85984', [(14, 4)]), ('41750', [(322, 1)]), ('41749', [(322, 1)]),
+                          ('11215', [(15, 2)]), ('15535', [(0, 8), (4, 2)]), ('14769', [(15, 2)]),
+                          ('98138', [(0, 4), (15, 4)]), ('35327', [(47, 4)])]),
 ]
 
 LDCAD = re.compile(r'^0\s+!LDCAD\s+(SNAP_\w+)\s*(.*)$', re.I)
@@ -325,7 +342,7 @@ def main():
         print(__doc__); sys.exit(1)
     lib = Library(os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2]))
     os.makedirs(OUT, exist_ok=True)
-    names = [(p, c) for _, ps in PALETTE for p, c in ps if lib.lines(p + '.dat')]
+    names = [(p, cs[0][0]) for _, ps in PALETTE for p, cs in ps if lib.lines(p + '.dat')]
     missing = [p for _, ps in PALETTE for p, _ in ps if not lib.lines(p + '.dat')]
     # parts already used by our models get connectors too (the robot, the attachments, the mission models)
     extra = set()
@@ -397,14 +414,15 @@ def main():
     catalog = {'categories': [], 'parts': {}}
     for cat, ps in PALETTE:
         catalog['categories'].append({'name': cat, 'parts': [p for p, _ in ps if lib.lines(p + '.dat')]})
-        for p, c in ps:
+        for p, cs in ps:
+            c = cs[0][0]
             if not lib.lines(p + '.dat'):
                 continue
             b = measured.get(p)
             # boxes in the part's own LDraw frame (LDU), axis-aligned there: [cx, cy, cz, hx, hy, hz]
             boxes = [bx[:6] for bx in ldraw_boxes(b)] if b else []
             friction = 'friction' in lib.description(p + '.dat').lower() and 'without' not in lib.description(p + '.dat').lower()
-            catalog['parts'][p] = {'d': lib.description(p + '.dat'), 'c': c, 'b': boxes, 'fr': friction}
+            catalog['parts'][p] = {'d': lib.description(p + '.dat'), 'c': c, 'cs': [list(x) for x in cs], 'b': boxes, 'fr': friction}
     with open(os.path.join(OUT, 'parts.json'), 'w') as f:
         f.write('{"categories": ' + json.dumps(catalog['categories']) + ',\n"parts": {\n')
         f.write(',\n'.join(f'{json.dumps(k)}: {json.dumps(v, separators=(",", ":"))}' for k, v in catalog['parts'].items()))
