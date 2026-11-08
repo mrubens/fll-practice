@@ -8,7 +8,7 @@ import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, plac
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
 import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
 import { InstructionsViewer } from './instructions.js';
-import { TOOL_PRESETS } from './tools.js';
+import { EXAMPLE_ARM, TOOL_PRESETS } from './tools.js';
 export { TOOL_PRESETS };
 
 const DEG = Math.PI / 180;
@@ -122,16 +122,6 @@ function roundAbout(bx, m) {
   return false;
 }
 
-const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr without its drive axle and gear; a 7-long axle joins the angle connectors, which take one stud of axle each)
-1 0 -40 -181.423 -221.2836 0 -1 0 0.6428 0 -0.766 0.766 0 0.6428 32009.dat
-1 322 -20 -130 -160 0 1 0 -0.766 0 -0.6428 -0.6428 0 0.766 60483.dat
-1 322 20 -130 -160 0 1 0 -0.766 0 -0.6428 -0.6428 0 0.766 60483.dat
-1 0 40 -181.423 -221.2836 0 -1 0 0.6428 0 -0.766 0.766 0 0.6428 32009.dat
-1 71 -60 -130 -160 0 0 -1 0 1 0 1 0 0 3713.dat
-1 71 0 -58.8559 -324.1296 1 0 0 0 0.6428 -0.766 0 0.766 0.6428 44294.dat
-1 15 -80 -58.8559 -324.1296 0 0 -1 0.6428 0.766 0 0.766 -0.6428 0 32192.dat
-1 15 80 -58.8559 -324.1296 0 0 1 0.6428 -0.766 0 0.766 0.6428 0 32192.dat
-`;
 
 const shortName = (d) => d.replace(/^[~=]?(Technic\s+)?/i, '').replace(/\s+/g, ' ').trim();
 // the colours the SPIKE Prime sets come in (LDraw codes, values from LDConfig.ldr)
@@ -349,8 +339,10 @@ export class AttachmentBuilder {
     this._push();
     const was = this.mode === 'custom';
     if (!was) this.setModule('custom');
-    // it replaces what is on its own tool frame and keeps the other frame's tool (a lift arm in front, a dozer behind)
-    const keep = was ? this.parts.filter((q) => toolSide(this.build.chassis, q) !== t.port) : [];
+    // it replaces what is on its own tool frame and keeps the other frame's tool (a lift arm in front, a dozer behind);
+    // a tool with no motor (the Driving Base's back pusher) goes on next to what is there (the arm comes along)
+    const own = new Set(parseLdr(t.ldr).map(partKey));
+    const keep = !t.port ? this.parts.filter((q) => !own.has(partKey(q))) : was ? this.parts.filter((q) => toolSide(this.build.chassis, q) !== t.port) : [];
     this.parts = keep.concat(parseLdr(t.ldr).filter((q) => this.D.parts.parts[q.f]));
     this.selected = null;
     this._rebuild(true);

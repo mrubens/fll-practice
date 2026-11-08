@@ -5,7 +5,32 @@
 // motor C's 28-tooth gear, carries a 20-tooth gear meshing with it (28:20, so the arm turns 1.4 times as far as the
 // motor, the other way); a 2-long liftarm locked on the axle's left end and a 9-long beam pinned to it reach out behind
 // the robot.
+/** LEGO's Driving Base 2 arm as parts ("My own" starts from it; the back pusher goes on next to it). */
+export const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr without its drive axle and gear; a 7-long axle joins the angle connectors, which take one stud of axle each)
+1 0 -40 -181.423 -221.2836 0 -1 0 0.6428 0 -0.766 0.766 0 0.6428 32009.dat
+1 322 -20 -130 -160 0 1 0 -0.766 0 -0.6428 -0.6428 0 0.766 60483.dat
+1 322 20 -130 -160 0 1 0 -0.766 0 -0.6428 -0.6428 0 0.766 60483.dat
+1 0 40 -181.423 -221.2836 0 -1 0 0.6428 0 -0.766 0.766 0 0.6428 32009.dat
+1 71 -60 -130 -160 0 0 -1 0 1 0 1 0 0 3713.dat
+1 71 0 -58.8559 -324.1296 1 0 0 0 0.6428 -0.766 0 0.766 0.6428 44294.dat
+1 15 -80 -58.8559 -324.1296 0 0 -1 0.6428 0.766 0 0.766 -0.6428 0 32192.dat
+1 15 80 -58.8559 -324.1296 0 0 1 0.6428 -0.766 0 0.766 0.6428 0 32192.dat
+`;
+
 export const TOOL_PRESETS = {
+  // LEGO's Driving Base (the Training Camp / Guided Mission robot): a pusher across its back, kept with the arm in front
+  'driving-base': [
+    // four blue long pins in the ball caster beam's back holes (two rows, 1 cm apart) and two black 15-long beams pressed
+    // onto them: a flat face 12 cm wide, 2.4 to 4 cm off the mat, 0.8 cm behind the robot's back. No motor
+    { id: 'back-pusher', port: null, label: 'Back pusher', note: 'Two 15-long beams across the robot\'s back on four blue long pins: back into a model to push it (no motor; the arm stays on)',
+      ldr: `1 1 -40 -90 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 40 -90 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 -40 -70 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 40 -70 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 0 0 -90 120 0 0 1 1 0 0 0 1 0 32278.dat
+1 0 0 -70 120 0 0 1 1 0 0 0 1 0 32278.dat
+` },
+  ],
   advanced: [
     // LEGO's Lift Arm for the Advanced Driving Base (its building instructions, steps 1-22), on the front tool frame: motor D's
     // 28-tooth gear turns a 36-tooth gear on an upright axle, whose 12-tooth gear turns two 20-tooth gears on the arm's 9-long axle

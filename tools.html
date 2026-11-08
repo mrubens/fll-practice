@@ -29,7 +29,7 @@
 <body>
 <main>
   <h1>Tool guide</h1>
-  <p class="lead">LEGO's Driving Base with its arm, and the Advanced Driving Base's tools, on the BIOGLOW table: which missions each one scores, where to put the
+  <p class="lead">LEGO's Driving Base with its arm (and a back pusher), and the Advanced Driving Base's tools, on the BIOGLOW table: which missions each one scores, where to put the
     robot and the exact moves. Every move here was checked in FLL Practice's simulator. Build the tools with the robot
     builder's <b>Instructions</b> button. In FLL Practice, <b>My projects → Add the Advanced Driving Base demos</b> (or <b>Add the arm robot demos</b>) adds one project per
     move below (the robot starts on its spot): press Run to watch it score, then put the real robot on the same spot and
@@ -38,7 +38,7 @@
   <h2>Driving Base with LEGO's arm</h2>
   <p>The robot from LEGO's Driving Base 2 instructions with its arm ("Tools and Accessories"): wheels on C (left) and
     D (right), the arm's motor on E. In FLL Practice it is the <b>Guided Mission robot</b>; <b>My projects → Add the arm
-    robot demos</b> adds the program below. Without a table, put the mat on a hard floor, tape it flat and lay a straight
+    robot demos</b> adds the programs below. Without a table, put the mat on a hard floor, tape it flat and lay a straight
     board along its bottom edge for the south wall.</p>
   <div class="card"><h3>M11 Window to the Past <span class="pts">20</span> (FIRST's Guided Mission)</h3>
     <p><b>Start:</b> the <b>Guided Mission (M11)</b> project, FIRST's own program. The robot faces east (along the south
@@ -66,6 +66,45 @@ E set speed to 75 %
 move back for 43 cm                     (back home, so picking it up costs no precision token)</div>
     <p class="tip">The window is narrow: 1 cm sideways. Line the robot up the same way every time (a LEGO beam laid
       against the mat's edge makes a good stop for its left side).</p></div>
+  <div class="card"><h3>M01 Drone Survey <span class="pts">20</span></h3>
+    <p><b>Start:</b> in the left launch area facing west (toward the mat's left edge), the wheel axles <b>30 cm in from
+      the mat's left edge</b>, the robot's left side <b>3.5 cm from the south wall</b>. No attachment needed: the
+      robot's back (the ball caster beam) pushes the red marker east, the bars fold up and lift the drone.</p>
+    <div class="prog">set movement motors to C+D
+set movement speed to 30 %
+move back for 40 cm                     (35 to 45 works)
+set movement speed to 50 %
+move forward for 40 cm                  (back home)</div></div>
+  <div class="card"><h3>Back pusher <span class="tip">no motor</span></h3>
+    <p>Four blue long pins in the two rows of holes on the back of the ball caster beam, and two black 15-long beams
+      pressed onto them: a flat face 12 cm wide across the robot's back, 0.8 cm behind it. The arm stays on. In the robot
+      builder pick the <b>Guided Mission robot</b>, then <b>Back pusher</b>; <b>Instructions</b> shows the steps.
+      (In the simulator the robot's own back also scores M06 and M01; the pusher gives a wider, flatter face.)</p></div>
+  <div class="card"><h3>M06 Leafcutter Frenzy <span class="pts">40</span></h3>
+    <p><b>Start:</b> in the right launch area facing north, with the back pusher <b>against the south wall</b> and the
+      wheel axles <b>32 cm in from the mat's right edge</b>. The robot drives north, turns with the gyro to face west,
+      crosses, turns to face south-west and backs slowly into the ant rack.</p>
+    <div class="prog">set movement motors to C+D
+set yaw angle to 0
+set movement speed to 40 %
+move forward for 68.5 cm
+set movement speed to 20 %
+start moving right: -100                (spin left...)
+wait until yaw angle < -89              (...until it faces west)
+stop moving
+set movement speed to 40 %
+move forward for 45 cm
+set movement speed to 20 %
+start moving right: -100
+wait until yaw angle < -134             (now facing south-west, its back to the ant rack)
+stop moving
+set movement speed to 20 %
+move back for 27.5 cm                   (27 to 28 works: 26 is short, 29 launches leaves)
+wait 1 seconds
+set movement speed to 50 %
+move forward for 10 cm</div>
+    <p class="tip">The last push is the touchy part: practise it and change the 27.5 by half a centimetre at a time. The
+      robot ends out on the field, so bring it home with a program (or lose a precision token picking it up).</p></div>
 
   <h2>Advanced Driving Base: the tools</h2>
   <div class="grid">

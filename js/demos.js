@@ -1,7 +1,7 @@
 // Tool demos: one project per mission move in tools.html, each starting the robot at its spot (a launch override) with
 // the Advanced Driving Base carrying the Rake in front and LEGO's Dozer Blade behind. Open one, press Run and watch it
 // score; then put the real robot on the same spot (measured from the walls) and run the same program.
-import { TOOL_PRESETS } from './tools.js';
+import { TOOL_PRESETS, EXAMPLE_ARM } from './tools.js';
 import { PRESETS, normalizeBuild } from './build.js';
 
 const num = (type, v) => ({ shadow: { type, fields: { NUM: v } } });
@@ -21,6 +21,15 @@ export const turnSeconds = (port, sec, dir = 'counterclockwise') => ({ type: 'fl
   inputs: { PORT: sel('flippermotor_multiple-port-selector', port), DIRECTION: sel('flippermotor_custom-icon-direction', dir), VALUE: num('math_number', sec) } });
 export const startMotor = (port, dir) => ({ type: 'flippermotor_motorStartDirection', inputs: { PORT: sel('flippermotor_multiple-port-selector', port), DIRECTION: sel('flippermotor_custom-icon-direction', dir) } });
 export const stopMotor = (port) => ({ type: 'flippermotor_motorStop', inputs: { PORT: sel('flippermotor_multiple-port-selector', port) } });
+export const resetYaw = () => ({ type: 'flippersensors_resetYaw' });
+export const startSteer = (steer) => ({ type: 'flippermove_startSteer', inputs: { STEERING: sel('flippermove_rotation-wheel', steer) } });
+export const stopMove = () => ({ type: 'flippermove_stopMove' });
+/** "wait until yaw angle < v" (or > v): the gyro turn's stop. */
+export const waitYaw = (cmp, v) => ({ type: 'control_wait_until', inputs: { CONDITION: { block: { type: cmp === '<' ? 'operator_lt' : 'operator_gt', inputs: {
+  OPERAND1: { shadow: { type: 'text', fields: { TEXT: '' } }, block: { type: 'flippersensors_orientationAxis', fields: { AXIS: 'yaw' } } },
+  OPERAND2: { shadow: { type: 'text', fields: { TEXT: String(v) } } } } } } } });
+/** Spin in place until the yaw passes `yaw` (negative: to the left), at 20%, then stop. */
+export const gyroTurn = (yaw) => [speed(20), startSteer(yaw < 0 ? -100 : 100), waitYaw(yaw < 0 ? '<' : '>', yaw), stopMove()];
 export const wait = (sec) => ({ type: 'control_wait', inputs: { DURATION: num('math_positive_number', sec) } });
 
 export const program = (blocks, ports = 'AE') => ({ blocks: { languageVersion: 0, blocks: [chain([{ type: 'flipperevents_whenProgramStarts', x: 40, y: 40 }, pair(ports), ...blocks])] } });
@@ -55,15 +64,27 @@ export const ARM_DEMOS = [
   { name: 'Arm robot: M03 Flip the Rock', robot: 'guided-mission', launch: { x: -91.2, y: 50.9, heading: -90 },
     blocks: [motorSpeed('E', 20), turnSeconds('E', 0.5), motorSpeed('E', 75), turn('E', 115), move(49), turn('E', -47), speed(10), move(-3),
       motorSpeed('E', 5), startMotor('E', 'counterclockwise'), move(-2.5), stopMotor('E'), speed(50), motorSpeed('E', 75), move(-43)] },
+  // the robot's own back (the ball caster beam) pushes the red marker east: the bars fold up and lift the drone.
+  // From the left launch area facing west; backing 35 to 45 cm works. Then back home
+  { name: 'Arm robot: M01 Drone Survey', robot: 'guided-mission', launch: { x: -70, y: 46, heading: 180 },
+    blocks: [speed(30), move(-40), speed(50), move(40)] },
+  // with the back pusher: from the right launch area, north, a gyro turn to face west, across, a gyro turn to face
+  // south-west, then backing slowly into the ant rack (27 to 28 cm works; 26 is short, 29 launches leaves)
+  { name: 'Arm robot: M06 Leafcutter Frenzy (back pusher)', robot: 'guided-mission-pusher', launch: { x: 68, y: 50.2, heading: -90 },
+    blocks: [resetYaw(), speed(40), move(68.5), ...gyroTurn(-89), speed(40), move(45), ...gyroTurn(-134), speed(20), move(-27.5), wait(1), speed(50), move(10)] },
 ];
 
 /** The demo robot: the Advanced Driving Base with a front tool (the Rake, or LEGO's Lift Arm) and LEGO's Dozer Blade. */
 export function demoBuild(front = 'rake', robot = 'advanced') {
   if (robot === 'guided-mission') return normalizeBuild({ ...PRESETS['guided-mission'], preset: 'guided-mission' });
+  if (robot === 'guided-mission-pusher') {
+    const pusher = TOOL_PRESETS['driving-base'].find((t) => t.id === 'back-pusher').ldr;
+    return normalizeBuild({ ...PRESETS['guided-mission'], preset: null, name: 'Driving Base with LEGO\'s arm and the back pusher', attachment: { module: 'custom', mount: 'front', ldr: EXAMPLE_ARM + '\n' + pusher } });
+  }
   const pick = (id) => TOOL_PRESETS.advanced.find((t) => t.id === id).ldr;
   const label = front === 'rake' ? 'the Rake' : 'LEGO\'s Lift Arm';
   return normalizeBuild({ ...PRESETS.advanced, preset: null, name: `Advanced Driving Base with ${label} and the Dozer Blade`,
     attachment: { module: 'custom', ldr: `0 ${label} and Dozer Blade\n` + pick(front) + pick('dozer'), stops: { D: front === 'rake' ? [-328, 45] : [-264, 32], C: [-328, 58] } } });
 }
 
-export const demoProgram = (demo) => program(demo.blocks, demo.robot === 'guided-mission' ? 'CD' : 'AE');
+export const demoProgram = (demo) => program(demo.blocks, /^guided-mission/.test(demo.robot || '') ? 'CD' : 'AE');
