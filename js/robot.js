@@ -119,11 +119,14 @@ export class Robot {
    */
   _pairPorts() {
     const wheels = [this.config.left, this.config.right];
-    const pair = this.movement.pair;
-    if (!pair || (pair[0] === wheels[0] && pair[1] === wheels[1])) return { left: wheels[0], right: wheels[1] };
+    // like the hub: with no "set movement motors" block, a program drives A+B
+    const pair = this.movement.pair || ['A', 'B'];
+    if (pair[0] === wheels[0] && pair[1] === wheels[1]) return { left: wheels[0], right: wheels[1] };
     if (pair[0] === wheels[1] && pair[1] === wheels[0]) return { left: wheels[0], right: wheels[1], reversed: true };
     if (!this.movement.hint) {
-      this.movement.hint = `Movement motors are set to ${pair[0]}+${pair[1]}, but this robot's wheels are on ${wheels[0]}+${wheels[1]}: the wheels will not move. Set the movement motors to ${wheels[0]}+${wheels[1]}.`;
+      this.movement.hint = this.movement.pair
+        ? `Movement motors are set to ${pair[0]}+${pair[1]}, but this robot's wheels are on ${wheels[0]}+${wheels[1]}: the wheels will not move. Set the movement motors to ${wheels[0]}+${wheels[1]}.`
+        : `This program has no "set movement motors" block, so like the real hub it drives A+B, but this robot's wheels are on ${wheels[0]}+${wheels[1]}: the wheels will not move. Put "set movement motors to ${wheels[0]}+${wheels[1]}" at the start.`;
       this.emit('hint', this.movement.hint);
     }
     return { left: pair[0], right: pair[1] };

@@ -42,6 +42,9 @@ def cmp(a, b):
         return -1 if sa < sb else (1 if sa > sb else 0)
 
 def pair():
+    # like Word Blocks on the hub: A+B until the program sets the movement motors
+    if not state.get('paired'):
+        set_pair('AB')
     return motor_pair.PAIR_1
 
 def set_pair(code):
@@ -258,7 +261,7 @@ export function compileToPython(workspace, robotConfig) {
   const header = HELPERS +
     `\nstate['cm_per_rot'] = ${Number(cfg.calibration) || 17.5}\n` +
     (cfg.hub === 'upright' ? `# Hub mounted upright: pick the face pointing up, e.g. motion_sensor.set_yaw_face(motion_sensor.FRONT)\n` : '') +
-    `set_pair(${pyStr(cfg.left + cfg.right)})\n`;
+    '';
   const footer = tasks.length ? `\nrunloop.run(${tasks.map((t) => t + '()').join(', ')})\n` : '\n# No "when ..." hat blocks found.\n';
   return { code: header + '\n' + myBlockDefs.concat(out).join('\n\n') + '\n' + footer, warnings: [...warnings] };
 }
