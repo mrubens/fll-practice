@@ -709,6 +709,12 @@ export class Physics {
   dragPiece(obstacleId, name, pos) {
     const pc = this.pieces.find((q) => (obstacleId === null ? q.equipment : q.o && q.o.id === obstacleId) && q.name === name);
     if (!pc) return;
+    if (pos && !pc.equipment && !pc.handFreed) {
+      // a seed taken off its model by hand: it comes free, off its hose too
+      if (!pc.freed) this.freePiece(pc);
+      if (pc.springJoint) { this.world.removeImpulseJoint(pc.springJoint, true); pc.springJoint = null; }
+      pc.handFreed = true;
+    }
     if (pos) {
       if (pc.body.bodyType() !== 2) pc.body.setBodyType(2, true);          // kinematic: it goes where the mouse is
       pc.body.setTranslation({ x: pos.x * S, y: pos.h * S, z: pos.y * S }, true);
@@ -721,12 +727,55 @@ export class Physics {
     this.readPieces(this.robot ? this.robot.time : 0);
   }
 
-  /** Whether a field piece is loose and may be picked up by hand: knocked free, not hooked on the robot, on a joint or held. */
+  /** Where a field piece is, if it may be picked up by hand: not hooked on the robot and not part of the model's frame. */
   loosePiece(obstacleId, name) {
     const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name);
-    if (!pc || !pc.freed || pc.carried || pc.body.bodyType() === 1) return null;
+    if (!pc || pc.carried || pc.body.bodyType() === 1) return null;
     const t = pc.body.translation();
     return { x: t.x / S, y: t.z / S };
+  }
+
+  /** A seed pulled off its model or hose by hand (its hose is not drawn any more). */
+  isHandFreed(obstacleId, name) { const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name); return !!(pc && pc.handFreed); }
+
+  /** Whether a model's moving piece can be grabbed and pulled with the mouse (it moves under forces: not fixed or driven). */
+  grabbable(obstacleId, name) {
+    const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name);
+    return !!(pc && pc.body.bodyType() === 0 && !pc.carried);
+  }
+
+  /**
+   * The mouse as a hand: hold a point of a piece (table cm: x, y, h) and pull it toward where the pointer is; its joints,
+   * limits and weight still apply. grabTo moves the target; grabEnd lets go.
+   */
+  grabStart(obstacleId, name, at) {
+    const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name);
+    if (!pc) return;
+    const t = pc.body.translation(), r = pc.body.rotation();
+    const inv = new THREE.Quaternion(r.x, r.y, r.z, r.w).invert();
+    const local = new THREE.Vector3(at.x * S - t.x, at.h * S - t.y, at.y * S - t.z).applyQuaternion(inv);
+    this.grab = { pc, local, target: new THREE.Vector3(at.x * S, at.h * S, at.y * S) };
+    pc.body.wakeUp();
+  }
+  grabTo(at) { if (this.grab) this.grab.target.set(at.x * S, at.h * S, at.y * S); }
+  grabEnd() { this.grab = null; }
+  _applyGrab(dt) {
+    const g = this.grab;
+    if (!g) return;
+    const b = g.pc.body;
+    if (b.bodyType() !== 0) { this.grab = null; return; }
+    const t = b.translation(), r = b.rotation();
+    const arm = g.local.clone().applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w));
+    const p = new THREE.Vector3(t.x, t.y, t.z).add(arm);
+    const lv = b.linvel(), av = b.angvel();
+    const v = new THREE.Vector3(lv.x, lv.y, lv.z).add(new THREE.Vector3(av.x, av.y, av.z).cross(arm));
+    // head for the target at up to 40 cm/s, like a steady hand; the push is capped so a joint at its stop holds
+    const want = g.target.clone().sub(p).divideScalar(0.12);
+    if (want.length() > 40 * S) want.setLength(40 * S);
+    const imp = want.sub(v).multiplyScalar(b.mass() * 0.6);
+    const cap = b.mass() * 2 * S * 100 * dt * 60;
+    if (imp.length() > cap) imp.setLength(cap);
+    b.applyImpulseAtPoint({ x: imp.x, y: imp.y, z: imp.z }, { x: p.x, y: p.y, z: p.z }, true);
   }
 
   /** Before a physics step: releases, latches, driven lifts. */
@@ -1242,6 +1291,7 @@ export class Physics {
       this.placeArm(hx / S, hz / S, hh, ha);
       driveGeared(this, robot, hx / S, hz / S, hh, f);
       this.updateMechanisms(robot.time);
+      this._applyGrab(dt / SUB);                // a hand on a model's piece (free practice)
       this.world.timestep = dt / SUB;
       this.world.step();
     }
@@ -1410,13 +1460,14 @@ export class Physics {
     // nothing moving and the robot where it was: the world is at rest, so there is nothing to step
     const rt = this.robotBody.translation(), rr = this.robotBody.rotation();
     const sig = [rt.x, rt.z, rr.y, rr.w, this.robot ? this.attachmentAngle(this.robot) : 0].join();
-    const awake = this.pieces.some((pc) => pc.body.bodyType() === 0 && !pc.body.isSleeping());
+    const awake = !!this.grab || this.pieces.some((pc) => pc.body.bodyType() === 0 && !pc.body.isSleeping());
     if (!awake && sig === this.idleSig) { this.idleAcc = 0; return; }
     this.idleSig = sig;
     const t = this.robot ? this.robot.time : 0;
     this.idleAcc = Math.min(0.05, (this.idleAcc || 0) + dt);
     const STEP = 1 / 200;                 // joint limits need small, fixed steps or they bounce
     while (this.idleAcc >= STEP) {
+      this._applyGrab(STEP);
       this.updateMechanisms(t);
       this.world.timestep = STEP;
       this.world.step();

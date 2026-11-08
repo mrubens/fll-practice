@@ -169,14 +169,24 @@ sim.onMatPoint = (p) => {
 };
 // dragging the keystone species with the mouse (between runs): set it down on the robot, in a carrier, anywhere
 let dropSettle = 0;            // after a drop the referee watches for two seconds, so a keystone set on M13 by hand scores
-sim.onDragLoose = (oid, name, pos) => { if (world.physics) world.physics.dragPiece(oid, name, pos); if (!pos) dropSettle = 2; };
+sim.onDragLoose = (oid, name, pos) => { if (world.physics) world.physics.dragPiece(oid, name, pos); if (pos) handsUsed(); else dropSettle = 2; };
 sim.onDragEquipment = (id, pos) => sim.onDragLoose(null, id, pos);
-// a field piece may be picked up by hand only when it's loose and completely in home, as the rules allow
+// Hands on the field. In a match only what the rules allow: a seed that is loose and completely in home, with the
+// robot stopped. In free practice anything, even while a program runs: a seed anywhere (off its model too), and any
+// moving part of a model pulled with the mouse to try the mechanisms.
+const inMatchNow = () => !!(scoring.match.launched && !scoring.match.ended);
+const handsUsed = () => { if (runtime.running) { replay.start = null; replay.snaps.clear(); updateRunState(); } };   // step back can't replay a hand
 sim.canDragPiece = (oid, name) => {
   if (!world.physics || !world.season || !FIELD_SEEDS.some(([m, n]) => m === oid && n === name)) return false;
   const at = world.physics.loosePiece(oid, name);
-  return !!at && inHome(at.x, at.y);
+  if (!at) return false;
+  if (inMatchNow()) return !runtime.running && inHome(at.x, at.y) && world.physics.pieces.some((q) => q.o && q.o.id === oid && q.name === name && q.freed);
+  return true;
 };
+sim.canGrabPiece = (oid, name) => !inMatchNow() && !!world.physics && world.physics.grabbable(oid, name);
+sim.onGrab = (oid, name, at) => { if (world.physics) { world.physics.grabStart(oid, name, at); handsUsed(); } };
+sim.onGrabMove = (at) => { if (world.physics) world.physics.grabTo(at); };
+sim.onGrabEnd = () => { if (world.physics) world.physics.grabEnd(); dropSettle = 2; };
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
   if (!world.season) return;                 // only the season table has mission cards
@@ -274,6 +284,7 @@ function updateRunState() {
   document.body.classList.toggle('running', runtime.running);
   document.body.classList.toggle('stepping', runtime.running && runtime.stepMode);
   sim.locked = runtime.running || replay.active;
+  sim.handsFree = !replay.active && !(scoring.match.launched && !scoring.match.ended);   // free practice: hands on the field even mid-run
   btnRun.disabled = (runtime.running && !runtime.paused) || replay.active;
   btnStop.disabled = !runtime.running || replay.active;
   btnStep.disabled = replay.active || (runtime.finished && !runtime.running);   // at the end of a program there is nothing to step on to
@@ -665,8 +676,7 @@ function applyBoardUi() {
   const season = !!world.season;
   $('#btnLaunch').hidden = !season;
   $('#scoreChip').hidden = !season;
-  $('#btnModels').hidden = !season;
-  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); modelsPanel.hidden = true; if (world.physics) world.physics.spawnEquipment([]); sim.buildEquipment([]); }
+  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); if (world.physics) world.physics.spawnEquipment([]); sim.buildEquipment([]); }
   equipmentShown = false;      // back on the season table the keystone comes back to home
   boardSelect.value = (world.board && world.board.id) || 'season';
   const b = world.board || {};
@@ -697,33 +707,9 @@ function updateCalReadout() {
   if (html !== calShown) { calReadout.innerHTML = html; calShown = html; }
 }
 
-// ---------- which mission models are on the table ----------
-// Kids can practice one mission at a time: untick the others and their models leave the table (and the scoresheet).
-const modelsPanel = $('#modelsPanel');
-const hiddenMissions = new Set(store.hiddenMissions || []);
-function applyHiddenMissions() {
-  const ids = new Set();
-  for (const m of MISSIONS) if (hiddenMissions.has(m.id)) m.models.forEach((id) => ids.add(id));
-  world.setHiddenModels(ids);
-  scoring.reset();
-  modelCard.renderChip();
-  store.hiddenMissions = [...hiddenMissions]; saveStore();
-}
-function renderModelsPanel() {
-  modelsPanel.innerHTML = `<h4><span>Models on the table</span><button type="button" data-all="1">All</button><button type="button" data-all="0">None</button></h4>` +
-    MISSIONS.map((m) => `<label class="${hiddenMissions.has(m.id) ? 'off' : ''}"><input type="checkbox" data-mission="${m.id}"${hiddenMissions.has(m.id) ? '' : ' checked'}><span class="m">${m.id}</span><span>${m.name}</span></label>`).join('');
-  modelsPanel.querySelectorAll('[data-mission]').forEach((cb) => cb.addEventListener('change', () => {
-    if (cb.checked) hiddenMissions.delete(cb.dataset.mission); else hiddenMissions.add(cb.dataset.mission);
-    applyHiddenMissions(); renderModelsPanel();
-  }));
-  modelsPanel.querySelectorAll('[data-all]').forEach((b) => b.addEventListener('click', () => {
-    hiddenMissions.clear();
-    if (b.dataset.all === '0') MISSIONS.forEach((m) => hiddenMissions.add(m.id));
-    applyHiddenMissions(); renderModelsPanel();
-  }));
-}
-$('#btnModels').addEventListener('click', () => { modelsPanel.hidden = !modelsPanel.hidden; if (!modelsPanel.hidden) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); renderModelsPanel(); } });
-world.setHiddenModels(new Set(MISSIONS.filter((m) => hiddenMissions.has(m.id)).flatMap((m) => m.models)));
+// every mission model is on the table (the Models panel that hid some was taken out; a saved choice is dropped)
+if (store.hiddenMissions) { delete store.hiddenMissions; saveStore(); }
+world.setHiddenModels(new Set());
 async function switchBoard(id, quiet) {
   const b = boardById(id);
   runtime.stop();
@@ -1003,6 +989,7 @@ async function frame(now) {
     partsPrefetch = true;
     setTimeout(() => loadLego().then((D) => partTemplates(D)).catch(() => {}), 1500);
   }
+  sim.handsFree = !replay.active && !inMatchNow();
   sim.lostModels = world.season ? scoring.lostGuards() : null;
   if (!equipmentShown && world.season && world.matReady && world.physics && !runtime.running && !replay.active) { equipmentShown = true; placeEquipment(true); }      // M10's habitats glow red while knocked out of place
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table

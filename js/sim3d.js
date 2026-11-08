@@ -909,7 +909,7 @@ export class Sim3D {
     el.addEventListener('pointerleave', () => { if (this.onMatPoint) this.onMatPoint(null); });
     el.addEventListener('pointerdown', (e) => {
       this.pressAt = { x: e.clientX, y: e.clientY, t: performance.now() };
-      if (this.locked) return;
+      if (this.locked && !this.handsFree) return;      // a program running in a match: hands off
       // Shift-drag on the mat lays a ruler between two points.
       if (e.shiftKey) {
         const p = matPoint(e);
@@ -939,7 +939,7 @@ export class Sim3D {
           return;
         }
       }
-      if (eqHits.length && (!robotHits.length || eqHits[0].distance <= robotHits[0].distance + 0.5)) {
+      if (eqHits.length && (!robotHits.length || eqHits[0].distance <= robotHits[0].distance + 0.5) && (!this.locked || this.handsFree)) {
         let o = eqHits[0].object; while (o && !o.userData.equipment) o = o.parent;
         if (o) {
           this.eqDrag = { oid: null, id: o.userData.equipment.id, node: o, half: o.userData.equipment.box[1] / 2, yaw: 0 };
@@ -950,6 +950,23 @@ export class Sim3D {
           return;
         }
       }
+      // any other moving piece of a model: the mouse is a hand that pulls it (free practice only)
+      const grabbable = this.canGrabPiece ? this.pieceNodes.filter((pn) => this.canGrabPiece(pn.o.id, pn.name)) : [];
+      const gHits = grabbable.length ? ray.intersectObjects(grabbable.map((pn) => pn.node), true) : [];
+      if (gHits.length && (!robotHits.length || gHits[0].distance <= robotHits[0].distance + 0.5)) {
+        const pn = grabbable.find((q) => { let o = gHits[0].object; while (o && o !== q.node) o = o.parent; return !!o; });
+        if (pn) {
+          const pt = gHits[0].point.clone();
+          const facing = this.camera.getWorldDirection(new THREE.Vector3());
+          this.handGrab = { plane: new THREE.Plane().setFromNormalAndCoplanarPoint(facing, pt) };
+          if (this.onGrab) this.onGrab(pn.o.id, pn.name, { x: pt.x, y: pt.z, h: pt.y });
+          this.controls.enabled = false;
+          el.setPointerCapture(e.pointerId);
+          el.style.cursor = 'grabbing';
+          return;
+        }
+      }
+      if (this.locked) return;                          // the robot itself is moved by hand only when it is stopped
       const hits = robotHits;
       if (!hits.length) return;
       this.dragging = true;
@@ -961,6 +978,13 @@ export class Sim3D {
       if (this.rulerDrag) {
         const p = matPoint(e);
         if (p) { this.ruler.b = p; this.updateRuler(); if (this.onMatPoint) this.onMatPoint(p); }
+        return;
+      }
+      if (this.handGrab) {
+        toNdc(e);
+        const p = ray.ray.intersectPlane(this.handGrab.plane, new THREE.Vector3());
+        if (p && this.onGrabMove) this.onGrabMove({ x: p.x, y: p.z, h: Math.max(0.3, p.y) });
+        this.frameForced = true;
         return;
       }
       if (this.eqDrag) {
@@ -1000,6 +1024,14 @@ export class Sim3D {
         if (!obj && this.ruler) this.clearRuler();          // a plain click on the mat puts the ruler away
       }
       this.pressAt = null;
+      if (this.handGrab) {
+        this.handGrab = null;
+        if (this.onGrabEnd) this.onGrabEnd();
+        this.controls.enabled = true;
+        el.style.cursor = '';
+        try { el.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        return;
+      }
       if (this.eqDrag) {
         if (this.onDragLoose) this.onDragLoose(this.eqDrag.oid, this.eqDrag.id, null);
         this.eqDrag = null;
@@ -1157,7 +1189,9 @@ export class Sim3D {
       const pose = ph ? ph.piecePose(pn.o.id, pn.name) : null;
       if (pose) { pn.node.position.set(pose.p[0], pose.p[1], pose.p[2]); pn.node.quaternion.set(pose.q[0], pose.q[1], pose.q[2], pose.q[3]); }
       else { pn.node.position.copy(pn.anchor).applyQuaternion(pn.holder.quaternion).add(pn.holder.position); pn.node.quaternion.copy(pn.holder.quaternion); }
-      if (pn.tether) this.drawTether(pn);
+      const cut = ph && ph.isHandFreed(pn.o.id, pn.name);      // pulled off its hose by hand
+      if (pn.tether && !cut) { if (pn.tetherMesh) pn.tetherMesh.visible = true; this.drawTether(pn); }
+      else if (pn.tetherMesh) pn.tetherMesh.visible = false;
     }
     for (const eq of this.equipmentNodes || []) {
       const pose = ph ? ph.piecePose(null, eq.id) : null;
