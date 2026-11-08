@@ -229,6 +229,31 @@ function box(w, h, d, color, opts = {}) {
   return mesh;
 }
 
+/**
+ * The graphics chip, read once from a throwaway WebGL context: older Intel HD/UHD chips, phone and Chromebook GPUs
+ * and software rendering start on the light setting (and without edge smoothing, which costs them the most).
+ */
+let gpuName = null;
+export function gpu() {
+  if (gpuName !== null) return gpuName;
+  gpuName = '';
+  try {
+    const gl = document.createElement('canvas').getContext('webgl');
+    const ext = gl && gl.getExtension('WEBGL_debug_renderer_info');
+    gpuName = gl ? String(gl.getParameter(ext ? ext.UNMASKED_RENDERER_WEBGL : gl.RENDERER) || '') : '';
+    const lose = gl && gl.getExtension('WEBGL_lose_context');
+    if (lose) lose.loseContext();
+  } catch { /* no WebGL: the renderer reports it */ }
+  return gpuName;
+}
+export function weakGpu(name = gpu()) {
+  const n = name.toLowerCase();
+  if (/swiftshader|llvmpipe|softpipe|basic render|software/.test(n)) return true;
+  if (/mali|adreno|powervr|videocore|tegra/.test(n)) return true;
+  if (/intel/.test(n) && !/iris|arc/.test(n)) return true;      // HD / UHD Graphics: most school laptops and Chromebooks
+  return false;
+}
+
 export class Sim3D {
   constructor(container, world, robot) {
     this.container = container;
@@ -238,7 +263,7 @@ export class Sim3D {
     this.locked = false;
     this.dragging = false;
 
-    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: 'high-performance' });
+    const renderer = new THREE.WebGLRenderer({ antialias: !weakGpu(), alpha: false, powerPreference: 'high-performance' });
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -355,7 +380,7 @@ export class Sim3D {
     const cores = navigator.hardwareConcurrency || 4;
     const mem = navigator.deviceMemory || 4;
     const maxTex = this.renderer.capabilities.maxTextureSize || 0;
-    if (mem <= 2 || cores <= 2) return 'low';
+    if (mem <= 2 || cores <= 2 || weakGpu()) return 'low';
     if (coarse || cores <= 4 || maxTex < 8192) return 'medium';
     return 'high';
   }
@@ -1125,6 +1150,9 @@ export class Sim3D {
 
   /** A cheap fingerprint of everything that moves on screen; true when it differs from the last frame drawn. */
   sceneChanged() {
+    const now0 = performance.now();
+    // the light setting draws at most 30 frames a second: on a slow computer the physics needs the time more
+    if (this.quality === 'low' && !this.frameForced && now0 - (this.lastDrawn || 0) < 1000 / 30 - 2) return false;
     const c = this.camera, r = this.robot, ph = this.world.physics, size = this.renderer.domElement;
     let sig = c.matrixWorld.elements.join() + '|' + c.projectionMatrix.elements[0] + c.projectionMatrix.elements[5] + '|' + size.width + 'x' + size.height;
     sig += '|' + r.x + ',' + r.y + ',' + r.heading + ',' + Object.values(r.motors).map((m) => m.angle).join();

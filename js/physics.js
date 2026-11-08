@@ -842,6 +842,16 @@ export class Physics {
   readPieces(time) {
     for (const pc of this.pieces) {
       const t = pc.body.translation(), r = pc.body.rotation();
+      // a piece asleep where it was last read: its pose, outline and contacts are what they were, so only the
+      // bookkeeping that runs on the clock is brought up to date (most of the field is asleep most of the time)
+      const key = t.x + ',' + t.y + ',' + t.z + ',' + r.x + ',' + r.y + ',' + r.z + ',' + r.w;
+      if (pc.state && pc.readKey === key && pc.body.isSleeping()) {
+        if (pc.axisW && pc.def.kind === 'slider') { pc.vel = 0; pc.extTime = time; }
+        pc.state = { ...pc.state, freed: !!pc.freed, angle: pc.angle, ext: pc.ext, vel: pc.vel || 0, height: pc.def.kind === 'lift' ? pc.height : pc.state.height,
+          touched: pc.touched >= 0 && time - pc.touched < 0.3, everTouched: pc.touched >= 0, released: pc.released, latched: pc.latched };
+        continue;
+      }
+      pc.readKey = key;
       const q = new THREE.Quaternion(r.x, r.y, r.z, r.w);
       const pos = new THREE.Vector3(t.x / S, t.y / S, t.z / S);
       if (pc.axisW && pc.def.kind === 'hinge') {
