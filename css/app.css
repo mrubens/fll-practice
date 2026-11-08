@@ -443,3 +443,4 @@ body.building #hubPanel { display: none; }
   .ins-print section > img { display: block; width: 100%; max-height: 60vh; object-fit: contain; }
 }
 .lb-tools a.tb { text-decoration: none; display: inline-flex; align-items: center; color: var(--fg); }
+#projectsPanel .demos { display: block; width: 100%; margin: 8px 0 2px; }

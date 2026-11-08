@@ -31,7 +31,9 @@
   <h1>Tool guide</h1>
   <p class="lead">The Advanced Driving Base's tools for the BIOGLOW table: which missions each one scores, where to put the
     robot and the exact moves. Every move here was checked in FLL Practice's simulator. Build the tools with the robot
-    builder's <b>Instructions</b> button, try the moves in the simulator, then do the same on the real table and compare.</p>
+    builder's <b>Instructions</b> button. In FLL Practice, <b>My projects → Add the tool demos</b> adds one project per
+    move below (the robot starts on its spot): press Run to watch it score, then put the real robot on the same spot and
+    run the same program.</p>
 
   <h2>The tools</h2>
   <div class="grid">
@@ -64,28 +66,37 @@
   <h2>Rake</h2>
   <div class="card"><h3>M07 Humongous Fungus <span class="pts">20</span></h3>
     <p><b>Start:</b> facing north, the middle of the robot lined up with the red handle (57.5 cm from the east wall), the
-      rake at rest, the wheel axles <b>25.5 cm from the north wall</b> (works from 24.5 to 26.5).</p>
-    <div class="prog">D run clockwise for 40 degrees          (the crossbar drops behind the red bar)
+      rake at rest, the wheel axles <b>35.5 cm from the north wall</b>. The program drives in 10 cm, to 25.5 cm (24.5 to
+      26.5 works; the crossbar then rests against the tower just behind the red bar).</p>
+    <div class="prog">move forward for 10 cm
+D run clockwise for 40 degrees          (the crossbar drops behind the red bar)
+wait 0.5 seconds
 move back for 4 cm                      (the handle slides out and the trap flips over)
 D run counterclockwise for 40 degrees
 move back for 10 cm                     (let go of the model: M07 scores nothing while touching it)</div></div>
   <div class="card"><h3>M09 Research Platform <span class="pts">30</span></h3>
-    <p><b>Start:</b> facing north, centred on the tree trunk (75.4 cm from the west wall), the wheel axles <b>35.3 cm from
-      the north wall</b> (works from 34.8 to 35.8), so the crossbar is 3.5 to 4.5 cm under the platform's front edge.</p>
-    <div class="prog">D run clockwise for 6 degrees           (the tip just above the mat, under the platform)
+    <p><b>Start:</b> facing north, centred on the tree trunk (75.4 cm from the west wall), the wheel axles <b>40.3 cm from
+      the north wall</b>. (Not further back: the Dozer Blade behind the robot would hit M02.)</p>
+    <div class="prog">D run clockwise for 6 degrees           (the tip just above the mat)
+move forward for 6 cm                   (the crossbar slides under the platform's front edge)
 D set speed to 30 %
-D run counterclockwise for 140 degrees  (lifts the platform to the top: the camera trap falls out, the branch tips
-                                         and the pinecone slides off)
+D run counterclockwise for 70 degrees   (lift halfway)
+move forward for 2 cm                   (creep in, so the crossbar stays under the platform as it rises)
+D run counterclockwise for 70 degrees   (to the top: the camera trap falls out, the branch tips, the pinecone slides off)
+wait 1.5 seconds
 D set speed to 75 %
 move back for 12 cm</div>
-    <p class="tip">Lift slowly: the platform ratchets at each notch and stays there.</p></div>
+    <p class="tip">This one is touchy: half a centimetre either way and the platform stops at a lower notch (20 points
+      instead of 30). Lift slowly; the platform ratchets at each notch and stays there.</p></div>
   <div class="card"><h3>M03 Flip the Rock <span class="pts">20</span></h3>
     <p><b>Start:</b> facing north, lined up with the middle of the rock model (25.3 cm from the west wall, within 2.5 cm
-      either way), the wheel axles <b>64 cm from the north wall</b> (works from 63 to 65).</p>
+      either way), the wheel axles <b>77 cm from the north wall</b>. The program raises the rake and drives in 13 cm, to 64
+      cm (63 to 65 works).</p>
     <div class="prog">D run counterclockwise for 86 degrees   (rake up, over the levers; do this before driving in)
-move forward to the start spot
+move forward for 13 cm                  (from 77 cm off the north wall to 64)
 D set speed to 25 %
 D run clockwise for 86 degrees          (the crossbar comes down behind the levers)
+wait 0.5 seconds
 move back for 6 cm                      (pulls the rock over: the flag drops)
 D set speed to 75 %
 D run counterclockwise for 60 degrees
@@ -93,10 +104,13 @@ move back for 10 cm</div>
     <p class="tip">Sometimes the rock tips past 60 degrees and falls back by itself: then the return bonus scores too (30).</p></div>
   <div class="card"><h3>M11 Window to the Past <span class="pts">20</span></h3>
     <p><b>Start:</b> facing north-west (45 degrees, toward the model), on the diagonal through the middle of the cover,
-      with the rake raised (D counterclockwise 86 degrees); the wheel axles <b>13 to 17 cm from the cover</b> along that
-      diagonal, within 3 cm either side of it.</p>
-    <div class="prog">D set speed to 25 %
+      the wheel axles <b>35 cm from the cover's middle</b> along that diagonal (within 3 cm either side of it). The robot
+      raises the rake, then drives in 20 cm (13 to 17 cm from the cover works).</p>
+    <div class="prog">D run counterclockwise for 86 degrees   (rake up)
+move forward for 20 cm
+D set speed to 25 %
 D run clockwise for 86 degrees          (the crossbar comes down behind the cover's top edge)
+wait 0.5 seconds
 move back for 8 cm                      (the cover falls open toward you)
 D set speed to 75 %
 D run counterclockwise for 86 degrees
@@ -109,6 +123,7 @@ move back for 8 cm</div></div>
       that line still works).</p>
     <div class="prog">set movement speed to 20 %
 move back for 20 cm                     (pushes the rack in until it stops; slowly, or the leaves fly out)
+wait 1 second
 set movement speed to 50 %
 move forward for 10 cm</div>
     <p class="tip">The distance matters: 2 cm too far and the push launches leaves. Practise it on the calibration strip first.</p></div>
