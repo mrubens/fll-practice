@@ -130,9 +130,9 @@ export const MISSIONS = [
   { id: 'M10', name: 'Fragile Microhabitats', models: ['M10 Fragile Microhabitat A', 'M10 Fragile Microhabitat B'], noEquipment: true,
     text: 'Move through the area without damaging these tiny creatures’ homes.',
     tasks: [
-      { id: 'spider', label: 'The spider habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat B',
+      { id: 'spider', label: 'The spider habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat B', guard: true,
         met: (c) => { const w = c.p('M10 Fragile Microhabitat B').webB; return !!w && w.angle < 5; } },
-      { id: 'snail', label: 'The snail habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat A',
+      { id: 'snail', label: 'The snail habitat is in its original starting position', points: 10, model: 'M10 Fragile Microhabitat A', guard: true,
         met: (c) => { const n = c.p('M10 Fragile Microhabitat A').neck; return !!n && n.angle < 5; } },
     ] },
   { id: 'M11', name: 'Window to the Past', models: ['M11 Window to the Past'],

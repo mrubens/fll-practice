@@ -14,6 +14,7 @@ import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 import { drawCustom, poseCustom } from './legodraw.js';
 
 const DEG = Math.PI / 180;
+const EMPTY_SET = new Set();
 const LDU = 0.04; // 1 LDraw unit = 0.4 mm = 0.04 cm
 
 // ---- LDraw models (real LEGO geometry) ----
@@ -1122,10 +1123,18 @@ export class Sim3D {
       else if (arm.module === 'lift') mv.position.y = arm.liftHeight - this.armPivot.position.y;
       else if (arm.module === 'custom') mv.rotation.set(0, 0, arm.angle * DEG);
     }
+    // a model knocked out of the position it must keep (M10's habitats) glows red while those points are lost
+    const lost = this.lostModels || EMPTY_SET;
     for (const m of this.obstacleMeshes) {
       const o = m.userData.obstacle;
       const hit = o.touched !== undefined && r.time - o.touched < 0.3;
-      m.material.emissive.setHex(hit ? 0x335533 : 0x000000);
+      m.material.emissive.setHex(lost.has(o.id) ? 0x8a0000 : hit ? 0x335533 : 0x000000);
+    }
+    for (const pn of this.pieceNodes) {
+      const red = lost.has(pn.o.id);
+      if (red === !!pn.red) continue;
+      pn.red = red;
+      pn.node.traverse((o) => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(red ? 0x8a0000 : 0x000000); });
     }
     this.centerButton.material.color.set(r.hub.centerColor || '#FFFFFF');
     for (const disc of this.sensorDiscs || []) {
@@ -1158,7 +1167,7 @@ export class Sim3D {
     sig += '|' + r.x + ',' + r.y + ',' + r.heading + ',' + Object.values(r.motors).map((m) => m.angle).join();
     if (ph) for (const pc of ph.pieces) if (pc.state) sig += '|' + pc.state.pos.join() + pc.state.q.join();
     for (const o of this.world.obstacles) sig += '|' + o.x + ',' + o.y + ',' + (o.angle || 0) + (o.touched !== undefined && r.time - o.touched < 0.3 ? 't' : '');
-    sig += '|' + this.scene.children.length + ',' + this.renderer.info.memory.textures + ',' + (r.hub.centerColor || '') + ',' + this.quality;
+    sig += '|' + this.scene.children.length + ',' + this.renderer.info.memory.textures + ',' + (r.hub.centerColor || '') + ',' + this.quality + ',' + [...(this.lostModels || EMPTY_SET)].join();
     const now = performance.now();
     // effects, outlines and camera moves animate on their own; anything else that changes without moving (a part shown
     // or hidden, the ruler) is caught by a refresh a few times a second

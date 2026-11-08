@@ -170,6 +170,16 @@ export class Scoring {
     this.emit({ type: 'score', score: this.score });
   }
 
+  /** Models whose "leave it as it was" task (guard) is lost right now: M10's habitats knocked out of place. */
+  lostGuards() {
+    const out = new Set();
+    for (const m of MISSIONS) {
+      if (!this.inPlay(m)) continue;
+      for (const t of m.tasks) if (t.guard && t.model && !this.isDone(m.id, t.id)) out.add(t.model);
+    }
+    return out;
+  }
+
   isDone(missionId, taskId) { const s = this.state[missionId + '.' + taskId]; return !!(s && s.met); }
 
   /** Scoresheet rows. */

@@ -864,6 +864,7 @@ async function frame(now) {
   }
   hub.update(now);
   updateCalReadout();
+  sim.lostModels = world.season ? scoring.lostGuards() : null;      // M10's habitats glow red while knocked out of place
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
   frameBusy = false;
   requestAnimationFrame(frame);
