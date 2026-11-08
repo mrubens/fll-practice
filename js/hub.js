@@ -102,6 +102,7 @@ export class HubPanel {
     this.keys.timer.textContent = this.mode === 'real' ? 'battery' : 'timer';
     this.keys.match.textContent = this.mode === 'real' ? 'tilt' : 'match';
     this.ro.match.parentElement.classList.remove('over', 'late');
+    this.ro.match.classList.remove('tight');
     if (this.mode === 'sim' && this.matchLeft === null) this.ro.match.textContent = '2:30';
     if (this.mode === 'sim') { this.updatePortTypes(); this.drawMatrix(); for (const p of PORT_LETTERS) { this.ports[p].classList.remove('mismatch'); this.ports[p].title = ''; } }
     this.lastText = 0;
@@ -119,7 +120,9 @@ export class HubPanel {
     const imu = d.imu;
     this.ro.yaw.textContent = stale ? 'no data' : imu ? `${Math.round(-imu.yaw / 10)}°` : '—';
     this.ro.timer.textContent = d.battery === null ? '—' : `${d.battery}%`;
-    this.ro.match.textContent = imu ? `${Math.round(imu.pitch / 10)}° ${Math.round(imu.roll / 10)}°` : '—';
+    const tilt = imu ? `${Math.round(imu.pitch / 10)}° ${Math.round(imu.roll / 10)}°` : '—';
+    this.ro.match.textContent = tilt;
+    this.ro.match.classList.toggle('tight', tilt.length > 7);   // big angles: a little smaller so both fit
     if (d.matrix) {
       const top = Math.max(9, ...d.matrix);
       this.pixels.forEach((px, i) => { const b = d.matrix[i] / top; px.style.opacity = b > 0 ? String(0.3 + 0.7 * b) : ''; px.classList.toggle('on', b > 0); });

@@ -136,6 +136,8 @@ a.vt { text-decoration: none; display: inline-flex; align-items: center; }
 .ro { background: #F6F7FA; border: 1px solid var(--line); border-radius: 7px; padding: 2px 7px; display: flex; align-items: baseline; gap: 5px; min-width: 0; }
 .ro .k { font-size: 9px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .ro .v { font-size: 12px; font-weight: 800; font-variant-numeric: tabular-nums; margin-left: auto; }
+.ro .k, .ro .v { white-space: nowrap; }   /* a reading never wraps: tilt's two angles stay on one line */
+.ro .v.tight { letter-spacing: -.02em; font-size: 11px; }
 .ports { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; }
 .port { background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 3px 6px; font-size: 11px; display: flex; gap: 6px; align-items: center; min-width: 0; }
 .port b { font-size: 11px; width: 18px; height: 18px; border-radius: 5px; background: #1E2430; color: #fff; display: grid; place-items: center; flex: none; }
