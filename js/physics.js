@@ -9,8 +9,8 @@ import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 import { buildCustom, removeCustom, customStep, placeCustom, restoreCustom, driveGeared } from './legophysics.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
-const GRAB_K = 500;             // the mouse hand: spring stiffness (N/m) to the point held
-const GRAB_LEAD = 2 * S;        // and how far it leads that point (m): at most 500 * 0.02 = 10 N of pull
+const GRAB_K = 2000;            // the mouse hand: spring stiffness (N/m) to the point held
+const GRAB_LEAD = 2 * S;        // and how far it leads that point (m): at most 2000 * 0.02 = 40 N of pull
 const DEG = Math.PI / 180;
 const SKIN = 0.25;              // cm the controller keeps between the robot and whatever it touches
 const STALL_MARGIN = 0.35;      // cm the attachment shape is shrunk by for "would this motor move hit something" tests
@@ -786,10 +786,10 @@ export class Physics {
     const t = b.translation(), r = b.rotation();
     const p = g.local.clone().applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w)).add(new THREE.Vector3(t.x, t.y, t.z));
     // the hand leads the point held by at most GRAB_LEAD, so the pull grows to k * lead and no further (a joint at
-    // its stop holds); it closes in on the pointer at up to 60 cm/s, like a quick hand
+    // its stop holds); it keeps up with the pointer (up to 3 m/s)
     const h = g.hand.translation(), hp = new THREE.Vector3(h.x, h.y, h.z);
     const step = g.target.clone().sub(hp);
-    if (step.length() > 60 * S * dt) step.setLength(60 * S * dt);
+    if (step.length() > 300 * S * dt) step.setLength(300 * S * dt);
     hp.add(step);
     const lead = hp.clone().sub(p);
     if (lead.length() > GRAB_LEAD) hp.copy(p).add(lead.setLength(GRAB_LEAD));

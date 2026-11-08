@@ -9,6 +9,9 @@ import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
 import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
 import { InstructionsViewer } from './instructions.js';
 import { EXAMPLE_ARM, TOOL_PRESETS } from './tools.js';
+
+/** A placement's rotation (LDraw's row-major 3x3) as a THREE.Matrix4. */
+const rotOf = (r) => new THREE.Matrix4().set(r[0], r[1], r[2], 0, r[3], r[4], r[5], 0, r[6], r[7], r[8], 0, 0, 0, 0, 1);
 export { TOOL_PRESETS };
 
 const DEG = Math.PI / 180;
@@ -455,9 +458,9 @@ export class AttachmentBuilder {
           </div>
           <div class="lb-hand" hidden>
             <b class="lb-hand-name"></b>
-            <button type="button" class="tb" data-hand="turn" title="Turn it a quarter turn (R)">↻ Turn</button>
-            <button type="button" class="tb" data-hand="flip" title="Flip it over (F)">⇅ Flip</button>
-            <button type="button" class="tb" data-hand="hole" title="Hold it by another hole or pin (Tab)">Other hole</button>
+            <button type="button" class="tb" data-hand="turn" title="Turn it a quarter turn (R)">↻ Turn <kbd>R</kbd></button>
+            <button type="button" class="tb" data-hand="flip" title="Flip it over (F)">⇅ Flip <kbd>F</kbd></button>
+            <button type="button" class="tb" data-hand="hole" title="Hold it by another hole or pin (Tab)">Other hole <kbd>Tab</kbd></button>
             <span class="lb-colours" data-for="hand" hidden></span>
             <span class="lb-hand-slide"><button type="button" class="tb" data-hand="back" title="Slide it along ([)" aria-label="Slide back">◀</button><small>slide</small><button type="button" class="tb" data-hand="fwd" title="Slide it along (])" aria-label="Slide forward">▶</button></span>
             <button type="button" class="lb-sel-x" data-hand="cancel" title="Put it back (Esc or right-click)" aria-label="Put it back">×</button>
@@ -466,8 +469,8 @@ export class AttachmentBuilder {
             <b class="lb-sel-name"></b>
             <label class="lb-sel-port" hidden>Port <select></select></label>
             <span class="lb-colours" data-for="sel" hidden></span>
-            <button type="button" class="tb" data-sel="move" title="Pick it up and put it somewhere else (M)">Move</button>
-            <button type="button" class="tb" data-sel="delete" title="Take it off (Delete)">Remove</button>
+            <button type="button" class="tb" data-sel="move" title="Pick it up and put it somewhere else (M). R or F picks it up turned or flipped">Move <kbd>M</kbd></button>
+            <button type="button" class="tb" data-sel="delete" title="Take it off (Delete)">Remove <kbd>Del</kbd></button>
             <button type="button" class="lb-sel-x" data-sel="close" title="Deselect (Esc, or click empty space)" aria-label="Deselect">×</button>
           </div>
           <div class="lb-msg" aria-live="polite"></div>
@@ -1027,15 +1030,16 @@ export class AttachmentBuilder {
     this.lastColour = this.lastColour || {};
     const colour = carry && carry.from ? carry.from.c : this.lastColour[f] ?? this.D.parts.parts[f].c;
     const mesh = this._ghostMesh(f, colour);
-    this.ghost = { f, own, k: 0, flip: false, roll: 0, slide: 0, mesh, q: null, ok: false, carry, colour };
+    this.ghost = { f, own, k: 0, rot: carry && carry.from ? rotOf(carry.from.r) : new THREE.Matrix4(), slide: 0, mesh, q: null, ok: false, carry, colour };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
     this._handBar();
     const sp = SENSOR_PARTS[f];
     const name = sp ? sp.label : (NAMES[f] || shortName(this.D.parts.parts[f].d));
-    this.message(switched + (sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
+    this.ghost.hint = (sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
       : this.mode === 'custom' && this._toolPorts().length ? `${name}: snap it onto the tool frame or another part. A gear that meshes with a tool motor's 28-tooth gear turns with that motor.`
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
-      : `${name}: snap it onto the robot.`));
+      : `${name}: snap it onto the robot.`) + ' R turns it, F flips it, the arrow keys move it hole by hole, Enter puts it on.';
+    this.message(switched + this.ghost.hint);
     this._guide();
   }
 
@@ -1043,6 +1047,15 @@ export class AttachmentBuilder {
   _ghostMesh(f, colour) {
     const m = partMesh(this.tpl.get(f), { f, c: colour, p: [0, 0, 0], r: I3 }, this.D.parts.parts[f].c);
     m.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
+    // its outline, drawn over everything too, so it shows even inside the robot (coloured: fits, does not fit, floating)
+    const lines = [];
+    m.traverse((o) => {
+      if (!o.isLineSegments || o.isConditionalLine) return;
+      o.material = new THREE.LineBasicMaterial({ color: 0x0A8DFF, transparent: true, opacity: 0.95, depthTest: false, depthWrite: false });
+      o.renderOrder = 10;
+      lines.push(o.material);
+    });
+    m.userData.lines = lines;
     m.visible = false;
     this.three.ld.add(m);
     return m;
@@ -1084,8 +1097,60 @@ export class AttachmentBuilder {
   }
 
   // the part in hand: turn it, flip it, hold it by another hole or pin, slide it along (keys R, F, Tab, [ ])
-  turnHand(dir = 1) { const g = this.ghost; if (!g) return; g.roll = (g.roll + (dir < 0 ? 3 : 1)) % 4; this._snap(); }
-  flipHand() { const g = this.ghost; if (!g) return; g.flip = !g.flip; g.slide = 0; this._snap(); }
+  // on a hole, R turns it round that hole's axis and F turns it end for end across it; floating, about up and across
+  turnHand(dir = 1) { const g = this.ghost; if (!g) return; this._turnRot(this._handAxes()[0], (dir < 0 ? -1 : 1) * Math.PI / 2); this._snap(); }
+  flipHand() { const g = this.ghost; if (!g) return; this._turnRot(this._handAxes()[1], Math.PI); g.slide = 0; this._snap(); }
+  _handAxes() {
+    const g = this.ghost;
+    if (g.q && g.c) {
+      const d = new THREE.Vector3(...g.c.d).normalize();
+      const across = new THREE.Vector3(0, 1, 0).cross(d);
+      if (across.lengthSq() < 1e-6) across.set(1, 0, 0).cross(d);
+      return [d, across.normalize()];
+    }
+    return [new THREE.Vector3(0, 1, 0), new THREE.Vector3(1, 0, 0)];
+  }
+  /**
+   * Arrow keys: move the part in hand to the next hole, pin or axle that way on screen (or, floating, a step that way).
+   * [ and ] slide it along the axle it is on, toward and away from you.
+   */
+  nudge(dx, dy) {
+    const g = this.ghost, m = this.mouse;
+    if (!g || !m) return;
+    this.three.ld.updateMatrixWorld(true);
+    const R = driveRot(this.motor), at = DRIVE_AXLE.at;
+    const shown = (it, p) => (this._onDriveItem(it) ? add(app(R, sub(p, at)), at) : p);
+    let cur = { x: m.x, y: m.y };
+    if (g.q && g.c) { const pr = this._project(add(g.c.o, scl(g.c.d, g.c.len / 2))); cur = { x: pr.x, y: pr.y }; }
+    let dm = null;
+    try { dm = this._depthMap(); } catch { dm = null; }
+    const genders = new Set(g.own.map((c) => c.g));
+    let best = null, bestScore = Infinity;
+    for (const it of this.scene.all()) {
+      if (it.role === 'drive' && (this.mode !== 'custom' || SENSOR_PARTS[g.f])) continue;
+      for (const c of it.conns) {
+        if (!genders.has(c.g === 'M' ? 'F' : 'M')) continue;
+        const mid = add(c.o, scl(c.d, c.len / 2));
+        const p = this._project(shown(it, mid));
+        if (p.z > 1 || p.x < 0 || p.y < 0 || p.x > m.w || p.y > m.h) continue;
+        if (dm && !this._visible(shown(it, mid), dm) && it.role !== 'drive') continue;
+        const vx = p.x - cur.x, vy = p.y - cur.y, along = vx * dx + vy * dy;
+        if (along < 6) continue;
+        const score = along + 2.5 * Math.abs(vx * dy - vy * dx);
+        if (score < bestScore) { bestScore = score; best = p; }
+      }
+    }
+    this.mouse = best ? { ...m, x: best.x, y: best.y } : { ...m, x: m.x + dx * 30, y: m.y + dy * 30 };
+    this._snap();
+  }
+  /** Enter: put the part in hand down where it is shown. */
+  placeHand() {
+    const g = this.ghost, m = this.mouse;
+    if (!g || !m || !g.ok) return;
+    const r = this.three.renderer.domElement.getBoundingClientRect();
+    this._click({ clientX: r.left + m.x, clientY: r.top + m.y, shiftKey: false });
+  }
+  _turnRot(axis, ang) { const g = this.ghost; g.rot = new THREE.Matrix4().makeRotationAxis(axis, ang).multiply(g.rot); }
   otherHole(dir = 1) { const g = this.ghost; if (!g) return; g.k = ((g.kUsed ?? g.k) + (dir < 0 ? g.own.length - 1 : 1)) % g.own.length; g.slide = 0; this._snap(); }
   slideHand(dir) { const g = this.ghost; if (!g) return; g.slide += dir; this._snap(); }
 
@@ -1220,46 +1285,48 @@ export class AttachmentBuilder {
     }
     cands.sort((p, q) => p.dist - q.dist || p.z - q.z);
     let found = null, near = null;
+    // the part keeps the way it is held: of every way it can go on (each hole of it, each flip and quarter turn), the
+    // one nearest how it is turned now wins, so it does not jump about over a hole; R and F turn it
+    const like = (r) => { const e = g.rot.elements; let sum = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sum += r[i * 3 + j] * e[j * 4 + i]; return Math.round(sum * 100); };
     for (const cand of cands.slice(0, 8)) {
       if (this._turned() && this._onDriveItem(cand.it)) continue;
-      // the way the part is held first; if it does not fit that way, the other turns and the flip (a beam goes onto
-      // the drive axle only square to it, which a child should not have to find with R and F)
-      const ways = [];
-      for (const fl of [g.flip, !g.flip]) for (let d = 0; d < 4; d++) ways.push([fl, (g.roll + d) % 4]);   // R keeps going round
-      for (const [flip, roll] of ways) {
-      if (found) break;
-      // on the drive axle a + hole grips and turns with it; a round hole only spins on it, so + holes are tried first
+      // on the drive axle a + hole grips and turns with it; a round hole only spins on it, so + holes come first
       const ks = g.own.map((_, i) => (g.k + i) % g.own.length);
       if (cand.it.role === 'drive') ks.sort((x, y) => gripsAxle(g.own[y]) - gripsAxle(g.own[x]));
-      for (const k of ks) {
-        if (found) break;
-        if (g.own[k].g === cand.c.g) continue;
-        const opts = this.scene.placementsOnto(g.f, k, cand.c, flip, roll);
-        if (!opts.length) continue;
-        // the best fits, nearest the pointer first
-        const good = opts.filter((o) => this.scene.check(o.q).ok).sort((p, q) => Math.round(q.eng) - Math.round(p.eng) || Math.abs(p.mid - cand.at) - Math.abs(q.mid - cand.at));
-        if (!good.length) { if (!near) near = { q: opts[0].q, why: this.scene.check(opts[0].q).why, c: cand.c }; continue; }
-        const byT = good.slice().sort((p, q) => p.t - q.t);
-        const i0 = byT.indexOf(good[0]);
-        const pick = byT[Math.max(0, Math.min(byT.length - 1, i0 + g.slide))];
-        found = { q: pick.q, c: cand.c, k, slides: byT.length, flip, roll, spins: cand.it.role === 'drive' && !gripsAxle(g.own[k]) };
-      }
-      }
-      if (found) break;
+      const all = [];
+      ks.forEach((k, kRank) => {
+        if (g.own[k].g === cand.c.g) return;
+        for (const flip of [false, true]) for (let roll = 0; roll < 4; roll++) {
+          for (const o of this.scene.placementsOnto(g.f, k, cand.c, flip, roll)) all.push({ o, k, kRank, flip, roll, like: like(o.q.r) });
+        }
+      });
+      if (!all.length) continue;
+      all.sort((p, q) => q.like - p.like || p.kRank - q.kRank || Math.round(q.o.eng) - Math.round(p.o.eng) || Math.abs(p.o.mid - cand.at) - Math.abs(q.o.mid - cand.at));
+      const best = all.find((w) => this.scene.check(w.o.q).ok);
+      if (!best) { if (!near) near = { q: all[0].o.q, why: this.scene.check(all[0].o.q).why, c: cand.c }; continue; }
+      // the same way, slid along the axle or pin ([ and ])
+      const byT = all.filter((w) => w.k === best.k && w.flip === best.flip && w.roll === best.roll && (w === best || this.scene.check(w.o.q).ok)).sort((p, q) => p.o.t - q.o.t);
+      const i0 = byT.indexOf(best);
+      const pick = byT[Math.max(0, Math.min(byT.length - 1, i0 + g.slide))];
+      found = { q: pick.o.q, c: cand.c, k: best.k, slides: byT.length, spins: cand.it.role === 'drive' && !gripsAxle(g.own[best.k]) };
+      break;
     }
     if (this._turned() && !found && cands.some((c) => this._onDriveItem(c.it))) this.message('Set the "Try motor" sliders back to 0 to add parts to what they turn.');
     const res = found || near;
     if (!res) {
-      g.q = null; g.ok = false; g.mesh.visible = false;
+      g.q = null; g.ok = false;
+      this._float();
       this._guide();
       return;
     }
     g.q = res.q; g.ok = !!found; g.kUsed = found ? found.k : g.k;
     g.slides = found ? found.slides : 0;
     this._handBar();
-    if (found) { g.flip = found.flip; g.roll = found.roll; }   // R and F carry on from the way it fits
+    if (found) g.rot = rotOf(found.q.r);   // it is held the way it went on
+    g.c = res.c;
     g.mesh.matrix.copy(placementMatrix(res.q)); g.mesh.visible = true;
-    g.mesh.traverse((o) => { if (o.isMesh) { o.material.emissive && o.material.emissive.setHex(found ? 0x1FA347 : 0xC81E1E); } });
+    g.lastAt = new THREE.Vector3(...res.q.p).applyMatrix4(this.three.ld.matrixWorld);
+    this._ghostLook(found ? 'fits' : 'no');
     // mark the connector it goes onto
     const c = res.c, mid = add(c.o, scl(c.d, c.len / 2));
     this.marker.position.set(...mid);
@@ -1271,6 +1338,42 @@ export class AttachmentBuilder {
     this.message(!found ? `It ${res.why} here: try Turn, Flip or Other hole.`
       : found.spins ? `${name}: click to place. Its round hole spins freely on the axle, so motor E will not turn it: start with a part that has a + hole (a bent liftarm, a cross block, the 2 liftarm) and build on that.`
       : `${name}: click to place it.`);
+  }
+
+  /** The part in hand's colour: green where it fits, red where it does not, blue while it floats under the pointer. */
+  _ghostLook(state) {
+    const g = this.ghost;
+    if (!g) return;
+    const col = state === 'fits' ? 0x1FA347 : state === 'no' ? 0xC81E1E : 0x0A8DFF;
+    g.mesh.traverse((o) => { if (o.isMesh) { o.material.emissive && o.material.emissive.setHex(state === 'float' ? 0x0A3F80 : col); o.material.opacity = state === 'float' ? 0.5 : 0.75; } });
+    for (const mat of g.mesh.userData.lines || []) mat.color.setHex(col);
+  }
+
+  /**
+   * Nothing near the pointer to snap onto: the part floats under the pointer (at about the depth of the robot, or of
+   * where it last fitted), turned and flipped the way it is held, so R and F show what they do.
+   */
+  _float() {
+    const g = this.ghost, m = this.mouse;
+    if (!g || !m || !m.w) { if (g) g.mesh.visible = false; return; }
+    const { camera, ld } = this.three;
+    ld.updateMatrixWorld(true);
+    if (!g.mid) g.mid = new THREE.Box3().setFromObject(this.tpl.get(g.f)).getCenter(new THREE.Vector3());
+    const anchor = g.lastAt ? g.lastAt.clone() : new THREE.Vector3(...DRIVE_AXLE.at).applyMatrix4(ld.matrixWorld);
+    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(camera.getWorldDirection(new THREE.Vector3()), anchor);
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(m.x / m.w * 2 - 1, -(m.y / m.h) * 2 + 1), camera);
+    const hit = ray.ray.intersectPlane(plane, new THREE.Vector3());
+    if (!hit) { g.mesh.visible = false; return; }
+    const at = hit.applyMatrix4(ld.matrixWorld.clone().invert());
+    // turned the way it is held (R and F turn it)
+    const rot = g.rot;
+    const off = g.mid.clone().applyMatrix4(rot);
+    const e = rot.elements;     // column-major
+    g.mesh.matrix.set(e[0], e[4], e[8], at.x - off.x, e[1], e[5], e[9], at.y - off.y, e[2], e[6], e[10], at.z - off.z, 0, 0, 0, 1);
+    g.mesh.visible = true;
+    this._ghostLook('float');
+    if (g.hint) this.message(g.hint);
   }
 
   /** Nothing under the pointer to snap onto: show where to start, the drive axle in the bracket. */
@@ -1353,6 +1456,9 @@ export class AttachmentBuilder {
     else if (!g && (k === 'm' || k === 'M') && this.selected) this.moveSelected();
     else if (g && (k === 'r' || k === 'R')) this.turnHand(e.shiftKey ? -1 : 1);
     else if (g && (k === 'f' || k === 'F')) this.flipHand();
+    // a placed part, selected: R or F picks it up turned or flipped, to put it back on another way
+    else if (!g && this.selected && !SENSOR_PARTS[this.selected.q.f] && (k === 'r' || k === 'R')) { this.moveSelected(); this.turnHand(e.shiftKey ? -1 : 1); }
+    else if (!g && this.selected && !SENSOR_PARTS[this.selected.q.f] && (k === 'f' || k === 'F')) { this.moveSelected(); this.flipHand(); }
     else if (g && k === 'Tab') this.otherHole(e.shiftKey ? -1 : 1);
     else if (g && k === ']') this.slideHand(1);
     else if (g && k === '[') this.slideHand(-1);
@@ -1364,7 +1470,12 @@ export class AttachmentBuilder {
     } else if (!e.ctrlKey && !e.metaKey && (k === 'z' || k === 'Z' || k === 'x' || k === 'X') && this._toolPorts()[1]) {
       const p2 = this._toolPorts()[1];
       this.setTool(p2, (this.tools[p2] || 0) + (k.toLowerCase() === 'z' ? 4 : -4));
-    } else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdWASD'.includes(k)) || k.startsWith('Arrow'))) {
+    } else if (!e.ctrlKey && !e.metaKey && k.startsWith('Arrow') && (g || (this.selected && !SENSOR_PARTS[this.selected.q.f]))) {
+      if (!g) this.moveSelected();
+      const d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+      if (d) this.nudge(d[0], d[1]);
+    } else if (g && k === 'Enter') this.placeHand();
+    else if (!e.ctrlKey && !e.metaKey && ((k.length === 1 && 'wasdWASD'.includes(k)) || k.startsWith('Arrow'))) {
       e.stopPropagation();          // the robot does not drive about under the builder
       return;
     } else used = false;

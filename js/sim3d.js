@@ -1016,11 +1016,16 @@ export class Sim3D {
       // A short, still press on a mission model is a click: report it.
       if (!this.dragging && this.pressAt && performance.now() - this.pressAt.t < 400 && Math.hypot(e.clientX - this.pressAt.x, e.clientY - this.pressAt.y) < 6) {
         toNdc(e);
-        const targets = this.obstacleExtras.concat(this.obstacleMeshes.filter((m) => m.visible));
+        // the models and their moving parts (a click on M01's drone or a seed is a click on its model)
+        const pieces = this.pieceNodes.filter((pn) => pn.node.visible);
+        const targets = this.obstacleExtras.concat(this.obstacleMeshes.filter((m) => m.visible), pieces.map((pn) => pn.node));
         const hits = ray.intersectObjects(targets, true);
-        let obj = hits.length ? hits[0].object : null;
-        while (obj && !obj.userData.obstacle) obj = obj.parent;
-        if (this.onPick) this.onPick(obj ? obj.userData.obstacle : null);
+        let obj = hits.length ? hits[0].object : null, picked = null;
+        for (let o = obj; o && !picked; o = o.parent) {
+          if (o.userData.obstacle) picked = o.userData.obstacle;
+          else { const pn = pieces.find((q) => q.node === o); if (pn) picked = pn.o; }
+        }
+        if (this.onPick) this.onPick(picked);
         if (!obj && this.ruler) this.clearRuler();          // a plain click on the mat puts the ruler away
       }
       this.pressAt = null;
@@ -1048,6 +1053,11 @@ export class Sim3D {
     };
     el.addEventListener('pointerup', end);
     el.addEventListener('pointercancel', end);
+    // let go outside the view (or outside the window, where no pointerup comes back) still lets go
+    const held = () => this.handGrab || this.eqDrag || this.dragging || this.rulerDrag;
+    window.addEventListener('pointerup', (e) => { if (held()) end(e); });
+    window.addEventListener('pointermove', (e) => { if (held() && e.buttons === 0) end(e); });
+    window.addEventListener('blur', () => { if (held()) end({ pointerId: -1, clientX: -1e4, clientY: -1e4 }); });
   }
 
   // ---- ruler: a line laid on the mat with shift-drag ----
