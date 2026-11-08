@@ -11,6 +11,29 @@ import { InstructionsViewer } from './instructions.js';
 import { EXAMPLE_ARM, TOOL_PRESETS } from './tools.js';
 
 /** A placement's rotation (LDraw's row-major 3x3) as a THREE.Matrix4. */
+/** How near a way of putting a part on must be to how it is held (100 x trace of the relative turn: 300 the same,
+ * about 230 for 50 degrees off, 100 a quarter turn). */
+const HELD_LIKE = 225;
+
+/** The nearest square turn (a quarter-turn orientation) to a rotation: the part squares up when you let go of it. */
+function squareUp(m) {
+  const e = m.elements, M = [0, 1, 2].map((i) => [0, 1, 2].map((j) => e[j * 4 + i]));     // row i, column j
+  const used = new Set(), out = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+  const cells = [];
+  for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) cells.push([Math.abs(M[i][j]), i, j]);
+  cells.sort((a, b) => b[0] - a[0]);
+  const rows = new Set(), cols = new Set();
+  for (const [, i, j] of cells) { if (rows.has(i) || cols.has(j)) continue; rows.add(i); cols.add(j); out[i][j] = Math.sign(M[i][j]) || 1; }
+  used.clear();
+  const det = out[0][0] * (out[1][1] * out[2][2] - out[1][2] * out[2][1]) - out[0][1] * (out[1][0] * out[2][2] - out[1][2] * out[2][0]) + out[0][2] * (out[1][0] * out[2][1] - out[1][1] * out[2][0]);
+  if (det < 0) {     // a mirror: flip the least certain axis
+    let worst = null;
+    for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) if (out[i][j] && (!worst || Math.abs(M[i][j]) < Math.abs(M[worst[0]][worst[1]]))) worst = [i, j];
+    out[worst[0]][worst[1]] *= -1;
+  }
+  return new THREE.Matrix4().set(out[0][0], out[0][1], out[0][2], 0, out[1][0], out[1][1], out[1][2], 0, out[2][0], out[2][1], out[2][2], 0, 0, 0, 0, 1);
+}
+
 const rotOf = (r) => new THREE.Matrix4().set(r[0], r[1], r[2], 0, r[3], r[4], r[5], 0, r[6], r[7], r[8], 0, 0, 0, 0, 1);
 export { TOOL_PRESETS };
 
@@ -701,6 +724,45 @@ export class AttachmentBuilder {
     this.marker = new THREE.Mesh(new THREE.CylinderGeometry(1, 1, 1, 12), new THREE.MeshBasicMaterial({ color: 0xFFB000, transparent: true, opacity: 0.85, depthTest: false }));
     this.marker.renderOrder = 10; this.marker.visible = false; ld.add(this.marker);
     const el = renderer.domElement;
+    // a press on the part in hand turns it (the view stays put); anywhere else turns the view as before
+    el.addEventListener('pointerdown', (e) => {
+      if (!this.ghost || e.button !== 0) return;
+      this.mouse = this._pointer(e);
+      if (!this._onGhost()) return;
+      e.stopImmediatePropagation();
+      const g = this.ghost;
+      this.three.ld.updateMatrixWorld(true);
+      const centre = g.at ? g.at.clone() : new THREE.Box3().setFromObject(g.mesh).getCenter(new THREE.Vector3()).applyMatrix4(this.three.ld.matrixWorld.clone().invert());
+      this.twist = { start: [e.clientX, e.clientY], last: [e.clientX, e.clientY], centre, mouse: { ...this.mouse }, moved: false };
+      el.setPointerCapture(e.pointerId);
+      el.style.cursor = 'grabbing';
+    }, true);
+    el.addEventListener('pointermove', (e) => {
+      if (!this.twist) return;
+      e.stopImmediatePropagation();
+      const t = this.twist;
+      if (Math.hypot(e.clientX - t.start[0], e.clientY - t.start[1]) > 4) t.moved = true;
+      if (t.moved) this._twistBy(e.clientX - t.last[0], e.clientY - t.last[1]);
+      t.last = [e.clientX, e.clientY];
+      this.message('Turning it: let go to try it there (it squares up to the nearest quarter turn).');
+    }, true);
+    const twistEnd = (e) => {
+      if (!this.twist) return;
+      e.stopImmediatePropagation();
+      const t = this.twist;
+      this.twist = null;
+      el.style.cursor = '';
+      try { el.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+      if (!t.moved) { this._click(e); return; }      // a plain click on it: put it on
+      const g = this.ghost;
+      if (!g) return;
+      g.rot = squareUp(g.rot);
+      g.slide = 0;
+      this.mouse = t.mouse;
+      this._snap();
+    };
+    el.addEventListener('pointerup', twistEnd, true);
+    el.addEventListener('pointercancel', twistEnd, true);
     el.addEventListener('pointermove', (e) => this._move(e));
     el.addEventListener('pointerdown', (e) => { this.downAt = [e.clientX, e.clientY]; });
     el.addEventListener('pointerup', (e) => {
@@ -1030,6 +1092,7 @@ export class AttachmentBuilder {
     this.lastColour = this.lastColour || {};
     const colour = carry && carry.from ? carry.from.c : this.lastColour[f] ?? this.D.parts.parts[f].c;
     const mesh = this._ghostMesh(f, colour);
+    this._handButtons(true);
     this.ghost = { f, own, k: 0, rot: carry && carry.from ? rotOf(carry.from.r) : new THREE.Matrix4(), slide: 0, mesh, q: null, ok: false, carry, colour };
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
     this._handBar();
@@ -1038,7 +1101,7 @@ export class AttachmentBuilder {
     this.ghost.hint = (sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
       : this.mode === 'custom' && this._toolPorts().length ? `${name}: snap it onto the tool frame or another part. A gear that meshes with a tool motor's 28-tooth gear turns with that motor.`
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
-      : `${name}: snap it onto the robot.`) + ' R turns it, F flips it, the arrow keys move it hole by hole, Enter puts it on.';
+      : `${name}: snap it onto the robot.`) + ' Drag it to turn it (right-drag turns the view), or R and F; the arrow keys move it hole by hole, Enter puts it on.';
     this.message(switched + this.ghost.hint);
     this._guide();
   }
@@ -1167,7 +1230,15 @@ export class AttachmentBuilder {
     this._swatches(this.handEl.querySelector('.lb-colours'), g.f, g.colour);
   }
 
+  /** While a part is in hand a left drag on it turns it, so the right button turns the view (and Shift-drag pans). */
+  _handButtons(holding) {
+    const c = this.three && this.three.controls;
+    if (!c) return;
+    c.mouseButtons.RIGHT = holding ? THREE.MOUSE.ROTATE : THREE.MOUSE.PAN;
+  }
+
   _dropGhost() {
+    this._handButtons(false);
     if (!this.ghost) return;
     this.ghost.mesh.parent && this.ghost.mesh.parent.remove(this.ghost.mesh);
     this.ghost = null;
@@ -1284,9 +1355,10 @@ export class AttachmentBuilder {
       }
     }
     cands.sort((p, q) => p.dist - q.dist || p.z - q.z);
-    let found = null, near = null;
-    // the part keeps the way it is held: of every way it can go on (each hole of it, each flip and quarter turn), the
-    // one nearest how it is turned now wins, so it does not jump about over a hole; R and F turn it
+    let found = null, near = null, turnIt = null;
+    // the part keeps the way it is held: of every way it can go on (each hole of it, each flip and quarter turn), only
+    // those within about 50 degrees of how it is turned now count, nearest first, so it never jumps round over a hole;
+    // dragging it, R and F turn it
     const like = (r) => { const e = g.rot.elements; let sum = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sum += r[i * 3 + j] * e[j * 4 + i]; return Math.round(sum * 100); };
     for (const cand of cands.slice(0, 8)) {
       if (this._turned() && this._onDriveItem(cand.it)) continue;
@@ -1301,6 +1373,9 @@ export class AttachmentBuilder {
         }
       });
       if (!all.length) continue;
+      const close = all.filter((w) => w.like >= HELD_LIKE);
+      if (!close.length) { if (!turnIt) turnIt = cand; continue; }
+      all.length = 0; all.push(...close);
       all.sort((p, q) => q.like - p.like || p.kRank - q.kRank || Math.round(q.o.eng) - Math.round(p.o.eng) || Math.abs(p.o.mid - cand.at) - Math.abs(q.o.mid - cand.at));
       const best = all.find((w) => this.scene.check(w.o.q).ok);
       if (!best) { if (!near) near = { q: all[0].o.q, why: this.scene.check(all[0].o.q).why, c: cand.c }; continue; }
@@ -1313,8 +1388,22 @@ export class AttachmentBuilder {
     }
     if (this._turned() && !found && cands.some((c) => this._onDriveItem(c.it))) this.message('Set the "Try motor" sliders back to 0 to add parts to what they turn.');
     const res = found || near;
+    if (!res && turnIt) {
+      // a hole it goes on, but not held this way: shown there as it is held, in red
+      const c = turnIt.c, mid = add(c.o, scl(c.d, c.len / 2));
+      g.q = null; g.ok = false; g.c = c;
+      this._poseAt(new THREE.Vector3(...mid));
+      this._ghostLook('no');
+      this.marker.position.set(...mid);
+      this.marker.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...c.d));
+      this.marker.scale.set(3, c.len + 2, 3);
+      this.marker.material.color.setHex(0xE8232A);
+      this.marker.visible = true;
+      this.message('It does not go on here the way you are holding it: drag the part to turn it, or press R or F.');
+      return;
+    }
     if (!res) {
-      g.q = null; g.ok = false;
+      g.q = null; g.ok = false; g.c = null;
       this._float();
       this._guide();
       return;
@@ -1324,7 +1413,7 @@ export class AttachmentBuilder {
     this._handBar();
     if (found) g.rot = rotOf(found.q.r);   // it is held the way it went on
     g.c = res.c;
-    g.mesh.matrix.copy(placementMatrix(res.q)); g.mesh.visible = true;
+    g.mesh.matrix.copy(placementMatrix(res.q)); g.mesh.visible = true; g.at = null;
     g.lastAt = new THREE.Vector3(...res.q.p).applyMatrix4(this.three.ld.matrixWorld);
     this._ghostLook(found ? 'fits' : 'no');
     // mark the connector it goes onto
@@ -1365,15 +1454,43 @@ export class AttachmentBuilder {
     ray.setFromCamera(new THREE.Vector2(m.x / m.w * 2 - 1, -(m.y / m.h) * 2 + 1), camera);
     const hit = ray.ray.intersectPlane(plane, new THREE.Vector3());
     if (!hit) { g.mesh.visible = false; return; }
-    const at = hit.applyMatrix4(ld.matrixWorld.clone().invert());
-    // turned the way it is held (R and F turn it)
-    const rot = g.rot;
-    const off = g.mid.clone().applyMatrix4(rot);
-    const e = rot.elements;     // column-major
-    g.mesh.matrix.set(e[0], e[4], e[8], at.x - off.x, e[1], e[5], e[9], at.y - off.y, e[2], e[6], e[10], at.z - off.z, 0, 0, 0, 1);
-    g.mesh.visible = true;
+    this._poseAt(hit.applyMatrix4(ld.matrixWorld.clone().invert()));
     this._ghostLook('float');
     if (g.hint) this.message(g.hint);
+  }
+
+  /** Show the part in hand turned the way it is held, its middle at `at` (LDraw frame). */
+  _poseAt(at) {
+    const g = this.ghost;
+    if (!g.mid) g.mid = new THREE.Box3().setFromObject(this.tpl.get(g.f)).getCenter(new THREE.Vector3());
+    const off = g.mid.clone().applyMatrix4(g.rot), e = g.rot.elements;     // column-major
+    g.mesh.matrix.set(e[0], e[4], e[8], at.x - off.x, e[1], e[5], e[9], at.y - off.y, e[2], e[6], e[10], at.z - off.z, 0, 0, 0, 1);
+    g.mesh.visible = true;
+    g.at = at.clone();
+  }
+
+  /** Is the pointer on the part in hand (or right by it)? */
+  _onGhost() {
+    const g = this.ghost, m = this.mouse;
+    if (!g || !m || !g.mesh.visible) return false;
+    const ray = new THREE.Raycaster();
+    ray.setFromCamera(new THREE.Vector2(m.x / m.w * 2 - 1, -(m.y / m.h) * 2 + 1), this.three.camera);
+    this.three.ld.updateMatrixWorld(true);
+    if (ray.intersectObject(g.mesh, true).some((h) => h.object.isMesh)) return true;
+    const c = new THREE.Box3().setFromObject(g.mesh).getCenter(new THREE.Vector3()).project(this.three.camera);
+    return Math.hypot((c.x + 1) / 2 * m.w - m.x, (1 - c.y) / 2 * m.h - m.y) < 30;
+  }
+
+  /** Dragging the part in hand turns it about its middle, like turning it in your fingers. */
+  _twistBy(dx, dy) {
+    const g = this.ghost, { camera, ld } = this.three;
+    const toLd = new THREE.Matrix4().extractRotation(ld.matrixWorld).invert();
+    const up = new THREE.Vector3(0, 1, 0).applyQuaternion(camera.quaternion).applyMatrix4(toLd).normalize();
+    const right = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion).applyMatrix4(toLd).normalize();
+    const turn = new THREE.Matrix4().makeRotationAxis(up, dx * 0.012).multiply(new THREE.Matrix4().makeRotationAxis(right, dy * 0.012));
+    g.rot = turn.multiply(g.rot);
+    this._poseAt(this.twist.centre);
+    this._ghostLook('float');
   }
 
   /** Nothing under the pointer to snap onto: show where to start, the drive axle in the bracket. */
