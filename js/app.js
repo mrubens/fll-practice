@@ -14,7 +14,7 @@ import { TOOL_DEMOS, ARM_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
-import { EQUIPMENT_PIECES, FIELD } from './mechanisms.js';
+import { EQUIPMENT_PIECES, FIELD, inHome } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 import { AttachmentBuilder } from './legobuilder.js';
 
@@ -164,6 +164,8 @@ sim.onMatPoint = (p) => {
   matReadout.innerHTML = parts.join('');
   matReadout.hidden = false;
 };
+// dragging the keystone species with the mouse (between runs): set it down on the robot, in a carrier, anywhere
+sim.onDragEquipment = (id, pos) => { if (world.physics) world.physics.dragEquipment(id, pos); };
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
   if (!world.season) return;                 // only the season table has mission cards
@@ -181,24 +183,40 @@ function startRun() {
   scoring.reset();
   sim.resetEffects();
   hub.ensureAudio();
-  replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading }, shafts: robot.shaftAngles() };
+  replay.start = { kind: 'run', pose: { x: robot.x, y: robot.y, heading: robot.heading }, shafts: robot.shaftAngles(), equipment: equipmentNow() };
   replay.snaps.clear();
   runtime.start();
 }
 
-/** The team's loose equipment starts in the left home area. */
-function placeEquipment() {
+/**
+ * The team's loose equipment (the keystone species) in home: on the table strip left of the mat, or loaded in the
+ * basket. With `keep`, a piece already in home stays where it is (the kids may have set it on the robot by hand);
+ * `items` puts them exactly where a replay needs them.
+ */
+function placeEquipment(keep = false, items = null) {
   const a = robot.geom.attachment;
-  const items = EQUIPMENT_PIECES.map((e, i) => {
+  const now = keep && world.physics ? world.physics.equipmentPoses() : {};
+  items = items || EQUIPMENT_PIECES.map((e, i) => {
+    const k = now[e.id];
+    if (k && inHome(k.x, k.y)) return { ...e, x: k.x, y: k.y, h: k.h, q: k.q };
     if (a.module === 'basket') {   // the technicians load the basket by hand before the launch
       const [x, y] = robot._point(a.fwd + 4 + (i % 2) * 1.6, -1.6 + Math.floor(i / 2) * 3.2);
       return { ...e, x, y, h: a.height + 2 + e.box[1] / 2 + 0.3 };      // on the basket's floor, 2 cm above the arm axle
     }
-    return { ...e, x: -97 + (i % 3) * 5, y: 46 + Math.floor(i / 3) * 6 };
+    return { ...e, x: -108, y: 44 + i * 6 };      // the strip of table left of the mat is home too, out of the robot's way
   });
   if (world.physics) world.physics.spawnEquipment(items);
   sim.buildEquipment(items);
+  return items;
 }
+let equipmentShown = false;
+/** The equipment where it is now, as items placeEquipment can put back (a replay starts from them). */
+function equipmentNow() {
+  if (!world.physics || !world.season) return null;
+  const now = world.physics.equipmentPoses();
+  const items = EQUIPMENT_PIECES.filter((e) => now[e.id]).map((e) => ({ ...e, x: now[e.id].x, y: now[e.id].y, h: now[e.id].h, q: now[e.id].q }));
+  return items.length ? items : null;
+}     // the keystone sits in home whenever the season table is up
 
 /** A launch under match rules: the robot must be completely inside a launch area. */
 function relaunch() {
@@ -220,9 +238,9 @@ function startMatch() {
   sim.resetEffects();
   robot.resetPose();
   robot.homeTools();
-  placeEquipment();
+  const equipment = placeEquipment(true);
   hub.matchLeft = MATCH_SECONDS;
-  replay.start = { kind: 'match' };
+  replay.start = { kind: 'match', equipment };
   replay.snaps.clear();
   const res = relaunch();
   if (res) toast(res.inspection ? 'Match started. Equipment inspection passed: +20 pts, 6 precision tokens.' : `Match started. Inspection failed (${res.top > FIELD.heightLimit ? `the robot is ${res.top.toFixed(1)} cm tall, over the 30.5 cm limit` : 'robot not in one launch area'}): no bonus.`, res.inspection ? undefined : 'warn');
@@ -275,8 +293,8 @@ async function stepBack(toStart) {
   updateRunState();
   runtime.stop();
   world.resetObstacles(); scoring.reset(); sim.resetEffects();
-  if (start.kind === 'match') { robot.resetPose(); robot.homeTools(); placeEquipment(); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
-  else { hub.matchLeft = null; robot.resetPose(start.pose); robot.setShaftAngles(start.shafts); }
+  if (start.kind === 'match') { robot.resetPose(); robot.homeTools(); placeEquipment(false, start.equipment); hub.matchLeft = MATCH_SECONDS; scoring.launch(); }
+  else { hub.matchLeft = null; robot.resetPose(start.pose); robot.setShaftAngles(start.shafts); if (start.equipment) placeEquipment(false, start.equipment); }
   runtime.setStepMode(true);
   runtime.start();
   await drain();
@@ -517,7 +535,7 @@ $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 
 // ---------- sim view tools ----------
 // a running program stops first, as you'd stop the real robot before picking it up
-$('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); robot.homeTools(); world.resetObstacles(); });
+$('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); robot.homeTools(); world.resetObstacles(); if (world.season) placeEquipment(true); });
 $('#btnLaunch').addEventListener('click', () => {
   if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
   startMatch();
@@ -532,7 +550,8 @@ function applyBoardUi() {
   $('#btnLaunch').hidden = !season;
   $('#scoreChip').hidden = !season;
   $('#btnModels').hidden = !season;
-  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); modelsPanel.hidden = true; }
+  if (!season) { modelCard.closeSheet(); if (!modelCard.card.hidden) modelCard.close(); modelsPanel.hidden = true; if (world.physics) world.physics.spawnEquipment([]); sim.buildEquipment([]); }
+  equipmentShown = false;      // back on the season table the keystone comes back to home
   boardSelect.value = (world.board && world.board.id) || 'season';
   const b = world.board || {};
   $('#btnGuide').hidden = !b.guide;
@@ -864,7 +883,8 @@ async function frame(now) {
   }
   hub.update(now);
   updateCalReadout();
-  sim.lostModels = world.season ? scoring.lostGuards() : null;      // M10's habitats glow red while knocked out of place
+  sim.lostModels = world.season ? scoring.lostGuards() : null;
+  if (!equipmentShown && world.season && world.matReady && world.physics && !runtime.running && !replay.active) { equipmentShown = true; placeEquipment(true); }      // M10's habitats glow red while knocked out of place
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
   frameBusy = false;
   requestAnimationFrame(frame);

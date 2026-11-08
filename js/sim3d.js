@@ -922,7 +922,21 @@ export class Sim3D {
         return;
       }
       toNdc(e);
-      const hits = ray.intersectObject(this.robotGroup, true);
+      // the keystone species (or other loose equipment) picks up first: drag it onto the robot
+      const eqHits = (this.equipmentNodes || []).length ? ray.intersectObjects(this.equipmentNodes.map((q) => q.node), true) : [];
+      const robotHits = ray.intersectObject(this.robotGroup, true);
+      if (eqHits.length && (!robotHits.length || eqHits[0].distance <= robotHits[0].distance + 0.5)) {
+        let o = eqHits[0].object; while (o && !o.userData.equipment) o = o.parent;
+        if (o) {
+          this.eqDrag = { id: o.userData.equipment.id, half: o.userData.equipment.box[1] / 2, yaw: 0 };
+          const r0 = o.quaternion; this.eqDrag.yaw = 2 * Math.atan2(r0.y, r0.w);
+          this.controls.enabled = false;
+          el.setPointerCapture(e.pointerId);
+          el.style.cursor = 'grabbing';
+          return;
+        }
+      }
+      const hits = robotHits;
       if (!hits.length) return;
       this.dragging = true;
       this.controls.enabled = false;
@@ -933,6 +947,17 @@ export class Sim3D {
       if (this.rulerDrag) {
         const p = matPoint(e);
         if (p) { this.ruler.b = p; this.updateRuler(); if (this.onMatPoint) this.onMatPoint(p); }
+        return;
+      }
+      if (this.eqDrag) {
+        // set it on whatever is under the pointer (the robot, a model, the mat), a hair above it
+        toNdc(e);
+        const node = this.equipmentNodes.find((q) => q.id === this.eqDrag.id);
+        const targets = [this.robotGroup, this.matMesh, ...this.obstacleExtras, ...this.obstacleMeshes.filter((m) => m.visible), ...this.equipmentNodes.filter((q) => q !== node).map((q) => q.node)];
+        const h = ray.intersectObjects(targets, true)[0];
+        const p = h ? h.point : (ray.ray.intersectPlane(plane, hit) ? hit : null);
+        if (p && this.onDragEquipment) this.onDragEquipment(this.eqDrag.id, { x: p.x, y: p.z, h: p.y + this.eqDrag.half + 0.15, yaw: this.eqDrag.yaw });
+        this.frameForced = true;
         return;
       }
       if (!this.dragging) { if (this.onMatPoint) this.onMatPoint(matPoint(e)); return; }
@@ -960,6 +985,14 @@ export class Sim3D {
         if (!obj && this.ruler) this.clearRuler();          // a plain click on the mat puts the ruler away
       }
       this.pressAt = null;
+      if (this.eqDrag) {
+        if (this.onDragEquipment) this.onDragEquipment(this.eqDrag.id, null);
+        this.eqDrag = null;
+        this.controls.enabled = true;
+        el.style.cursor = '';
+        try { el.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+        return;
+      }
       if (!this.dragging) return;
       this.dragging = false;
       this.controls.enabled = true;

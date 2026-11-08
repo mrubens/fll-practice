@@ -684,6 +684,7 @@ export class Physics {
     for (const it of items) {
       const h = it.h ?? (it.box[1] / 2 + 0.2);
       const desc = R.RigidBodyDesc.dynamic().setTranslation(it.x * S, h * S, it.y * S).setLinearDamping(1.5).setAngularDamping(1.5).setCcdEnabled(true).setCanSleep(false);
+      if (it.q) desc.setRotation(it.q);
       const body = this.world.createRigidBody(desc);
       const col = this.world.createCollider(R.ColliderDesc.cuboid((it.box[0] / 2) * S, (it.box[1] / 2) * S, (it.box[2] / 2) * S).setFriction(0.8).setMass(it.mass || 0.02).setCollisionGroups(SHARED), body);
       const pc = { o: null, equipment: it, name: it.id, def: { kind: 'loose', box: it.box }, body, colliders: [col], collider: col,
@@ -692,6 +693,28 @@ export class Physics {
       this.colliderToPiece.set(col.handle, pc);
     }
     this.readPieces(0);
+  }
+
+  /** Where each equipment piece is now: {id: {x, y, h, q}} (table cm). */
+  equipmentPoses() {
+    const out = {};
+    for (const pc of this.pieces) if (pc.equipment) { const t = pc.body.translation(), r = pc.body.rotation(); out[pc.name] = { x: t.x / S, y: t.z / S, h: t.y / S, q: { x: r.x, y: r.y, z: r.z, w: r.w } }; }
+    return out;
+  }
+
+  /** Hold an equipment piece at `pos` (table cm: x, y, h of its middle), upright, while the mouse drags it; null lets it go. */
+  dragEquipment(id, pos) {
+    const pc = this.pieces.find((q) => q.equipment && q.name === id);
+    if (!pc) return;
+    if (pos) {
+      if (pc.body.bodyType() !== 2) pc.body.setBodyType(2, true);          // kinematic: it goes where the mouse is
+      pc.body.setTranslation({ x: pos.x * S, y: pos.h * S, z: pos.y * S }, true);
+      if (pos.yaw !== undefined) pc.body.setRotation({ x: 0, y: Math.sin(pos.yaw / 2), z: 0, w: Math.cos(pos.yaw / 2) }, true);
+    } else {
+      pc.body.setBodyType(0, true);                                          // dynamic again: it settles where it was set down
+      pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
+    }
+    this.readPieces(this.robot ? this.robot.time : 0);
   }
 
   /** Before a physics step: releases, latches, driven lifts. */
