@@ -368,7 +368,8 @@ export const MECHANISMS = {
 // The team's own equipment on the field: only the keystone species (bag 20). The seeds for M14 are collected
 // from the field itself: three from the seed pod (M02), one from the research platform (M09), one from M11.
 export const EQUIPMENT_PIECES = [
-  { id: 'keystone', label: 'Keystone species', color: 0xE34A9A, box: [3.2, 6, 1.6], mass: 0.02 },   // a bag-20 brick stack, about 2x4 studs and 6 cm tall
+  // our example keystone species: a small macaw of 10 bricks (models/src/keystone-parrot.ldr), 3.2 x 1.6 cm and 4.6 cm tall
+  { id: 'keystone', label: 'Keystone species', color: 0xB40000, box: [3.2, 4.6, 1.6], mass: 0.012, model: 'models/keystone-parrot.mpd' },
 ];
 export const FIELD_SEEDS = [['M02 Exploding Seeds', 'seed1'], ['M02 Exploding Seeds', 'seed2'], ['M02 Exploding Seeds', 'seed3'], ['M08-09 Tangled / Research Platform', 'seed'], ['M11 Window to the Past', 'seed'], ['M12 Forest Elder', 'seed']];
 

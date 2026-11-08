@@ -839,7 +839,15 @@ export class Sim3D {
     for (const eq of this.equipmentNodes || []) this.scene.remove(eq.node);
     this.equipmentNodes = [];
     for (const it of items) {
-      const node = box(it.box[0], it.box[1], it.box[2], it.color, { roughness: 0.5 });
+      // a piece with a LEGO model (the keystone macaw) is drawn from its bricks, centred where its box is
+      const node = it.model ? new THREE.Group() : box(it.box[0], it.box[1], it.box[2], it.color, { roughness: 0.5 });
+      if (it.model) loadLDrawModel(it.model).then((g) => {
+        if (!g) { node.add(box(it.box[0], it.box[1], it.box[2], it.color, { roughness: 0.5 })); return; }
+        const w = ldrawToWorld(g);
+        w.updateMatrixWorld(true);
+        w.position.sub(new THREE.Box3().setFromObject(w).getCenter(new THREE.Vector3()));
+        node.add(w);
+      });
       node.position.set(it.x, it.box[1] / 2, it.y);
       node.userData.equipment = it;
       this.scene.add(node);

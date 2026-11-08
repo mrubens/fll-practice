@@ -4,7 +4,22 @@
 # (apps/desktop/resources/ldraw/pack.json.gz). Low-res "8\" primitives are preferred where the pack has them.
 import sys, gzip, json, re, os
 PACK = os.environ.get("LDRAW_PACK", os.path.expanduser("~/Downloads/pack.json.gz"))   # fll-sim: apps/desktop/resources/ldraw/pack.json.gz
-files = json.load(gzip.open(PACK))['files']
+LDRAW_DIR = os.environ.get("LDRAW_DIR")   # or the official LDraw library folder (complete.zip unpacked: has parts/ and p/)
+class DirFiles(dict):
+    """The library folder as the pack's {path: text} map, read on demand."""
+    def __init__(self, root):
+        super().__init__()
+        self.root = root
+        for sub in ('parts', 'p'):
+            for dp, _, fs in os.walk(os.path.join(root, sub)):
+                for f in fs:
+                    if f.lower().endswith('.dat'): dict.__setitem__(self, os.path.relpath(os.path.join(dp, f), root).replace(os.sep, '/'), None)
+    def __getitem__(self, k):
+        v = dict.__getitem__(self, k)
+        if v is None:
+            v = open(os.path.join(self.root, k), encoding='utf-8', errors='replace').read(); dict.__setitem__(self, k, v)
+        return v
+files = DirFiles(LDRAW_DIR) if LDRAW_DIR else json.load(gzip.open(PACK))['files']
 lower = {k.lower(): k for k in files}
 def lookup(ref):
     r = ref.lower().replace('\\', '/')

@@ -1,0 +1,14 @@
+0 Keystone species: a small scarlet macaw (11 bricks, about 2.4 x 1.6 cm and 4.5 cm tall), from the kind of bricks in bag 20
+0 Name: keystone-parrot.ldr
+0 // facing -x. A brown perch plate, a blue 2 x 2 brick (wings), a yellow 2 x 3 plate (its back stud is the tail),
+0 // a red 2 x 2 brick (chest), the red head, a black slope for the hooked beak and two eyes
+1 70 0 -8 0 1 0 0 0 1 0 0 0 1 3022.dat
+1 1 0 -32 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 14 10 -40 0 1 0 0 0 1 0 0 0 1 3021.dat
+1 4 0 -64 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 4 0 -88 0 1 0 0 0 1 0 0 0 1 3003.dat
+1 0 -10 -112 0 0 0 1 0 1 0 -1 0 0 3040b.dat
+1 15 10 -96 -10 1 0 0 0 1 0 0 0 1 6141.dat
+1 15 10 -96 10 1 0 0 0 1 0 0 0 1 6141.dat
+1 0 10 -104 -10 1 0 0 0 1 0 0 0 1 4073.dat
+1 0 10 -104 10 1 0 0 0 1 0 0 0 1 4073.dat

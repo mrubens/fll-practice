@@ -10,6 +10,8 @@ The `.mpd` files in this folder are self-contained LDraw models (each one embeds
   [fll-sim](https://github.com/martijas/fll-sim) project (`apps/desktop/resources/missions`, `resources/robots`
   and `resources/tools`), whose model files carry the note "Model data for simulation use". Model placement on the
   mat also comes from fll-sim's measurements of the FIRST wireframe PDF.
+- `keystone-parrot.mpd`: our own keystone species (a small macaw, source `src/keystone-parrot.ldr`), packed from the
+  LDraw library with `tools/pack-ldraw.py` (`LDRAW_DIR`).
 - `LDConfig.ldr`: LDraw color definitions (LDraw library, CC BY 4.0).
 - **`lego/`, the attachment builder's parts** (made by `tools/snaps.py` from the LDraw library and the LDCad shadow
   library):
