@@ -80,7 +80,9 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   ("is pressed?", "pressure in newtons / %", "when pressed") and export to Python. Two color sensors for line following work; a sensor hung on a single
   pin is flagged, since it would swing. The sensors stay when you change the attachment.
 - **Build your own attachment.** In the robot builder pick "My own" and build on the Driving Base's arm bracket:
-  a parts box with every Technic part of the SPIKE Prime sets (beams, frames, pins, axles, connectors, bushes, gears)
+  a parts box with the Technic parts of the SPIKE Prime set and its expansion set, checked against LEGO's parts lists
+  (beams, frames, pins, axles, connectors, bushes, gears, turntables whose top turns on its base, the 56 and 88 mm
+  wheels, the big panels)
   and the Driving Base with its arm bracket, whose axle motor E turns. Parts snap only where real LEGO connects (a pin
   into a pin hole, an axle into an axle hole or through a round hole, from the LDCad shadow library's connector
   data): click a part, point at a hole, axle or pin and click to place it; R turns it about the axle, F flips it,

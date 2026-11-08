@@ -171,7 +171,7 @@ function placeConnector(c, p, r, part) {
 export function partConnectors(D, q, part) {
   const e = D.snaps[q.f];
   if (!e) return [];
-  return e.s.filter((c) => c.k === 'cyl' && !c.gp).map((c) => placeConnector(c, q.p, q.r, part));
+  return e.s.filter((c) => c.k === 'cyl' && usable(c)).map((c) => placeConnector(c, q.p, q.r, part));
 }
 
 /** The section of a connector at distance u along it, or null outside it. */
@@ -189,8 +189,14 @@ const capEnd = (c) => c.cp === 'one' || c.cp === 'two' || c.cp === 'B';
  * male cannot be there (too fat for the hole, a round pin in an axle hole, through a closed end); otherwise
  * {len, rigid, from, to}: how much engages, whether rotation is locked, and the engaged stretch along the female.
  */
+// LDCad groups a few connectors that only fit their own kind; the turntables' rings are the ones the builder uses
+const GROUPS = new Set(['techTrnTbl60', 'z28Turntable']);
+/** A connector the builder works with: a plain one, or a turntable's ring. */
+export const usable = (c) => !c.gp || GROUPS.has(c.gp);
+
 export function fit(a, b) {
   if (a.g === b.g) return null;
+  if ((a.gp || b.gp) && a.gp !== b.gp) return null;    // a turntable's ring goes only into its own kind
   const m = a.g === 'M' ? a : b, f = a.g === 'M' ? b : a;
   const c = dot(m.d, f.d);
   if (Math.abs(c) < 0.999) return null;
@@ -296,7 +302,7 @@ export class Scene {
     // the Driving Base with its arm bracket and the bracket's drive axle; another chassis is just itself
     const db = chassis === 'driving-base';
     const ctx = db ? [...D.ctx.base, ...D.ctx.bracket] : D.ctx.chassis[chassis].base;
-    const baseConns = ctx.filter((c) => c.k === 'cyl' && !c.gp).map((c) => ({ ...c, d: unit(c.d), x: unit(c.x), len: secLen(c.s) }));
+    const baseConns = ctx.filter((c) => c.k === 'cyl' && usable(c)).map((c) => ({ ...c, d: unit(c.d), x: unit(c.x), len: secLen(c.s) }));
     const bb = baseBoxes(D, chassis);
     this.base = { q: null, role: 'base', conns: baseConns, boxes: bb, aabb: aabbOf(bb) };
     this.base.conns.forEach((c) => { c.part = this.base; });
@@ -361,7 +367,7 @@ export class Scene {
    * Returned best first (most engagement), each with its check() result.
    */
   placementsOnto(f, k, T, flip, roll) {
-    const own = (this.D.snaps[f] ? this.D.snaps[f].s : []).filter((c) => c.k === 'cyl' && !c.gp);
+    const own = (this.D.snaps[f] ? this.D.snaps[f].s : []).filter((c) => c.k === 'cyl' && usable(c));
     const G = own[k];
     if (!G || G.g === T.g) return [];
     const Gd = unit(G.d), Gx = unit(G.x), Gl = secLen(G.s);

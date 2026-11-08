@@ -3,7 +3,7 @@
 // attachment is a built-in one or the child's own, built on the arm bracket's axle, which motor E turns.
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import { loadLego, Scene, DRIVE_AXLE, DRIVE_PARTS, CHASSIS_DRIVES, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
+import { loadLego, usable, Scene, DRIVE_AXLE, DRIVE_PARTS, CHASSIS_DRIVES, parseLdr, toLdr, app, sub, add, scl, dot, rotAxis, mul, I3, LDU, boxesOverlap, baseBoxes, partBoxes } from './lego.js';
 import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
 import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
@@ -131,6 +131,13 @@ const EXAMPLE_ARM = `0 Driving Base 2 arm (from models/src/arm-moving.ldr withou
 `;
 
 const shortName = (d) => d.replace(/^~?Technic\s+/i, '').replace(/\s+/g, ' ').trim();
+// names that say what a child would call the part, where LDraw's description runs long
+const NAMES = {
+  '39367p01': 'Wheel 56 mm', '49295p01': 'Wheel 88 mm', '18939': 'Turntable 60 base', '18938': 'Turntable 60 top',
+  '99009': 'Turntable 28 base', '99010': 'Turntable 28 top', '39369': 'Panel 11 x 19', '65817': 'Panel 11 x 15',
+  '45590': 'Rubber joiner', '6553': 'Catch', '69819': 'Fork cross block', '35185': 'Gear 20 angled', '99773': 'Triangle',
+  '39370': 'Ball caster cup', '50450': 'Axle 32',
+};
 
 // The attachments that come with the app: their physics is tuned for the missions, and the builder shows their parts.
 export const BUILT_IN = [
@@ -688,7 +695,7 @@ export class AttachmentBuilder {
         const b = document.createElement('button');
         b.type = 'button'; b.className = 'lb-part'; b.dataset.part = f;
         b.title = `${info.d} (${f})`;
-        b.innerHTML = `<img alt=""><span>${SENSOR_PARTS[f] ? SENSOR_PARTS[f].label : shortName(info.d)}</span>`;
+        b.innerHTML = `<img alt=""><span>${SENSOR_PARTS[f] ? SENSOR_PARTS[f].label : NAMES[f] || shortName(info.d)}</span>`;
         b.addEventListener('click', () => this.pick(f));
         grid.appendChild(b);
       }
@@ -1009,7 +1016,7 @@ export class AttachmentBuilder {
     this.selEl.hidden = !it;
     if (!it) return;
     const sp = SENSOR_PARTS[it.q.f];
-    this.selEl.querySelector('.lb-sel-name').textContent = sp ? sp.label : shortName(this.D.parts.parts[it.q.f].d);
+    this.selEl.querySelector('.lb-sel-name').textContent = sp ? sp.label : (NAMES[it.q.f] || shortName(this.D.parts.parts[it.q.f].d));
     const portEl = this.selEl.querySelector('.lb-sel-port');
     portEl.hidden = !sp;
     if (sp) {
@@ -1083,7 +1090,7 @@ export class AttachmentBuilder {
     this._selBar();
     const tpl = this.tpl.get(f);
     if (!tpl) return;
-    const own = this.D.snaps[f].s.filter((c) => c.k === 'cyl' && !c.gp);
+    const own = this.D.snaps[f].s.filter((c) => c.k === 'cyl' && usable(c));
     const mesh = tpl.clone();
     // the part in hand is drawn over everything (it is often half inside the robot) and lit green where it fits
     mesh.traverse((o) => { if (o.isMesh) { o.material = o.material.clone(); o.material.transparent = true; o.material.opacity = 0.75; o.material.depthWrite = false; o.material.depthTest = false; o.renderOrder = 9; } });
@@ -1093,7 +1100,7 @@ export class AttachmentBuilder {
     this.root.querySelectorAll('.lb-part').forEach((b) => b.classList.toggle('on', b.dataset.part === f));
     this._handBar();
     const sp = SENSOR_PARTS[f];
-    const name = sp ? sp.label : shortName(this.D.parts.parts[f].d);
+    const name = sp ? sp.label : (NAMES[f] || shortName(this.D.parts.parts[f].d));
     this.message(switched + (sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
       : this.mode === 'custom' && this._toolPorts().length ? `${name}: snap it onto the tool frame or another part. A gear that meshes with a tool motor's 28-tooth gear turns with that motor.`
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
@@ -1114,7 +1121,7 @@ export class AttachmentBuilder {
     this.handEl.hidden = !g;
     if (!g) return;
     const sp = SENSOR_PARTS[g.f];
-    this.handEl.querySelector('.lb-hand-name').textContent = sp ? sp.label : shortName(this.D.parts.parts[g.f].d);
+    this.handEl.querySelector('.lb-hand-name').textContent = sp ? sp.label : (NAMES[g.f] || shortName(this.D.parts.parts[g.f].d));
     this.handEl.querySelector('[data-hand="hole"]').hidden = g.own.length < 2;
     this.handEl.querySelector('.lb-hand-slide').hidden = !(g.slides > 1);
   }
@@ -1284,7 +1291,7 @@ export class AttachmentBuilder {
     this.marker.scale.set(3, c.len + 2, 3);
     this.marker.material.color.setHex(found ? 0xFFB000 : 0xE8232A);
     this.marker.visible = true;
-    const name = shortName(this.D.parts.parts[g.f].d);
+    const name = (NAMES[g.f] || shortName(this.D.parts.parts[g.f].d));
     this.message(!found ? `It ${res.why} here: try Turn, Flip or Other hole.`
       : found.spins ? `${name}: click to place. Its round hole spins freely on the axle, so motor E will not turn it: start with a part that has a + hole (a bent liftarm, a cross block, the 2 liftarm) and build on that.`
       : `${name}: click to place it.`);
@@ -1348,7 +1355,7 @@ export class AttachmentBuilder {
         this.message(g.carry ? note : `${note} Shift-click to place several.`);
         return;
       }
-      this.message(`${note} Shift-click to put another ${sp ? sp.label.toLowerCase() : shortName(this.D.parts.parts[g.f].d)} on; right-click or Esc to stop.`);
+      this.message(`${note} Shift-click to put another ${sp ? sp.label.toLowerCase() : (NAMES[g.f] || shortName(this.D.parts.parts[g.f].d))} on; right-click or Esc to stop.`);
       return;
     }
     const it = this._raycast();
