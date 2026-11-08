@@ -10,6 +10,8 @@ import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { PRESETS, defaultBuild, advancedBuild, normalizeBuild } from './build.js';
+import { TOOL_PRESETS, EXAMPLE_ARM } from './tools.js';
+import { parseLdr } from './lego.js';
 import { TOOL_DEMOS, ARM_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
@@ -337,6 +339,70 @@ const nameInput = $('#projectName');
 let saveTimer = null;
 
 function currentProject() { return store.projects[store.current]; }
+
+// ---------- a match like the real one: a different program each run, attachments swapped in home ----------
+const matchBar = $('#matchBar'), nextRun = $('#nextRun'), shelf = $('#shelf');
+const MODULE_NAMES = { none: 'None', arm: 'Arm', plow: 'Dozer blade', basket: 'Basket', sweeper: 'Sweeper', scoop: 'Side scoop', lift: 'Forklift' };
+const partKeys = (ldr) => new Set(parseLdr(ldr || '').map((q) => q.f + '@' + q.p.map((v) => Math.round(v)).join(',')));
+/** A short name for an attachment: the built-in's, the ready-made tools it is made of, or "My own". */
+function attachmentName(a, chassis) {
+  if (!a || a.module !== 'custom') return MODULE_NAMES[(a && a.module) || 'none'] || 'Attachment';
+  const have = partKeys(a.ldr);
+  if (!have.size) return 'None';
+  const names = (TOOL_PRESETS[chassis] || []).filter((t) => [...partKeys(t.ldr)].every((k) => have.has(k))).map((t) => t.label);
+  if (chassis === 'driving-base' && [...partKeys(EXAMPLE_ARM)].every((k) => have.has(k))) names.unshift('Arm');
+  return names.length ? names.join(' + ') : 'My own';
+}
+const attachmentKey = (a) => JSON.stringify(a ? { m: a.module, l: a.module === 'custom' ? a.ldr || '' : '' } : null);
+/** The attachments the team has for this robot: every project's (same chassis), plus none. */
+function shelfItems() {
+  const chassis = robot.build.chassis;
+  const seen = new Map();
+  const add = (a) => { const k = attachmentKey(a); if (!seen.has(k)) seen.set(k, a); };
+  add({ module: 'none', mount: 'front' });
+  add(robot.build.attachment);
+  for (const p of Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name))) if (p.build && (p.build.chassis || 'driving-base') === chassis) add(p.build.attachment);
+  const names = new Map();
+  return [...seen.entries()].map(([k, a]) => {
+    let n = attachmentName(a, chassis); const c = (names.get(n) || 0) + 1; names.set(n, c);
+    return { key: k, attachment: a, name: c > 1 ? `${n} (${c})` : n };
+  });
+}
+let matchBarKey = '';
+function updateMatchBar() {
+  const show = !!(world.season && scoring.match.launched && !scoring.match.ended);
+  const busy = runtime.running || replay.active;
+  const key = [show, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length].join('|');
+  if (key === matchBarKey) return;
+  matchBarKey = key;
+  matchBar.hidden = !show;
+  if (!show) return;
+  const list = Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name));
+  nextRun.innerHTML = list.map((p) => `<option value="${p.id}">${p.name.replace(/[<&]/g, (c) => (c === '<' ? '&lt;' : '&amp;'))}</option>`).join('');
+  nextRun.value = store.current;
+  nextRun.disabled = busy;
+  const cur = attachmentKey(robot.build.attachment);
+  const items = shelfItems();
+  shelf.innerHTML = '<span>Attachment</span>' + items.map((it, i) => `<button type="button" data-i="${i}" class="${it.key === cur ? 'on' : ''}" ${busy ? 'disabled' : ''}>${it.name}</button>`).join('');
+  shelf.items = items;
+}
+nextRun.addEventListener('change', () => {
+  if (runtime.running || replay.active) return;
+  loadProject(nextRun.value);                        // its program, its robot and attachment, the robot on its start spot
+  replay.start = null; replay.snaps.clear(); updateRunState();   // step back can't cross a program change
+  if (!scoring.fit().area) toast('Put the robot in a launch area before the next launch.', 'warn');
+  else toast(`Next run: ${currentProject().name}. Press Run to launch it.`);
+});
+shelf.addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-i]');
+  if (!b || runtime.running || replay.active) return;
+  const it = shelf.items[Number(b.dataset.i)];
+  robot.applyBuild({ ...robot.build, attachment: it.attachment });   // swapped in home: the project keeps its own
+  hub.updatePortTypes();
+  robot.setPose(robot.x, robot.y);
+  replay.start = null; replay.snaps.clear(); updateRunState();
+  toast(`Attachment: ${it.name}.`);
+});
 
 function loadProject(id) {
   const p = store.projects[id];
@@ -883,6 +949,7 @@ async function frame(now) {
   }
   hub.update(now);
   updateCalReadout();
+  updateMatchBar();
   sim.lostModels = world.season ? scoring.lostGuards() : null;
   if (!equipmentShown && world.season && world.matReady && world.physics && !runtime.running && !replay.active) { equipmentShown = true; placeEquipment(true); }      // M10's habitats glow red while knocked out of place
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table
