@@ -493,6 +493,10 @@ export function createWorkspace(div, options = {}) {
       return super.getFlyoutMetrics(own);
     }
   } : null;
+  // Slots light up (and a block snaps in) from further away than Blockly's default 28, closer to how Scratch and the
+  // SPIKE App feel: kids aim with the pointer, not the block's left end. Once lit, a slot stays lit a little further out.
+  B.config.snapRadius = 48;
+  B.config.connectingSnapRadius = 68;
   const ws = B.inject(div, {
     toolbox: buildToolbox(),
     renderer: 'zelos',
