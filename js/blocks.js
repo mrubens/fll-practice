@@ -339,10 +339,34 @@ export function defineTheme() {
 
 // ---------- toolbox ----------
 
+// The port a new sensor block starts on: the robot's first sensor of that kind (set from the robot's build), else A.
+let sensorDefaults = {};
+/** Set the ports new sensor blocks start on ({ color: 'B', distance: 'F' }); true when they changed. */
+export function setSensorDefaults(map) {
+  const next = { ...map };
+  if (JSON.stringify(next) === JSON.stringify(sensorDefaults)) return false;
+  sensorDefaults = next;
+  return true;
+}
+
+/** Rebuild the palette with the current sensor ports (the flyout would otherwise reuse its old blocks as they were). */
+export function refreshPalette(ws) {
+  ws.updateToolbox(buildToolbox());
+  const tbx = ws.getToolbox(), fl = tbx && tbx.getFlyout && tbx.getFlyout();
+  if (!fl || !tbx.getInitialFlyoutContents_) return;
+  const visible = fl.isVisible();
+  if (fl.setRecyclingEnabled) fl.setRecyclingEnabled(false);
+  fl.show(tbx.getInitialFlyoutContents_());
+  if (fl.setRecyclingEnabled) fl.setRecyclingEnabled(true);
+  if (!visible) { fl.setVisible(false); ws.resize(); }
+}
+
 function shadowFor(arg) {
   if (arg.k === 'sel') {
     const s = SELECTORS[arg.sel];
-    const value = s.field === 'number' || s.field === 'steering' ? Number(arg.d) : String(arg.d);
+    const kind = (/[-_](color|distance|force)-sensor-selector$/.exec(arg.sel) || [])[1];
+    const d = kind && sensorDefaults[kind] ? sensorDefaults[kind] : arg.d;
+    const value = s.field === 'number' || s.field === 'steering' ? Number(d) : String(d);
     return { type: arg.sel, fields: { ['field_' + arg.sel]: value } };
   }
   const type = KIND_SHADOW[arg.k];

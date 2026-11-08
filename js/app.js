@@ -1,5 +1,5 @@
 // Wires the editor, the simulator, the hub panel, project storage and file import/export together.
-import { createWorkspace, installDialogs } from './blocks.js';
+import { createWorkspace, installDialogs, setSensorDefaults, refreshPalette } from './blocks.js';
 import { World, MATCH_SECONDS } from './world.js';
 import { Robot, PORT_LETTERS, MAX_DEG_PER_S } from './robot.js';
 import { Sim3D } from './sim3d.js';
@@ -75,6 +75,15 @@ const runtime = new Runtime({
   onLog: (m) => toast(m, 'warn'),
 });
 robot.on('hint', (m) => toast(m, 'warn'));
+// sensor blocks taken from the palette start on the robot's own sensor ports (its first color sensor, and so on)
+function syncSensorDefaults() {
+  const map = {};
+  const sensors = (robot.config && robot.config.sensors) || {};
+  for (const port of Object.keys(sensors).sort()) if (!map[sensors[port]]) map[sensors[port]] = port;
+  if (setSensorDefaults(map)) refreshPalette(workspace);
+}
+robot.on('build', () => syncSensorDefaults());
+syncSensorDefaults();
 
 // ---------- missions: scripted interactions, scoresheet, mission cards ----------
 const scoring = new Scoring(robot, world);
