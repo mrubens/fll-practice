@@ -166,8 +166,15 @@ export class SpikeHub {
     if (!isSupported()) throw new Error('Web Bluetooth is not available in this browser. Use Chrome or Edge on a laptop or Android, or the SPIKE App.');
     this.emit('status', 'Choose your hub in the browser dialog…');
     const device = await navigator.bluetooth.requestDevice({ filters: [{ services: [SERVICE] }] });
+    // start clean: a link dropped mid-frame (live readings stream every 100 ms) leaves half a frame in the buffer,
+    // which would swallow the hub's first answer on the next connect
+    this.buffer = []; this.info = null; this.rejectAll(new Error('Reconnecting'));
+    if (this.device && this.device !== device && this.device.gatt.connected) this.device.gatt.disconnect();
     this.device = device;
-    device.addEventListener('gattserverdisconnected', () => { this.rx = this.tx = null; this.rejectAll(new Error('Hub disconnected')); this.emit('disconnect'); });
+    if (!device._fllListening) {
+      device._fllListening = true;
+      device.addEventListener('gattserverdisconnected', () => { this.rx = this.tx = null; this.buffer = []; this.rejectAll(new Error('Hub disconnected')); this.emit('disconnect'); });
+    }
     this.emit('status', `Connecting to ${this.name}…`);
     const server = await device.gatt.connect();
     const service = await server.getPrimaryService(SERVICE);
@@ -175,7 +182,14 @@ export class SpikeHub {
     this.tx = await service.getCharacteristic(TX_CHAR);
     this.tx.addEventListener('characteristicvaluechanged', (e) => this.onData(new Uint8Array(e.target.value.buffer)));
     await this.tx.startNotifications();
-    this.info = parseInfo(await this.request(messages.info(), MSG.InfoResponse));
+    await new Promise((r) => setTimeout(r, 200));   // let the hub's side of the link settle before the first question
+    // ask a few times: a hub just woken up, or still sending to a previous connection, can miss the first question
+    let info = null, lastErr = null;
+    for (let attempt = 0; attempt < 4 && !info; attempt++) {
+      try { info = parseInfo(await this.request(messages.info(), MSG.InfoResponse, 2500)); } catch (err) { lastErr = err; this.buffer = []; }
+    }
+    if (!info) { this.disconnect(); throw lastErr || new Error('The hub did not answer in time.'); }
+    this.info = info;
     this.emit('status', `Connected to ${this.name} (firmware ${this.info.firmware})`);
     return this.info;
   }
