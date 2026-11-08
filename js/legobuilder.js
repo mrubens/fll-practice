@@ -34,22 +34,31 @@ export function motionOf(D, scene, an) {
       if (L > best.length) best = { length: L, tipAngle: Math.atan2(dy, dx) / DEG };
     }
   }
-  // sweep the moving parts both ways until they meet the Driving Base or the bracket (pairs touching at rest don't count)
-  const base = baseBoxes(D);
+  // sweep the moving parts both ways until they meet the Driving Base, the bracket or the parts fixed to the robot
+  // (its sensors and what holds them, the attachment's own fixed parts); pairs touching at rest don't count
+  const onDrive = new Set(an.bodies.map((b, i) => (b.role === 'drive' || b.role === 'geared' ? i : -1)).filter((i) => i >= 0));
+  for (let grew = true; grew;) { grew = false; for (const j of an.joints) for (const [x, y] of [[j.a, j.b], [j.b, j.a]]) if (onDrive.has(x) && !onDrive.has(y) && an.bodies[y].role !== 'base') { onDrive.add(y); grew = true; } }
+  const loose = new Set(an.loose);
+  const base = [...baseBoxes(D)];
+  an.bodies.forEach((b, i) => { if (!onDrive.has(i)) for (const it of b.items) if (it.role === 'part' && !loose.has(it)) base.push(...it.boxes); });
   const movingBoxes = items.flatMap((it) => it.boxes);
   const at = DRIVE_AXLE.at;
   const turned = (b, deg) => { const R = driveRot(deg); return { c: add(app(R, sub(b.c, at)), at), h: b.h, R: mul(R, b.R) }; };
   const near = (a, b) => len3(sub(a.c, b.c)) < Math.hypot(...a.h) + Math.hypot(...b.h);
-  // the robot's parts are measured as boxes, rounder in real life: only a clear overlap (over 3 mm) stops the arm
-  const M = 8;
+  // the parts are measured as boxes, a little rounder in real life: an overlap of more than about 2 mm stops the arm
+  const M = OVERLAP;
   const restHits = new Set();
-  movingBoxes.forEach((m, i) => base.forEach((b, j) => { if (near(m, b) && boxesOverlap(m, b, M)) restHits.add(i + ',' + j); }));
+  movingBoxes.forEach((m, i) => base.forEach((b, j) => { if (near(m, b) && boxesOverlap(m, b, 0)) restHits.add(i + ',' + j); }));
   const hitsAt = (deg) => movingBoxes.some((m0, i) => { const m = turned(m0, deg); return base.some((b, j) => !restHits.has(i + ',' + j) && near(m, b) && boxesOverlap(m, b, M)); });
   const sweep = (dir) => { for (let a = 3; a <= 180; a += 3) if (hitsAt(dir * a)) return dir * (a - 3); return dir * 180; };
   const stops = movingBoxes.length ? [sweep(-1), sweep(1)] : [-180, 180];
   return { length: Math.round(best.length * 100) / 100, tipAngle: Math.round(best.tipAngle * 10) / 10, stops };
 }
 const len3 = (v) => Math.hypot(v[0], v[1], v[2]);
+// how far (LDU, off each box's half size) two parts' boxes may sink into each other before a turning part counts as
+// hitting: 3 lets about 2 mm through (rounded beam ends, the boxes' corners); more let arms swing into the hub. Two
+// boxes that already touch at rest (a tool lying on its frame) slide along each other and never count
+const OVERLAP = 3;
 
 /**
  * The bodies a motor turns through gears (and the Advanced Driving Base's drive gears), with what hangs on them by
@@ -86,6 +95,7 @@ export function toolStops(D, scene, an, ports) {
     if (!moving.length) { out[port] = [-FREE_STOP, FREE_STOP]; continue; }
     const turned = ({ bx, m }, deg) => { const R = rotAxis(unitV(m.w), deg * len3(m.w) * DEG); return { c: add(app(R, sub(bx.c, m.at)), m.at), h: bx.h, R: mul(R, bx.R) }; };
     const rest = new Set();
+    // (the Advanced Driving Base's tools keep the looser 8: their stops were checked against LEGO's instructions)
     moving.forEach((mv, i) => still.forEach((s, j) => { if (near(mv.bx, s) && boxesOverlap(mv.bx, s, 8)) rest.add(i + ',' + j); }));
     const hits = (deg) => moving.some((mv, i) => { const t = turned(mv, deg); return still.some((s, j) => !rest.has(i + ',' + j) && near(t, s) && boxesOverlap(t, s, 8)); });
     // sweep the motor until what it drives has turned half a turn (geared down, the motor turns further than that)
@@ -279,6 +289,11 @@ export class AttachmentBuilder {
     this._palette();
     this.history = [];
     this._load(build, lastCustom);
+    // a build saved before the stops were worked out this way gets the new ones on the robot
+    if (this.mode === 'custom' && !this._toolPorts().length && this.parts.length) {
+      const was = this.build.attachment.stops || [], now = motionOf(this.D, this.scene, this.an).stops;
+      if (was[0] !== now[0] || was[1] !== now[1]) this._emit();
+    }
     this._resize();
     this._loop();
   }
