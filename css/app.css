@@ -358,7 +358,16 @@ body.building #hubPanel { display: none; }
 .lb-issues { margin: 8px 0 0; color: var(--stop); font-weight: 700; }
 .lb-issues:empty { display: none; }
 .lb-sel { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,.95); border: 1px solid var(--line); border-radius: 12px; padding: 6px 8px 6px 12px; box-shadow: 0 6px 18px rgba(30,36,48,.14); font-size: 12px; z-index: 2; }
-.lb-sel[hidden], .lb-sel [hidden], .lb-motor[hidden] { display: none; }
+.lb-sel[hidden], .lb-sel [hidden], .lb-motor[hidden], .lb-hand[hidden], .lb-hand [hidden] { display: none; }
+.lb-hand { position: absolute; left: 50%; top: 52px; transform: translateX(-50%); display: flex; align-items: center; gap: 6px; background: rgba(255,255,255,.96); border: 1px solid var(--line); border-radius: 12px; padding: 6px 8px 6px 12px; box-shadow: 0 6px 18px rgba(30,36,48,.14); font-size: 12px; z-index: 2; white-space: nowrap; }
+.lb-hand .tb { padding: 5px 10px; font-size: 12px; }
+.lb-hand-slide { display: inline-flex; align-items: center; gap: 3px; }
+.lb-hand-slide small { color: var(--muted); font-weight: 700; }
+.lb-hand-slide .tb { padding: 5px 7px; }
+.lb-cam { position: absolute; right: 10px; bottom: 10px; display: flex; gap: 2px; background: rgba(255,255,255,.92); border: 1px solid var(--line); border-radius: 10px; padding: 3px; z-index: 2; }
+.lb-cam button { border: 0; background: none; font: inherit; font-size: 12px; font-weight: 700; color: var(--fg); padding: 5px 9px; border-radius: 7px; cursor: pointer; min-width: 28px; }
+.lb-cam button:hover { background: var(--bg); }
+.lb-cam button[data-cam="in"], .lb-cam button[data-cam="out"] { font-size: 15px; line-height: 1; }
 .lb-sel label { display: flex; align-items: center; gap: 5px; font-weight: 700; color: var(--muted); }
 .lb-sel select { font: inherit; font-weight: 800; padding: 3px 4px; border-radius: 7px; border: 1px solid var(--line); background: #fff; color: var(--fg); }
 .lb-sel .tb { padding: 5px 10px; font-size: 12px; }
