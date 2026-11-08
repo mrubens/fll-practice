@@ -1176,6 +1176,8 @@ export class Sim3D {
       const red = lost.has(pn.o.id);
       if (red === !!pn.red) continue;
       pn.red = red;
+      // the piece's own copies of its materials: LDraw materials are shared by every model of the same colour
+      if (!pn.ownMaterials) { pn.ownMaterials = true; pn.node.traverse((o) => { if (o.isMesh && o.material && o.material.clone) o.material = o.material.clone(); }); }
       pn.node.traverse((o) => { if (o.isMesh && o.material && o.material.emissive) o.material.emissive.setHex(red ? 0x8a0000 : 0x000000); });
     }
     this.centerButton.material.color.set(r.hub.centerColor || '#FFFFFF');

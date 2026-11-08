@@ -64,25 +64,32 @@ export function flatten(obj) {
   return out;
 }
 
-let templates = null;
-/** Map part number -> template group (geometry in the part's LDraw frame, LDU). */
-export function partTemplates(D) {
-  if (!templates) {
-    templates = loadRaw('models/lego/parts.mpd').then((g) => {
-      const map = new Map();
-      if (!g) return map;
-      const names = D.parts.categories.flatMap((c) => c.parts);
-      [...g.children].forEach((child, i) => {
-        const fromFile = String(child.userData.fileName || '').toLowerCase().replace(/\.dat$/, '');
-        const name = names.includes(fromFile) ? fromFile : names[i];
-        child.matrix.identity(); child.position.set(0, 0, 0); child.quaternion.identity(); child.scale.set(1, 1, 1);
-        child.updateMatrix();
-        const holder = new THREE.Group(); holder.add(child);
-        map.set(name, flatten(holder));
-      });
-      return map;
-    });
+// Part templates, one file per part (models/lego/parts/<part>.mpd, made by tools/split_parts.py): the app parses only
+// the parts it draws (a robot's sensors and tools), not the whole palette, which took many seconds on a cold start.
+const templates = new Map();     // part -> template group (geometry in the part's LDraw frame, LDU)
+const pending = new Map();       // part -> promise of its template
+function loadTemplate(name) {
+  if (!pending.has(name)) {
+    pending.set(name, loadRaw(`models/lego/parts/${name}.mpd`).then((g) => {
+      const child = g && g.children[0];
+      if (!child) return null;
+      child.matrix.identity(); child.position.set(0, 0, 0); child.quaternion.identity(); child.scale.set(1, 1, 1);
+      child.updateMatrix();
+      const holder = new THREE.Group(); holder.add(child);
+      const t = flatten(holder);
+      templates.set(name, t);
+      return t;
+    }));
   }
+  return pending.get(name);
+}
+/**
+ * Map part number -> template group, with at least `wanted` loaded (every palette part when it is left out: the
+ * robot builder's parts box). The map is shared and grows as more parts load.
+ */
+export async function partTemplates(D, wanted) {
+  const names = wanted ? [...new Set(wanted)].filter((n) => D.parts.parts[n]) : D.parts.categories.flatMap((c) => c.parts);
+  await Promise.all(names.map(loadTemplate));
   return templates;
 }
 

@@ -1,0 +1,552 @@
+0 FILE 39789.ldr
+0 39789 (from the attachment builder parts, LDraw parts library CC BY 4.0)
+1 14 0 0 0 1 0 0 0 1 0 0 0 1 39789.dat
+0 FILE 39789.dat
+0 Brick  2 x  4 with  3 Axleholes Vertical
+0 Name: 39789.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Part UPDATE 2019-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !KEYWORDS Spike Prime
+
+0 !HISTORY 2019-06-28 [PTadmin] Official Update 2019-01
+
+
+0 BFC INVERTNEXT
+1 16 0 4 0 36 0 0 0 20 0 0 0 16 box4.dat
+1 16 0 0 0 40 0 0 0 24 0 0 0 20 box4.dat
+1 16 -20 0 0 1 0 0 0 1 0 0 0 1 stug-2x2.dat
+1 16 20 0 0 1 0 0 0 1 0 0 0 1 stug-2x2.dat
+4 16 40 24 20 36 24 16 -36 24 16 -40 24 20
+4 16 -40 24 20 -36 24 16 -36 24 -16 -40 24 -20
+4 16 -40 24 -20 -36 24 -16 36 24 -16 40 24 -20
+4 16 40 24 -20 36 24 -16 36 24 16 40 24 20
+4 16 36 4 16 28 4 8 -28 4 8 -36 4 16
+4 16 -36 4 16 -28 4 8 -28 4 -8 -36 4 -16
+4 16 -36 4 -16 -28 4 -8 28 4 -8 36 4 -16
+4 16 36 4 -16 28 4 -8 28 4 8 36 4 16
+4 16 -40 0 20 -26 0 6 26 0 6 40 0 20
+4 16 -40 0 -20 -26 0 -6 -26 0 6 -40 0 20
+4 16 40 0 -20 26 0 -6 -26 0 -6 -40 0 -20
+4 16 40 0 20 26 0 6 26 0 -6 40 0 -20
+1 16 0 18 0 1 0 0 0 1 0 0 0 1 axl3hol3.dat
+1 16 0 18 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 0 18 0 1 0 0 0 -1 0 0 0 1 axl3ho10.dat
+1 16 0 0 0 1 0 0 0 18 0 0 0 1 axl3hol8.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl3hol2.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl3ho10.dat
+1 16 0 18 0 1 0 0 0 -1.5 0 0 0 1 stud4a.dat
+1 16 0 4 0 8 0 0 0 14 0 0 0 8 4-4cyli.dat
+1 16 0 4 0 8 0 0 0 1 0 0 0 8 4-4edge.dat
+1 16 0 4 0 8 0 0 0 -1 0 0 0 8 4-4ndis.dat
+1 16 0 0 0 6 0 0 0 1 0 0 0 6 4-4ndis.dat
+1 16 20 18 0 1 0 0 0 1 0 0 0 1 axl3hol3.dat
+1 16 20 18 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 20 18 0 1 0 0 0 -1 0 0 0 1 axl3ho10.dat
+1 16 20 0 0 1 0 0 0 18 0 0 0 1 axl3hol8.dat
+1 16 20 0 0 1 0 0 0 1 0 0 0 1 axl3hol2.dat
+1 16 20 0 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 20 0 0 1 0 0 0 1 0 0 0 1 axl3ho10.dat
+1 16 20 18 0 1 0 0 0 -1.5 0 0 0 1 stud4a.dat
+1 16 20 4 0 8 0 0 0 14 0 0 0 8 4-4cyli.dat
+1 16 20 4 0 8 0 0 0 1 0 0 0 8 4-4edge.dat
+1 16 20 4 0 8 0 0 0 -1 0 0 0 8 4-4ndis.dat
+1 16 20 0 0 6 0 0 0 1 0 0 0 6 4-4ndis.dat
+1 16 -20 18 0 1 0 0 0 1 0 0 0 1 axl3hol3.dat
+1 16 -20 18 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 -20 18 0 1 0 0 0 -1 0 0 0 1 axl3ho10.dat
+1 16 -20 0 0 1 0 0 0 18 0 0 0 1 axl3hol8.dat
+1 16 -20 0 0 1 0 0 0 1 0 0 0 1 axl3hol2.dat
+1 16 -20 0 0 1 0 0 0 1 0 0 0 1 axl3hol9.dat
+1 16 -20 0 0 1 0 0 0 1 0 0 0 1 axl3ho10.dat
+1 16 -20 18 0 1 0 0 0 -1.5 0 0 0 1 stud4a.dat
+1 16 -20 4 0 8 0 0 0 14 0 0 0 8 4-4cyli.dat
+1 16 -20 4 0 8 0 0 0 1 0 0 0 8 4-4edge.dat
+1 16 -20 4 0 8 0 0 0 -1 0 0 0 8 4-4ndis.dat
+1 16 -20 0 0 6 0 0 0 1 0 0 0 6 4-4ndis.dat
+4 16 -14 0 6 -14 0 -6 -6 0 -6 -6 0 6
+4 16 14 0 6 6 0 6 6 0 -6 14 0 -6
+4 16 12 4 -8 8 4 -8 8 4 8 12 4 8
+4 16 -8 4 -8 -12 4 -8 -12 4 8 -8 4 8
+1 16 0 4 11.9006 0 0 1 0 14 0 4.00994 0 0 box3u4p.dat
+2 24 -1 18 7.8012 0 18 8
+2 24 1 18 7.8012 0 18 8
+2 24 -1 18 15.9105 1 18 15.9105
+1 16 0 4 -11.9006 0 0 1 0 14 0 -4.00994 0 0 box3u4p.dat
+2 24 -1 18 -7.8012 0 18 -8
+2 24 1 18 -7.8012 0 18 -8
+2 24 -1 18 -15.9105 1 18 -15.9105
+0 FILE box3u4p.dat
+0 Box with  3 Faces without  4 Parallel Edges
+0 Name: box3u4p.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-12-29 [PTadmin] Official Update 2009-03
+0 !HISTORY 2024-01-03 [Holly-Wood] Complete re-write, original by LordAdmiral
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+2 24 -1 1 1 1 1 1
+2 24 1 1 -1 -1 1 -1
+4 16 1 1 1 1 1 -1 -1 1 -1 -1 1 1
+
+2 24 -1 0 1 1 0 1
+2 24 1 1 1 1 0 1
+2 24 -1 1 1 -1 0 1
+4 16 1 1 1 -1 1 1 -1 0 1 1 0 1
+
+2 24 1 0 -1 -1 0 -1
+2 24 1 1 -1 1 0 -1
+2 24 -1 1 -1 -1 0 -1
+4 16 -1 1 -1 1 1 -1 1 0 -1 -1 0 -1
+0 FILE 4-4ndis.dat
+0 Lo-Res Disc Negative 1.0
+0 Name: 8\4-4ndis.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG 8_Primitive UPDATE 2019-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2019-09-09 [PTadmin] Official Update 2019-02
+
+
+3 16 1 0 1 0.7071 0 0.7071 1 0 0
+3 16 1 0 1 0 0 1 0.7071 0 0.7071
+3 16 -1 0 1 -0.7071 0 0.7071 0 0 1
+3 16 -1 0 1 -1 0 0 -0.7071 0 0.7071
+3 16 -1 0 -1 -0.7071 0 -0.7071 -1 0 0
+3 16 -1 0 -1 0 0 -1 -0.7071 0 -0.7071
+3 16 1 0 -1 0.7071 0 -0.7071 0 0 -1
+3 16 1 0 -1 1 0 0 0.7071 0 -0.7071
+0 // Build by Primitive Generator 2
+0 FILE 4-4edge.dat
+0 Circle 1.0
+0 Name: 8\4-4edge.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+2 24 1 0 0 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0 0 1
+2 24 0 0 1 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -1 0 0
+2 24 -1 0 0 -0.7071 0 -0.7071
+2 24 -0.7071 0 -0.7071 0 0 -1
+2 24 0 0 -1 0.7071 0 -0.7071
+2 24 0.7071 0 -0.7071 1 0 0
+0 // Build by Primitive Generator 2
+0 FILE 4-4cyli.dat
+0 Cylinder 1.0
+0 Name: 8\4-4cyli.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+4 16 0.7071 0 0.7071 1 0 0 1 1 0 0.7071 1 0.7071
+4 16 0 0 1 0.7071 0 0.7071 0.7071 1 0.7071 0 1 1
+4 16 -0.7071 0 0.7071 0 0 1 0 1 1 -0.7071 1 0.7071
+4 16 -1 0 0 -0.7071 0 0.7071 -0.7071 1 0.7071 -1 1 0
+4 16 -0.7071 0 -0.7071 -1 0 0 -1 1 0 -0.7071 1 -0.7071
+4 16 0 0 -1 -0.7071 0 -0.7071 -0.7071 1 -0.7071 0 1 -1
+4 16 0.7071 0 -0.7071 0 0 -1 0 1 -1 0.7071 1 -0.7071
+4 16 1 0 0 0.7071 0 -0.7071 0.7071 1 -0.7071 1 1 0
+0 // conditional lines
+5 24 1 1 0 1 0 0 0.7071 1 -0.7071 0.7071 1 0.7071
+5 24 0.7071 1 0.7071 0.7071 0 0.7071 1 1 0 0 1 1
+5 24 0 1 1 0 0 1 0.7071 1 0.7071 -0.7071 1 0.7071
+5 24 -0.7071 1 0.7071 -0.7071 0 0.7071 0 1 1 -1 1 0
+5 24 -1 1 0 -1 0 0 -0.7071 1 0.7071 -0.7071 1 -0.7071
+5 24 -0.7071 1 -0.7071 -0.7071 0 -0.7071 -1 1 0 0 1 -1
+5 24 0 1 -1 0 0 -1 -0.7071 1 -0.7071 0.7071 1 -0.7071
+5 24 0.7071 1 -0.7071 0.7071 0 -0.7071 0 1 -1 1 1 0
+0 // Build by Primitive Generator 2
+0 FILE stud4a.dat
+0 Stud Tube Open without Base Edges (Fast-Draw)
+0 Name: 8\stud4a.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-04 [sbliss] Modified for BFC compliance; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+0 !HISTORY 2013-12-23 [PTadmin] Official Update 2013-02
+0 !HISTORY 2016-01-04 [Philo] Used 8/primitives
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+1 16 0 -4 0 6 0 0 0 1 0 0 0 6 8\4-4edge.dat
+1 16 0 -4 0 8 0 0 0 1 0 0 0 8 8\4-4edge.dat
+0 BFC INVERTNEXT
+1 16 0 -4 0 6 0 0 0 4 0 0 0 6 8\4-4cyli.dat
+1 16 0 -4 0 8 0 0 0 4 0 0 0 8 8\4-4cyli.dat
+1 16 0 -4 0 2 0 0 0 1 0 0 0 2 8\4-4ring3.dat
+0 FILE 8/4-4ring3.dat
+0 Ring  3 x 1.0
+0 Name: 8\4-4ring3.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+4 16 4 0 0 2.8284 0 2.8284 2.1213 0 2.1213 3 0 0
+4 16 2.8284 0 2.8284 0 0 4 0 0 3 2.1213 0 2.1213
+4 16 0 0 4 -2.8284 0 2.8284 -2.1213 0 2.1213 0 0 3
+4 16 -2.8284 0 2.8284 -4 0 0 -3 0 0 -2.1213 0 2.1213
+4 16 -4 0 0 -2.8284 0 -2.8284 -2.1213 0 -2.1213 -3 0 0
+4 16 -2.8284 0 -2.8284 0 0 -4 0 0 -3 -2.1213 0 -2.1213
+4 16 0 0 -4 2.8284 0 -2.8284 2.1213 0 -2.1213 0 0 -3
+4 16 2.8284 0 -2.8284 4 0 0 3 0 0 2.1213 0 -2.1213
+0 // Build by Primitive Generator 2
+0 FILE 8/4-4cyli.dat
+0 Cylinder 1.0
+0 Name: 8\4-4cyli.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+4 16 0.7071 0 0.7071 1 0 0 1 1 0 0.7071 1 0.7071
+4 16 0 0 1 0.7071 0 0.7071 0.7071 1 0.7071 0 1 1
+4 16 -0.7071 0 0.7071 0 0 1 0 1 1 -0.7071 1 0.7071
+4 16 -1 0 0 -0.7071 0 0.7071 -0.7071 1 0.7071 -1 1 0
+4 16 -0.7071 0 -0.7071 -1 0 0 -1 1 0 -0.7071 1 -0.7071
+4 16 0 0 -1 -0.7071 0 -0.7071 -0.7071 1 -0.7071 0 1 -1
+4 16 0.7071 0 -0.7071 0 0 -1 0 1 -1 0.7071 1 -0.7071
+4 16 1 0 0 0.7071 0 -0.7071 0.7071 1 -0.7071 1 1 0
+0 // conditional lines
+5 24 1 1 0 1 0 0 0.7071 1 -0.7071 0.7071 1 0.7071
+5 24 0.7071 1 0.7071 0.7071 0 0.7071 1 1 0 0 1 1
+5 24 0 1 1 0 0 1 0.7071 1 0.7071 -0.7071 1 0.7071
+5 24 -0.7071 1 0.7071 -0.7071 0 0.7071 0 1 1 -1 1 0
+5 24 -1 1 0 -1 0 0 -0.7071 1 0.7071 -0.7071 1 -0.7071
+5 24 -0.7071 1 -0.7071 -0.7071 0 -0.7071 -1 1 0 0 1 -1
+5 24 0 1 -1 0 0 -1 -0.7071 1 -0.7071 0.7071 1 -0.7071
+5 24 0.7071 1 -0.7071 0.7071 0 -0.7071 0 1 -1 1 1 0
+0 // Build by Primitive Generator 2
+0 FILE 8/4-4edge.dat
+0 Circle 1.0
+0 Name: 8\4-4edge.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+2 24 1 0 0 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0 0 1
+2 24 0 0 1 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -1 0 0
+2 24 -1 0 0 -0.7071 0 -0.7071
+2 24 -0.7071 0 -0.7071 0 0 -1
+2 24 0 0 -1 0.7071 0 -0.7071
+2 24 0.7071 0 -0.7071 1 0 0
+0 // Build by Primitive Generator 2
+0 FILE axl3ho10.dat
+0 Technic Axle Hole Semi-Reduced Tooth Surface
+0 Name: axl3ho10.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+
+
+4 16 -2.5 0 2.5 -2.791 0 5.213 -4.243 0 4.243 -5.213 0 2.791
+0 //
+4 16 2.5 0 -2.5 2.791 0 -5.213 4.243 0 -4.243 5.213 0 -2.791
+0 //
+4 16 -5.602 0 -2 -5.543 0 -2.296 -4.243 0 -4.243 -4 0 -2
+4 16 -4 0 -2 -4.243 0 -4.243 -2 0 -4 -2.5 0 -2.5
+4 16 -2.296 0 -5.543 -2 0 -5.602 -2 0 -4 -4.243 0 -4.243
+0 //
+4 16 5.602 0 2 5.543 0 2.296 4.243 0 4.243 4 0 2
+4 16 4 0 2 4.243 0 4.243 2 0 4 2.5 0 2.5
+4 16 2.296 0 5.543 2 0 5.602 2 0 4 4.243 0 4.243
+0 //
+0
+0 FILE axl3hol9.dat
+0 Technic Axle Hole Semi-Reduced Tooth Inner Edges
+0 Name: axl3hol9.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+
+
+2 24 -2.791 0 5.213 -2.5 0 2.5
+2 24 -2.5 0 2.5 -5.213 0 2.791
+2 24 2.791 0 -5.213 2.5 0 -2.5
+2 24 2.5 0 -2.5 5.213 0 -2.791
+2 24 -5.602 0 -2 -4 0 -2
+2 24 -4 0 -2 -2.5 0 -2.5
+2 24 -2.5 0 -2.5 -2 0 -4
+2 24 -2 0 -4 -2 0 -5.602
+2 24 5.602 0 2 4 0 2
+2 24 4 0 2 2.5 0 2.5
+2 24 2.5 0 2.5 2 0 4
+2 24 2 0 4 2 0 5.602
+0 //
+0
+0 FILE axl3hol2.dat
+0 Technic Axle Hole Semi-Reduced Side Edges
+0 Name: axl3hol2.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+
+
+2 24 0 0 6 -2.296 0 5.543
+2 24 -2.296 0 5.543 -2.791 0 5.213
+2 24 -5.213 0 2.791 -5.543 0 2.296
+2 24 -5.543 0 2.296 -6 0 0
+0 //
+2 24 0 0 -6 2.296 0 -5.543
+2 24 2.296 0 -5.543 2.791 0 -5.213
+2 24 5.213 0 -2.791 5.543 0 -2.296
+2 24 5.543 0 -2.296 6 0 0
+0 //
+2 24 0 0 -6 -2 0 -5.602
+2 24 -6 0 0 -5.602 0 -2
+0 //
+2 24 6 0 0 5.602 0 2
+2 24 0 0 6 2 0 5.602
+0 //
+0
+0 FILE axl3hol8.dat
+0 Technic Axle Hole Semi-Reduced Perimeter
+0 Name: axl3hol8.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+
+
+2 24 -2.791 1 5.213 -2.791 0 5.213
+2 24 -2.5 1 2.5 -2.5 0 2.5
+2 24 -5.213 1 2.791 -5.213 0 2.791
+5 24 0 1 6 0 0 6 -2.296 1 5.543 6 1 6
+5 24 -2.296 1 5.543 -2.296 0 5.543 -4.243 1 4.243 0 1 6
+5 24 -5.543 1 2.296 -5.543 0 2.296 -6 1 0 -4.243 1 4.243
+5 24 -6 1 0 -6 0 0 -5.543 1 2.296 -6 1 -6
+4 16 -2.5 1 2.5 -2.5 0 2.5 -5.213 0 2.791 -5.213 1 2.791
+4 16 -2.791 1 5.213 -2.791 0 5.213 -2.5 0 2.5 -2.5 1 2.5
+4 16 0 1 6 0 0 6 -2.296 0 5.543 -2.296 1 5.543
+4 16 -2.296 1 5.543 -2.296 0 5.543 -2.791 0 5.213 -2.791 1 5.213
+4 16 -5.213 1 2.791 -5.213 0 2.791 -5.543 0 2.296 -5.543 1 2.296
+4 16 -5.543 1 2.296 -5.543 0 2.296 -6 0 0 -6 1 0
+0 //
+2 24 2.791 1 -5.213 2.791 0 -5.213
+2 24 2.5 1 -2.5 2.5 0 -2.5
+2 24 5.213 1 -2.791 5.213 0 -2.791
+5 24 0 1 -6 0 0 -6 2.296 1 -5.543 -6 1 -6
+5 24 2.296 1 -5.543 2.296 0 -5.543 4.243 1 -4.243 0 1 -6
+5 24 5.543 1 -2.296 5.543 0 -2.296 6 1 0 4.243 1 -4.243
+5 24 6 1 0 6 0 0 5.543 1 -2.296 6 1 6
+4 16 2.5 1 -2.5 2.5 0 -2.5 5.213 0 -2.791 5.213 1 -2.791
+4 16 2.791 1 -5.213 2.791 0 -5.213 2.5 0 -2.5 2.5 1 -2.5
+4 16 0 1 -6 0 0 -6 2.296 0 -5.543 2.296 1 -5.543
+4 16 2.296 1 -5.543 2.296 0 -5.543 2.791 0 -5.213 2.791 1 -5.213
+4 16 5.213 1 -2.791 5.213 0 -2.791 5.543 0 -2.296 5.543 1 -2.296
+4 16 5.543 1 -2.296 5.543 0 -2.296 6 0 0 6 1 0
+0 //
+5 24 -6 1 0 -6 0 0 -6 1 6 -5.602 1 -2
+2 24 -5.602 1 -2 -5.602 0 -2
+5 24 -2.5 1 -2.5 -2.5 0 -2.5 -4 1 -2 -2 1 -4
+2 24 -2 1 -5.602 -2 0 -5.602
+5 24 0 1 -6 0 0 -6 -2 1 -5.602 6 1 -6
+4 16 -6 1 0 -6 0 0 -5.602 0 -2 -5.602 1 -2
+4 16 -5.602 1 -2 -5.602 0 -2 -4 0 -2 -4 1 -2
+4 16 -4 1 -2 -4 0 -2 -2.5 0 -2.5 -2.5 1 -2.5
+4 16 -2.5 1 -2.5 -2.5 0 -2.5 -2 0 -4 -2 1 -4
+4 16 -2 1 -4 -2 0 -4 -2 0 -5.602 -2 1 -5.602
+4 16 -2 0 -5.602 0 0 -6 0 1 -6 -2 1 -5.602
+0 //
+5 24 6 1 0 6 0 0 6 1 -6 5.602 1 2
+2 24 5.602 1 2 5.602 0 2
+5 24 2.5 1 2.5 2.5 0 2.5 4 1 2 2 1 4
+2 24 2 1 5.602 2 0 5.602
+5 24 0 1 6 0 0 6 2 1 5.602 -6 1 6
+4 16 6 1 0 6 0 0 5.602 0 2 5.602 1 2
+4 16 4 1 2 5.602 1 2 5.602 0 2 4 0 2
+4 16 4 1 2 4 0 2 2.5 0 2.5 2.5 1 2.5
+4 16 2.5 1 2.5 2.5 0 2.5 2 0 4 2 1 4
+4 16 2 1 4 2 0 4 2 0 5.602 2 1 5.602
+4 16 2 0 5.602 0 0 6 0 1 6 2 1 5.602
+0 //
+5 24 -4 0 -2 -4 1 -2 -5.602 1 -2 -2.5 0 -2.5
+5 24 -2 0 -4 -2 1 -4 -2.5 1 -2.5 -2 0 -5.602
+5 24 4 0 2 4 1 2 5.602 1 2 2.5 0 2.5
+5 24 2 0 4 2 1 4 2.5 1 2.5 2 0 5.602
+0
+0 FILE axl3hol3.dat
+0 Technic Axle Hole Semi-Reduced Tooth Outer Edges
+0 Name: axl3hol3.dat
+0 Author: Santeri Piippo [arezey]
+0 !LDRAW_ORG Primitive UPDATE 2011-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+
+
+2 24 5.602 0 2 5.5434 0 2.2962
+2 24 5.5434 0 2.2962 4.2426 0 4.2426
+2 24 4.2426 0 4.2426 2.2962 0 5.5434
+2 24 2 0 5.602 2.2962 0 5.5434
+2 24 -2.791 0 5.2127 -4.2426 0 4.2426
+2 24 -4.2426 0 4.2426 -5.2127 0 2.791
+2 24 -5.602 0 -2 -5.5434 0 -2.2962
+2 24 -5.5434 0 -2.2962 -4.2426 0 -4.2426
+2 24 -4.2426 0 -4.2426 -2.2962 0 -5.5434
+2 24 -2 0 -5.602 -2.2962 0 -5.5434
+2 24 2.791 0 -5.2127 4.2426 0 -4.2426
+2 24 4.2426 0 -4.2426 5.2127 0 -2.791
+0
+0 FILE stug-2x2.dat
+0 Stud Group  2 x  2
+0 Name: stug-2x2.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-05-04 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2011-07-01 [PTadmin] Renamed from stug2
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+1 16 -10 0 -10 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 10 0 -10 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 -10 0 10 1 0 0 0 1 0 0 0 1 stud.dat
+1 16 10 0 10 1 0 0 0 1 0 0 0 1 stud.dat
+0 FILE stud.dat
+0 Stud (Fast-Draw)
+0 Name: 8\stud.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-04 [sbliss] Modified for BFC compliance; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+0 !HISTORY 2013-12-23 [PTadmin] Official Update 2013-02
+0 !HISTORY 2016-01-04 [Philo] Used 8/primitives
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+1 16 0 0 0 6 0 0 0 1 0 0 0 6 8\4-4edge.dat
+1 16 0 -4 0 6 0 0 0 1 0 0 0 6 8\4-4edge.dat
+1 16 0 0 0 6 0 0 0 -4 0 0 0 6 8\4-4cyli.dat
+1 16 0 -4 0 6 0 0 0 1 0 0 0 6 8\4-4disc.dat
+0 FILE 8/4-4disc.dat
+0 Disc 1.0
+0 Name: 8\4-4disc.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+3 16 0 0 0 1 0 0 0.7071 0 0.7071
+3 16 0 0 0 0.7071 0 0.7071 0 0 1
+3 16 0 0 0 0 0 1 -0.7071 0 0.7071
+3 16 0 0 0 -0.7071 0 0.7071 -1 0 0
+3 16 0 0 0 -1 0 0 -0.7071 0 -0.7071
+3 16 0 0 0 -0.7071 0 -0.7071 0 0 -1
+3 16 0 0 0 0 0 -1 0.7071 0 -0.7071
+3 16 0 0 0 0.7071 0 -0.7071 1 0 0
+0 // Build by Primitive Generator 2
+0 FILE box4.dat
+0 Box with 4 Faces (2 Parallel Pairs) and All Edges
+0 Name: box4.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2012-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-03 [sbliss] Modified for BFC compliance
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+
+
+2 24 1 1 1 -1 1 1
+2 24 -1 1 1 -1 1 -1
+2 24 -1 1 -1 1 1 -1
+2 24 1 1 -1 1 1 1
+2 24 1 0 1 -1 0 1
+2 24 -1 0 1 -1 0 -1
+2 24 -1 0 -1 1 0 -1
+2 24 1 0 -1 1 0 1
+2 24 1 0 1 1 1 1
+2 24 -1 0 1 -1 1 1
+2 24 1 0 -1 1 1 -1
+2 24 -1 0 -1 -1 1 -1
+4 16 -1 1 1 -1 0 1 1 0 1 1 1 1
+4 16 -1 1 -1 -1 0 -1 -1 0 1 -1 1 1
+4 16 1 1 -1 1 0 -1 -1 0 -1 -1 1 -1
+4 16 1 1 1 1 0 1 1 0 -1 1 1 -1

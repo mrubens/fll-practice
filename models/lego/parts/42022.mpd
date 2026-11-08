@@ -1,0 +1,515 @@
+0 FILE 42022.ldr
+0 42022 (from the attachment builder parts, LDraw parts library CC BY 4.0)
+1 14 0 0 0 1 0 0 0 1 0 0 0 1 42022.dat
+0 FILE 42022.dat
+0 Slope Brick Curved  6 x  1
+0 Name: 42022.dat
+0 Author: Franklin W. Cain [fwcain]
+0 !LDRAW_ORG Part UPDATE 2026-10
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !CATEGORY Slope
+0 !KEYWORDS Alpha Team, Brickowl 782373, Racers, rounded
+
+0 !HISTORY 2004-04-22 [PTadmin] Official Update 2004-02
+0 !HISTORY 2004-09-15 [PTadmin] Official Update 2004-03
+0 !HISTORY 2007-07-08 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2008-07-07 [PTadmin] Renamed from 464
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2010-01-19 [Eldar] Add BFC
+0 !HISTORY 2010-07-05 [PTadmin] Official Update 2010-02
+0 !HISTORY 2021-10-04 [Holly-Wood] Unmirrored subfile
+0 !HISTORY 2022-07-18 [PTadmin] Official Update 2022-04
+0 !HISTORY 2026-10-18 [KnightOfTarenta] Adapted Curve to match 61678.dat
+0 !HISTORY 2026-10-26 [OrionP] Official Update 2026-10
+
+0 // Base Part
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 s\42022s01.dat
+
+0 // Patternable Surface
+1 16 10 149.254 -20 0 -20 0 -149.254 0 0 0 0 -159.993 48\1-12cyli.dat
+0 FILE p/48/1-12cyli.dat
+0 Hi-Res Cylinder 0.0833
+0 Name: 48\1-12cyli.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2024-01-08 [Holly-Wood] Complete regeneration, original by westrate
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+4 16 0.9914 0 0.1305 1 0 0 1 1 0 0.9914 1 0.1305
+4 16 0.9659 0 0.2588 0.9914 0 0.1305 0.9914 1 0.1305 0.9659 1 0.2588
+4 16 0.9239 0 0.3827 0.9659 0 0.2588 0.9659 1 0.2588 0.9239 1 0.3827
+4 16 0.866 0 0.5 0.9239 0 0.3827 0.9239 1 0.3827 0.866 1 0.5
+0 // conditional lines
+5 24 1 1 0 1 0 0 1 1 -0.1317 0.9914 1 0.1305
+5 24 0.9914 1 0.1305 0.9914 0 0.1305 1 1 0 0.9659 1 0.2588
+5 24 0.9659 1 0.2588 0.9659 0 0.2588 0.9914 1 0.1305 0.9239 1 0.3827
+5 24 0.9239 1 0.3827 0.9239 0 0.3827 0.9659 1 0.2588 0.866 1 0.5
+5 24 0.866 1 0.5 0.866 0 0.5 0.9239 1 0.3827 0.8002 1 0.614
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE parts/s/42022s01.dat
+0 ~Slope Brick Curved  6 x  1 without Top Surface
+0 Name: s\42022s01.dat
+0 Author: Franklin W. Cain [fwcain]
+0 !LDRAW_ORG Subpart UPDATE 2026-10
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-04-22 [PTadmin] Official Update 2004-02
+0 !HISTORY 2007-09-09 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-19 [Eldar] Add BFC
+0 !HISTORY 2010-07-05 [PTadmin] Official Update 2010-02
+0 !HISTORY 2021-10-04 [Holly-Wood] Primitive substitution, added underside ribs
+0 !HISTORY 2022-07-18 [PTadmin] Official Update 2022-04
+0 !HISTORY 2022-07-18 [KnightOfTarenta] Adapted Curve to match 61678.dat
+0 !HISTORY 2026-10-26 [OrionP] Official Update 2026-10
+
+0 // Top Studs
+1 16 0 0 -10 0 0 1 0 1 0 -1 0 0 stud.dat
+1 16 0 0 10 0 0 1 0 1 0 -1 0 0 stud.dat
+
+0 // Outer Surface
+1 16 0 12 0 10 0 0 0 -12 0 0 0 20 box2-7.dat
+1 16 0 22 -100 10 0 0 0 0 -2 0 1 0 rect.dat
+1 16 -10 149.254 -20 0 1 0 -149.254 0 0 0 0 -159.993 48\1-12edge.dat
+1 16 -10 149.254 -20 0 1 0 -149.254 0 0 0 0 -159.993 48\1-12chrd.dat
+3 16 -10 24 20 -10 0 -20 -10 0 20
+4 16 -10 24 20 -10 24 -100 -10 20 -100 -10 0 -20
+1 16 10 149.254 -20 0 -1 0 -149.254 0 0 0 0 -159.993 48\1-12edge.dat
+1 16 10 149.254 -20 0 -1 0 -149.254 0 0 0 0 -159.993 48\1-12chrd.dat
+3 16 10 24 20 10 0 20 10 0 -20
+4 16 10 0 -20 10 20 -100 10 24 -100 10 24 20
+
+0 // Flat Bottom
+4 16 10 24 20 6 24 16 -6 24 16 -10 24 20
+4 16 -10 24 -100 -10 24 20 -6 24 16 -6 24 -96
+4 16 10 24 20 10 24 -100 6 24 -96 6 24 16
+4 16 -10 24 -100 -6 24 -96 6 24 -96 10 24 -100
+2 24 -10 24 20 10 24 20
+2 24 10 24 20 10 24 -100
+2 24 -10 24 -100 -10 24 20
+2 24 6 24 16 6 24 -96
+2 24 -6 24 16 -6 24 -96
+
+0 // Inner Structure
+0 // Back Chamber
+0 BFC INVERTNEXT
+1 16 0 14 -1.5 6 0 0 0 -10 0 0 0 17.5 box2-5.dat
+3 16 6 20 -61 6 24 -96 6 20 -92
+3 16 6 20 -92 6 24 -96 6 20 -96
+4 16 6 24 16 6 20 -19 6 4 -19 6 4 16
+4 16 6 20 -19 6 24 16 6 24 -96 6 20 -61
+3 16 -6 24 -96 -6 20 -61 -6 20 -92
+3 16 -6 24 -96 -6 20 -92 -6 20 -96
+4 16 -6 4 -19 -6 20 -19 -6 24 16 -6 4 16
+4 16 -6 24 -96 -6 24 16 -6 20 -19 -6 20 -61
+
+0 // Divider Back
+4 16 -6 4 -19 6 4 -19 6 20 -19 -6 20 -19
+4 16 -6 20 -19 6 20 -19 6 20 -21 -6 20 -21
+4 16 -6 20 -21 6 20 -21 6 4 -21 -6 4 -21
+2 24 -6 4 -19 -6 20 -19
+2 24 6 4 -19 6 20 -19
+2 24 -6 20 -19 -6 20 -21
+2 24 6 20 -19 6 20 -21
+2 24 -6 4 -21 -6 20 -21
+2 24 6 4 -21 6 20 -21
+2 24 -6 20 -19 6 20 -19
+2 24 -6 4 -21 6 4 -21
+2 24 -6 20 -21 6 20 -21
+
+0 // Center Chamber
+4 16 -6 10 -59 -6 20 -59 -6 20 -21 -6 4 -21
+4 16 6 4 -21 6 20 -21 6 20 -59 6 10 -59
+4 16 -6 4 -21 6 4 -21 6 10 -59 -6 10 -59
+2 24 -6 4 -21 -6 10 -59
+2 24 6 4 -21 6 10 -59
+
+0 // Divider Front
+4 16 -6 10 -59 6 10 -59 6 20 -59 -6 20 -59
+4 16 -6 20 -59 6 20 -59 6 20 -61 -6 20 -61
+4 16 -6 20 -61 6 20 -61 6 10 -61 -6 10 -61
+2 24 -6 10 -59 -6 20 -59
+2 24 6 10 -59 6 20 -59
+2 24 -6 20 -59 -6 20 -61
+2 24 6 20 -59 6 20 -61
+2 24 -6 10 -61 -6 20 -61
+2 24 6 10 -61 6 20 -61
+2 24 -6 10 -59 6 10 -59
+2 24 -6 20 -59 6 20 -59
+2 24 -6 10 -61 6 10 -61
+2 24 -6 20 -61 6 20 -61
+
+0 // Front Chamber
+3 16 -6 20 -92 -6 20 -61 -6 10 -61
+3 16 6 10 -61 6 20 -61 6 20 -92
+4 16 -6 10 -61 6 10 -61 6 20 -92 -6 20 -92
+2 24 -6 10 -61 -6 20 -92
+2 24 6 10 -61 6 20 -92
+0 BFC INVERTNEXT
+1 16 0 22 -94 6 0 0 0 0 -2 0 -2 0 box2-5.dat
+
+0 // Ridges Back
+1 16 6 23.9 5 0 0 -1 0 19.9 0 1 0 0 ridge.dat
+1 16 6 23.9 -5 0 0 -1 0 19.9 0 1 0 0 ridge.dat
+1 16 6 23.9 -15 0 0 -1 0 19.9 0 1 0 0 ridge.dat
+1 16 -6 23.9 5 0 0 1 0 19.9 0 1 0 0 ridge.dat
+1 16 -6 23.9 -5 0 0 1 0 19.9 0 1 0 0 ridge.dat
+1 16 -6 23.9 -15 0 0 1 0 19.9 0 1 0 0 ridge.dat
+
+0 // Ridges Center
+1 16 6 4.8684 -25 0 0 -1 0 .4737 0 1 0 0 ridges.dat
+1 16 6 23.9 -25 0 0 -1 0 19.0316 0 1 0 0 ridgea.dat
+1 16 6 6.4474 -35 0 0 -1 0 .4737 0 1 0 0 ridges.dat
+1 16 6 23.9 -35 0 0 -1 0 17.4526 0 1 0 0 ridgea.dat
+1 16 6 8.0263 -45 0 0 -1 0 .4737 0 1 0 0 ridges.dat
+1 16 6 23.9 -45 0 0 -1 0 15.8737 0 1 0 0 ridgea.dat
+1 16 6 9.6053 -55 0 0 -1 0 .4737 0 1 0 0 ridges.dat
+1 16 6 23.9 -55 0 0 -1 0 14.2947 0 1 0 0 ridgea.dat
+1 16 -6 4.8684 -25 0 0 1 0 .4737 0 1 0 0 ridges.dat
+1 16 -6 23.9 -25 0 0 1 0 19.0316 0 1 0 0 ridgea.dat
+1 16 -6 6.4474 -35 0 0 1 0 .4737 0 1 0 0 ridges.dat
+1 16 -6 23.9 -35 0 0 1 0 17.4526 0 1 0 0 ridgea.dat
+1 16 -6 8.0263 -45 0 0 1 0 .4737 0 1 0 0 ridges.dat
+1 16 -6 23.9 -45 0 0 1 0 15.8737 0 1 0 0 ridgea.dat
+1 16 -6 9.6053 -55 0 0 1 0 .4737 0 1 0 0 ridges.dat
+1 16 -6 23.9 -55 0 0 1 0 14.2947 0 1 0 0 ridgea.dat
+
+0 // Ridges Front
+1 16 6 11.7742 -65 0 0 -1 0 .9677 0 1 0 0 ridges.dat
+1 16 6 23.9 -65 0 0 -1 0 12.1258 0 1 0 0 ridgea.dat
+1 16 6 15 -75 0 0 -1 0 .9677 0 1 0 0 ridges.dat
+1 16 6 23.9 -75 0 0 -1 0 8.9 0 1 0 0 ridgea.dat
+1 16 6 18.2258 -85 0 0 -1 0 .9677 0 1 0 0 ridges.dat
+1 16 6 23.9 -85 0 0 -1 0 5.6742 0 1 0 0 ridgea.dat
+1 16 -6 11.7742 -65 0 0 1 0 .9677 0 1 0 0 ridges.dat
+1 16 -6 23.9 -65 0 0 1 0 12.1258 0 1 0 0 ridgea.dat
+1 16 -6 15 -75 0 0 1 0 .9677 0 1 0 0 ridges.dat
+1 16 -6 23.9 -75 0 0 1 0 8.9 0 1 0 0 ridgea.dat
+1 16 -6 18.2258 -85 0 0 1 0 .9677 0 1 0 0 ridges.dat
+1 16 -6 23.9 -85 0 0 1 0 5.6742 0 1 0 0 ridgea.dat
+0 FILE ridgea.dat
+0 Underside Stud Holder Ridge without Base Edges
+0 Name: ridgea.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2023-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2023-06-24 [OrionP] Official Update 2023-03
+
+
+1 16 0 -1 .5 0 0 1.5 0 1 0 -.5 0 0 box3u6a.dat
+3 16 -1.5 0 1 0 0 2.5 1.5 0 1
+1 16 0 -.5 1 0 -.75 .75 .5 0 0 0 .75 .75 box2-9.dat
+2 24 1.5 0 0 -1.5 0 0
+0 FILE box2-9.dat
+0 Box with 2 Faces without 9 Edges
+0 Name: box2-9.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+2 24 1 1 1 -1 1 1
+2 24 1 -1 1 1 1 1
+2 24 1 1 -1 1 1 1
+4 16 1 1 1 1 1 -1 -1 1 -1 -1 1 1
+4 16 1 1 1 -1 1 1 -1 -1 1 1 -1 1
+0
+0 FILE box3u6a.dat
+0 Box with 3 Faces without 4 Adjacent and 2 Parallel Edges
+0 Name: box3u6a.dat
+0 Author: Massimo Maso [Sirio]
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-03-06 [PTadmin] Official Update 2022-02
+
+
+2 24 1 1 1 -1 1 1
+2 24 -1 1 -1 1 1 -1
+2 24 1 0 -1 1 1 -1
+2 24 1 0 1 1 1 1
+2 24 -1 0 -1 -1 1 -1
+2 24 -1 0 1 -1 1 1
+4 16 1 1 -1 -1 1 -1 -1 1 1 1 1 1
+4 16 -1 1 1 -1 0 1 1 0 1 1 1 1
+4 16 1 1 -1 1 0 -1 -1 0 -1 -1 1 -1
+0 FILE ridges.dat
+0 Underside Stud Holder Ridge Slope
+0 Name: ridges.dat
+0 Author: Vincent Messenet [Cheenzo]
+0 !LDRAW_ORG Primitive UPDATE 2023-06
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2023-11-19 [OrionP] Official Update 2023-06
+
+4 16 1.5 0 1 1.5 -1 1 1.5 -1 0 1.5 0 0
+4 16 0 -.5 2.5 1.5 -1 1 1.5 0 1 0 0 2.5
+3 16 0 -.5 2.5 0 0 2.5 -1.5 0 1
+2 24 1.5 -1 0 1.5 -1 1
+2 24 1.5 -1 1 0 -.5 2.5
+2 24 0 -.5 2.5 -1.5 0 1
+2 24 -1.5 0 1 -1.5 0 0
+2 24 1.5 0 1 1.5 -1 1
+2 24 1.5 0 0 1.5 -1 0
+2 24 0 -.5 2.5 0 0 2.5
+0 FILE ridge.dat
+0 Underside Stud Holder Ridge
+0 Name: ridge.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2023-06
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2023-11-19 [OrionP] Official Update 2023-06
+
+
+1 16 0 -1 .5 0 0 1.5 0 1 0 -.5 0 0 box3u6.dat
+3 16 -1.5 0 1 0 0 2.5 1.5 0 1
+1 16 0 -.5 1 0 -.75 .75 .5 0 0 0 .75 .75 box2-5.dat
+2 24 1.5 0 0 -1.5 0 0
+0 FILE box2-5.dat
+0 Box with 2 Faces without 5 Edges
+0 Name: box2-5.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2003-03
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2003-12-19 [PTadmin] Official Update 2003-03
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+2 24 1 1 1 -1 1 1
+2 24 1 1 -1 -1 1 -1
+2 24 1 -1 1 -1 -1 1
+2 24 -1 -1 1 -1 1 1
+2 24 1 -1 1 1 1 1
+2 24 -1 1 -1 -1 1 1
+2 24 1 1 -1 1 1 1
+4 16 1 1 1 1 1 -1 -1 1 -1 -1 1 1
+4 16 1 1 1 -1 1 1 -1 -1 1 1 -1 1
+0
+0 FILE box3u6.dat
+0 Box with  3 Faces without  6 Edges
+0 Name: box3u6.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2011-07-25 [PTadmin] Official Update 2011-01
+0 !HISTORY 2024-01-04 [Holly-Wood] Complete re-write, original by WilliamH
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+2 24 -1 1 1 1 1 1
+2 24 1 1 -1 -1 1 -1
+4 16 1 1 -1 -1 1 -1 -1 1 1 1 1 1
+
+2 24 1 0 1 1 1 1
+2 24 -1 0 1 1 0 1
+4 16 1 1 1 -1 1 1 -1 0 1 1 0 1
+
+2 24 1 0 -1 1 1 -1
+2 24 1 0 -1 -1 0 -1
+4 16 -1 1 -1 1 1 -1 1 0 -1 -1 0 -1
+0 FILE p/48/1-12chrd.dat
+0 Hi-Res Chord 0.0833
+0 Name: 48\1-12chrd.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2024-01-09 [Holly-Wood] Complete re-write, original by westrate
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+4 16 .866 0 .5 1 0 0 .9914 0 .1305 .9239 0 .3827
+3 16 .9239 0 .3827 .9914 0 .1305 .9659 0 .2588
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE p/48/1-12edge.dat
+0 Hi-Res Circle 0.0833
+0 Name: 48\1-12edge.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG 48_Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2024-01-07 [Holly-Wood] Complete regeneration, original by westrate
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+2 24 1 0 0 0.9914 0 0.1305
+2 24 0.9914 0 0.1305 0.9659 0 0.2588
+2 24 0.9659 0 0.2588 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.866 0 0.5
+0 // Build by LDPartEditor (PrimGen 2.X)
+0 FILE rect.dat
+0 Rectangle
+0 Name: rect.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2010-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-05 [hafhead] Added BFC statement
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2010-01-17 [mikeheide] changed winding to CCW
+0 !HISTORY 2010-04-05 [PTadmin] Official Update 2010-01
+
+
+2 24 1 0 1 -1 0 1
+2 24 -1 0 1 -1 0 -1
+2 24 -1 0 -1 1 0 -1
+2 24 1 0 -1 1 0 1
+4 16 -1 0 1 -1 0 -1 1 0 -1 1 0 1
+0
+0 FILE box2-7.dat
+0 Box with  2 Faces without  7 Edges
+0 Name: box2-7.dat
+0 Author: Willy Tschager [Holly-Wood]
+0 !LDRAW_ORG Primitive UPDATE 2024-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-05-02 [PTadmin] Official Update 2009-01
+0 !HISTORY 2024-01-02 [Holly-Wood] Complete re-write, original by guyvivan
+0 !HISTORY 2024-01-29 [OrionP] Official Update 2024-01
+
+2 24 -1 1 -1 -1 1 1
+2 24 1 1 1 1 1 -1
+4 16 -1 1 1 1 1 1 1 1 -1 -1 1 -1
+
+2 24 -1 1 1 -1 -1 1
+2 24 1 1 1 1 -1 1
+4 16 1 -1 1 1 1 1 -1 1 1 -1 -1 1
+
+2 24 -1 1 1 1 1 1
+0 FILE stud.dat
+0 Stud (Fast-Draw)
+0 Name: 8\stud.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-04 [sbliss] Modified for BFC compliance; compacted code
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2012-02-16 [Philo] Changed to CCW
+0 !HISTORY 2012-03-30 [PTadmin] Official Update 2012-01
+0 !HISTORY 2013-12-23 [PTadmin] Official Update 2013-02
+0 !HISTORY 2016-01-04 [Philo] Used 8/primitives
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+1 16 0 0 0 6 0 0 0 1 0 0 0 6 8\4-4edge.dat
+1 16 0 -4 0 6 0 0 0 1 0 0 0 6 8\4-4edge.dat
+1 16 0 0 0 6 0 0 0 -4 0 0 0 6 8\4-4cyli.dat
+1 16 0 -4 0 6 0 0 0 1 0 0 0 6 8\4-4disc.dat
+0 FILE 8/4-4disc.dat
+0 Disc 1.0
+0 Name: 8\4-4disc.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+3 16 0 0 0 1 0 0 0.7071 0 0.7071
+3 16 0 0 0 0.7071 0 0.7071 0 0 1
+3 16 0 0 0 0 0 1 -0.7071 0 0.7071
+3 16 0 0 0 -0.7071 0 0.7071 -1 0 0
+3 16 0 0 0 -1 0 0 -0.7071 0 -0.7071
+3 16 0 0 0 -0.7071 0 -0.7071 0 0 -1
+3 16 0 0 0 0 0 -1 0.7071 0 -0.7071
+3 16 0 0 0 0.7071 0 -0.7071 1 0 0
+0 // Build by Primitive Generator 2
+0 FILE 8/4-4cyli.dat
+0 Cylinder 1.0
+0 Name: 8\4-4cyli.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+4 16 0.7071 0 0.7071 1 0 0 1 1 0 0.7071 1 0.7071
+4 16 0 0 1 0.7071 0 0.7071 0.7071 1 0.7071 0 1 1
+4 16 -0.7071 0 0.7071 0 0 1 0 1 1 -0.7071 1 0.7071
+4 16 -1 0 0 -0.7071 0 0.7071 -0.7071 1 0.7071 -1 1 0
+4 16 -0.7071 0 -0.7071 -1 0 0 -1 1 0 -0.7071 1 -0.7071
+4 16 0 0 -1 -0.7071 0 -0.7071 -0.7071 1 -0.7071 0 1 -1
+4 16 0.7071 0 -0.7071 0 0 -1 0 1 -1 0.7071 1 -0.7071
+4 16 1 0 0 0.7071 0 -0.7071 0.7071 1 -0.7071 1 1 0
+0 // conditional lines
+5 24 1 1 0 1 0 0 0.7071 1 -0.7071 0.7071 1 0.7071
+5 24 0.7071 1 0.7071 0.7071 0 0.7071 1 1 0 0 1 1
+5 24 0 1 1 0 0 1 0.7071 1 0.7071 -0.7071 1 0.7071
+5 24 -0.7071 1 0.7071 -0.7071 0 0.7071 0 1 1 -1 1 0
+5 24 -1 1 0 -1 0 0 -0.7071 1 0.7071 -0.7071 1 -0.7071
+5 24 -0.7071 1 -0.7071 -0.7071 0 -0.7071 -1 1 0 0 1 -1
+5 24 0 1 -1 0 0 -1 -0.7071 1 -0.7071 0.7071 1 -0.7071
+5 24 0.7071 1 -0.7071 0.7071 0 -0.7071 0 1 -1 1 1 0
+0 // Build by Primitive Generator 2
+0 FILE 8/4-4edge.dat
+0 Circle 1.0
+0 Name: 8\4-4edge.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+2 24 1 0 0 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0 0 1
+2 24 0 0 1 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -1 0 0
+2 24 -1 0 0 -0.7071 0 -0.7071
+2 24 -0.7071 0 -0.7071 0 0 -1
+2 24 0 0 -1 0.7071 0 -0.7071
+2 24 0.7071 0 -0.7071 1 0 0
+0 // Build by Primitive Generator 2

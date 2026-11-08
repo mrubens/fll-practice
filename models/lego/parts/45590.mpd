@@ -1,0 +1,458 @@
+0 FILE 45590.ldr
+0 45590 (from the attachment builder parts, LDraw parts library CC BY 4.0)
+1 0 0 0 0 1 0 0 0 1 0 0 0 1 45590.dat
+0 FILE 45590.dat
+0 Technic Axle Joiner Double Flexible
+0 Name: 45590.dat
+0 Author: Guy Vivan [guyvivan]
+0 !LDRAW_ORG Part UPDATE 2009-02
+0 !LICENSE Licensed under CC BY 2.0 and CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2009-09-03 [PTadmin] Official Update 2009-02
+
+
+1 16 0 0 -10 1 0 0 0 0 -1 0 20 0 axlehole.dat
+1 16 20 0 -10 1 0 0 0 0 -1 0 20 0 axlehole.dat
+1 16 20 0 -10 1 0 0 0 0 -1 0 20 0 axlehol2.dat
+1 16 0 0 -10 1 0 0 0 0 -1 0 20 0 axlehol2.dat
+1 16 20 0 10 1 0 0 0 0 -1 0 20 0 axlehol2.dat
+1 16 0 0 10 1 0 0 0 0 -1 0 20 0 axlehol2.dat
+1 16 0 0 10 3 0 0 0 0 -3 0 -1 0 4-4ring2.dat
+1 16 0 0 -10 3 0 0 0 0 -3 0 1 0 4-4ring2.dat
+1 16 20 0 10 3 0 0 0 0 -3 0 -1 0 4-4ring2.dat
+1 16 20 0 -10 3 0 0 0 0 -3 0 1 0 4-4ring2.dat
+1 16 0 0 -10 3.44415 0 -8.31492 -8.31492 0 -3.44415 0 1 0 5-8edge.dat
+1 16 20 0 -10 -3.44415 0 8.31492 -8.31492 0 -3.44415 0 1 0 5-8edge.dat
+1 16 10 14.679 -10 -3.44415 0 8.31492 -8.31492 0 -3.44415 0 1 0 1-8edge.dat
+1 16 0 0 -10 3.44415 0 -8.31492 -8.31492 0 -3.44415 0 20 0 5-8cyli.dat
+1 16 20 0 -10 -3.44415 0 8.31492 8.31492 0 3.44415 0 20 0 5-8cyli.dat
+2 24 13.4443 6.3639 -10 16.5557 8.3151 -10
+2 24 6.5557 6.3639 -10 3.4443 8.3151 -10
+2 24 6.5557 -6.3639 -10 3.4443 -8.3151 -10
+2 24 13.4443 -6.3639 -10 16.5557 -8.3151 -10
+2 24 13.4443 6.3639 10 16.5557 8.3151 10
+2 24 6.5557 6.3639 10 3.4443 8.3151 10
+2 24 6.5557 -6.3639 10 3.4443 -8.3151 10
+2 24 13.4443 -6.3639 10 16.5557 -8.3151 10
+4 16 13.4443 6.3639 10 16.5557 8.3151 10 16.5557 8.3151 -10 13.4443 6.3639 -10
+4 16 6.5557 6.3639 -10 3.4443 8.3151 -10 3.4443 8.3151 10 6.5557 6.3639 10
+4 16 6.5557 -6.3639 10 3.4443 -8.3151 10 3.4443 -8.3151 -10 6.5557 -6.3639 -10
+4 16 13.4443 -6.3639 -10 16.5557 -8.3151 -10 16.5557 -8.3151 10 13.4443 -6.3639 10
+1 16 10 -14.679 -10 3.44415 0 -8.31492 8.31492 0 3.44415 0 1 0 1-8edge.dat
+1 16 0 0 10 3.44415 0 -8.31492 -8.31492 0 -3.44415 0 1 0 5-8edge.dat
+1 16 20 0 10 -3.44415 0 8.31492 -8.31492 0 -3.44415 0 1 0 5-8edge.dat
+1 16 10 14.679 10 -3.44415 0 8.31492 -8.31492 0 -3.44415 0 1 0 1-8edge.dat
+1 16 10 -14.679 10 3.44415 0 -8.31492 8.31492 0 3.44415 0 1 0 1-8edge.dat
+0 BFC INVERTNEXT
+1 16 10 -14.679 -10 3.44415 0 -8.31492 8.31492 0 3.44415 0 20 0 1-8cyli.dat
+0 BFC INVERTNEXT
+1 16 10 14.679 -10 -3.44415 0 8.31492 -8.31492 0 -3.44415 0 20 0 1-8cyli.dat
+4 16 11 0 -10 9 0 -10 8.3151 3.4443 -10 11.6849 3.4443 -10
+4 16 11.6849 -3.4443 -10 8.3151 -3.4443 -10 9 0 -10 11 0 -10
+4 16 9 0 10 11 0 10 11.6849 3.4443 10 8.3151 3.4443 10
+4 16 8.3151 -3.4443 10 11.6849 -3.4443 10 11 0 10 9 0 10
+3 16 11.6849 3.4443 -10 8.3151 3.4443 -10 10 5.679 -10
+3 16 10 -5.679 -10 8.3151 -3.4443 -10 11.6849 -3.4443 -10
+3 16 8.3151 3.4443 10 11.6849 3.4443 10 10 5.679 10
+3 16 10 -5.679 10 11.6849 -3.4443 10 8.3151 -3.4443 10
+3 16 13.4443 6.3639 -10 11.6849 3.4443 -10 10 5.679 -10
+3 16 10 5.679 -10 8.3151 3.4443 -10 6.5557 6.3639 -10
+3 16 13.4443 -6.3639 10 11.6849 -3.4443 10 10 -5.679 10
+3 16 10 -5.679 10 8.3151 -3.4443 10 6.5557 -6.3639 10
+3 16 6.5557 6.3639 10 8.3151 3.4443 10 10 5.679 10
+3 16 10 5.679 10 11.6849 3.4443 10 13.4443 6.3639 10
+3 16 6.5557 -6.3639 -10 8.3151 -3.4443 -10 10 -5.679 -10
+3 16 10 -5.679 -10 11.6849 -3.4443 -10 13.4443 -6.3639 -10
+3 16 11.6849 3.4443 -10 13.4443 6.3639 -10 13.637 6.363 -10
+3 16 6.363 6.363 -10 6.5557 6.3639 -10 8.3151 3.4443 -10
+3 16 8.3151 -3.4443 -10 6.5557 -6.3639 -10 6.363 -6.363 -10
+3 16 13.637 -6.363 -10 13.4443 -6.3639 -10 11.6849 -3.4443 -10
+3 16 8.3151 3.4443 10 6.5557 6.3639 10 6.363 6.363 10
+3 16 13.637 6.363 10 13.4443 6.3639 10 11.6849 3.4443 10
+3 16 11.6849 -3.4443 10 13.4443 -6.3639 10 13.637 -6.363 10
+3 16 6.363 -6.363 10 6.5557 -6.3639 10 8.3151 -3.4443 10
+3 16 13.637 6.363 -10 13.4443 6.3639 -10 16.5557 8.3151 -10
+3 16 3.4443 8.3151 -10 6.5557 6.3639 -10 6.363 6.363 -10
+3 16 6.363 -6.363 -10 6.5557 -6.3639 -10 3.4443 -8.3151 -10
+3 16 16.5557 -8.3151 -10 13.4443 -6.3639 -10 13.637 -6.363 -10
+3 16 6.363 6.363 10 6.5557 6.3639 10 3.4443 8.3151 10
+3 16 16.5557 8.3151 10 13.4443 6.3639 10 13.637 6.363 10
+3 16 13.637 -6.363 10 13.4443 -6.3639 10 16.5557 -8.3151 10
+3 16 3.4443 -8.3151 10 6.5557 -6.3639 10 6.363 -6.363 10
+0
+0 FILE 1-8cyli.dat
+0 Cylinder 0.125
+0 Name: 1-8cyli.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-04-25 [PTadmin] Official Update 2002-02
+0 !HISTORY 2004-12-11 [nielsk] Recreated using Primitive Generator, Edge lines fixed, BFC changed to CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 .9239 1 .3827 .9239 0 .3827 1 0 0 1 1 0
+4 16 .7071 1 .7071 .7071 0 .7071 .9239 0 .3827 .9239 1 .3827
+5 24 1 1 0 1 0 0 1 1 -.4142 .9239 1 .3827
+5 24 .9239 1 .3827 .9239 0 .3827 1 1 0 .7071 1 .7071
+5 24 .7071 1 .7071 .7071 0 .7071 .9239 1 .3827 .4142 1 1
+0
+0 FILE 1-8edge.dat
+0 Circle 0.125
+0 Name: 1-8edge.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+0 FILE 5-8edge.dat
+0 Circle 0.625
+0 Name: 5-8edge.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2017-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-04-22 [PTadmin] Official Update 2004-02
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2017-01-15 [Steffen] BFCed
+0 !HISTORY 2017-12-30 [PTadmin] Official Update 2017-01
+
+
+2 24 1 0 0 0.9239 0 0.3827
+2 24 0.9239 0 0.3827 0.7071 0 0.7071
+2 24 0.7071 0 0.7071 0.3827 0 0.9239
+2 24 0.3827 0 0.9239 0 0 1
+2 24 0 0 1 -0.3827 0 0.9239
+2 24 -0.3827 0 0.9239 -0.7071 0 0.7071
+2 24 -0.7071 0 0.7071 -0.9239 0 0.3827
+2 24 -0.9239 0 0.3827 -1 0 0
+2 24 -1 0 0 -0.9239 0 -0.3827
+2 24 -0.9239 0 -0.3827 -0.7071 0 -0.7071
+0 FILE 5-8cyli.dat
+0 Cylinder 0.625
+0 Name: 5-8cyli.dat
+0 Author: Mark Kennedy [mkennedy]
+0 !LDRAW_ORG Primitive UPDATE 2005-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-04-22 [PTadmin] Official Update 2004-02
+0 !HISTORY 2004-12-11 [nielsk] Recreated using Primitive Generator, Edge lines fixed, BFC changed to CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+
+
+4 16 .9239 1 .3827 .9239 0 .3827 1 0 0 1 1 0
+4 16 .7071 1 .7071 .7071 0 .7071 .9239 0 .3827 .9239 1 .3827
+4 16 .3827 1 .9239 .3827 0 .9239 .7071 0 .7071 .7071 1 .7071
+4 16 0 1 1 0 0 1 .3827 0 .9239 .3827 1 .9239
+4 16 -.3827 1 .9239 -.3827 0 .9239 0 0 1 0 1 1
+4 16 -.7071 1 .7071 -.7071 0 .7071 -.3827 0 .9239 -.3827 1 .9239
+4 16 -.9239 1 .3827 -.9239 0 .3827 -.7071 0 .7071 -.7071 1 .7071
+4 16 -1 1 0 -1 0 0 -.9239 0 .3827 -.9239 1 .3827
+4 16 -.9239 1 -.3827 -.9239 0 -.3827 -1 0 0 -1 1 0
+4 16 -.7071 1 -.7071 -.7071 0 -.7071 -.9239 0 -.3827 -.9239 1 -.3827
+0
+5 24 1 1 0 1 0 0 1 1 -.4142 .9239 1 .3827
+5 24 .9239 1 .3827 .9239 0 .3827 1 1 0 .7071 1 .7071
+5 24 .7071 1 .7071 .7071 0 .7071 .9239 1 .3827 .3827 1 .9239
+5 24 .3827 1 .9239 .3827 0 .9239 .7071 1 .7071 0 1 1
+5 24 0 1 1 0 0 1 .3827 1 .9239 -.3827 1 .9239
+5 24 -.3827 1 .9239 -.3827 0 .9239 0 1 1 -.7071 1 .7071
+5 24 -.7071 1 .7071 -.7071 0 .7071 -.3827 1 .9239 -.9239 1 .3827
+5 24 -.9239 1 .3827 -.9239 0 .3827 -.7071 1 .7071 -1 1 0
+5 24 -1 1 0 -1 0 0 -.9239 1 .3827 -.9239 1 -.3827
+5 24 -.9239 1 -.3827 -.9239 0 -.3827 -1 1 0 -.7071 1 -.7071
+5 24 -.7071 1 -.7071 -.7071 0 -.7071 -.9239 1 -.3827 -.4142 1 -1
+0
+0 FILE 4-4ring2.dat
+0 Ring  2 x 1.0
+0 Name: 8\4-4ring2.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG 8_Primitive UPDATE 2016-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2016-12-31 [PTadmin] Official Update 2016-01
+
+
+4 16 3 0 0 2.1213 0 2.1213 1.4142 0 1.4142 2 0 0
+4 16 2.1213 0 2.1213 0 0 3 0 0 2 1.4142 0 1.4142
+4 16 0 0 3 -2.1213 0 2.1213 -1.4142 0 1.4142 0 0 2
+4 16 -2.1213 0 2.1213 -3 0 0 -2 0 0 -1.4142 0 1.4142
+4 16 -3 0 0 -2.1213 0 -2.1213 -1.4142 0 -1.4142 -2 0 0
+4 16 -2.1213 0 -2.1213 0 0 -3 0 0 -2 -1.4142 0 -1.4142
+4 16 0 0 -3 2.1213 0 -2.1213 1.4142 0 -1.4142 0 0 -2
+4 16 2.1213 0 -2.1213 3 0 0 2 0 0 1.4142 0 -1.4142
+0 // Build by Primitive Generator 2
+0 FILE axlehol2.dat
+0 Technic Axle Hole Side Edges
+0 Name: axlehol2.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2002-11-08 [OrionP] Adjusted fit and precision
+0 !HISTORY 2003-03-12 [PTadmin] Official Update 2003-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2021-12-24 [MagFors] rounded to four decimals
+0 !HISTORY 2022-03-06 [PTadmin] Official Update 2022-02
+
+
+2 24 6 0 0 5.6023 0 2
+2 24 2 0 5.6023 0 0 6
+2 24 -6 0 0 -5.6023 0 2
+2 24 -2 0 5.6023 0 0 6
+2 24 6 0 0 5.6023 0 -2
+2 24 2 0 -5.6023 0 0 -6
+2 24 -6 0 0 -5.6023 0 -2
+2 24 -2 0 -5.6023 0 0 -6
+0 FILE axlehole.dat
+0 Technic Axle Hole Closed
+0 Name: axlehole.dat
+0 Author: James Jessiman
+0 !LDRAW_ORG Primitive UPDATE 2022-02
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2000-04-23 [sbliss] Added conditional edges along outermost diameters
+0 !HISTORY 2000-05-07 [PTadmin] Official Update 2000-01
+0 !HISTORY 2002-05-08 [OrionP] Made BFC compliant
+0 !HISTORY 2002-08-18 [PTadmin] Official Update 2002-04
+0 !HISTORY 2002-11-08 [OrionP] Adjusted fit and precision
+0 !HISTORY 2003-03-12 [PTadmin] Official Update 2003-01
+0 !HISTORY 2005-05-15 [guyvivan] Use 1-8chrd.dat primitive and made BFC'ed CCW
+0 !HISTORY 2005-12-28 [PTadmin] Official Update 2005-01
+0 !HISTORY 2007-06-24 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2021-03-25 [Sirio] Added adapter rings and rounded to four decimals
+0 !HISTORY 2021-12-20 [MagFors] Reshaped the hole
+0 !HISTORY 2022-03-06 [PTadmin] Official Update 2022-02
+
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl5hol9.dat
+1 16 0 1 0 1 0 0 0 1 0 0 0 1 axl5hol9.dat
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl5ho10.dat
+1 16 0 1 0 1 0 0 0 -1 0 0 0 -1 axl5ho10.dat
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 axl5hol8.dat
+
+0 // Adapter rings
+1 16 0 0 0 6 0 0 0 1 0 0 0 6 1-16chrd.dat
+1 16 0 0 0 0 0 6 0 1 0 6 0 0 1-16chrd.dat
+1 16 0 0 0 0 0 -6 0 1 0 6 0 0 1-16chrd.dat
+1 16 0 0 0 -6 0 0 0 1 0 0 0 6 1-16chrd.dat
+1 16 0 0 0 -6 0 0 0 1 0 0 0 -6 1-16chrd.dat
+1 16 0 0 0 0 0 -6 0 1 0 -6 0 0 1-16chrd.dat
+1 16 0 0 0 0 0 6 0 1 0 -6 0 0 1-16chrd.dat
+1 16 0 0 0 6 0 0 0 1 0 0 0 -6 1-16chrd.dat
+
+1 16 0 1 0 6 0 0 0 -1 0 0 0 6 1-16chrd.dat
+1 16 0 1 0 0 0 6 0 -1 0 6 0 0 1-16chrd.dat
+1 16 0 1 0 0 0 -6 0 -1 0 6 0 0 1-16chrd.dat
+1 16 0 1 0 -6 0 0 0 -1 0 0 0 6 1-16chrd.dat
+1 16 0 1 0 -6 0 0 0 -1 0 0 0 -6 1-16chrd.dat
+1 16 0 1 0 0 0 -6 0 -1 0 -6 0 0 1-16chrd.dat
+1 16 0 1 0 0 0 6 0 -1 0 -6 0 0 1-16chrd.dat
+1 16 0 1 0 6 0 0 0 -1 0 0 0 -6 1-16chrd.dat
+0 FILE 1-16chrd.dat
+0 Chord 0.0625
+0 Name: 1-16chrd.dat
+0 Author: Philippe Hurbain [Philo]
+0 !LDRAW_ORG Primitive UPDATE 2015-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2015-10-11 [PTadmin] Official Update 2015-01
+
+
+0 // This file is intentionally empty because at the current \P resolution,
+0 // an 1-16chrd is actually empty. However, this file still is present
+0 // to allow tools to do primitives substition and fill in a real chrd here,
+0 // or, if desired, to substitute this with the hi-res 48\1-16chrd.
+
+0 // This file is based on an idea by Darats at http://forums.ldraw.org/read.php?19,14500,14500#msg-14500
+
+1 16 0 0 0 1 0 0 0 1 0 0 0 1 empty.dat
+0 FILE empty.dat
+0 Empty
+0 Name: empty.dat
+0 Author: Steffen [Steffen]
+0 !LDRAW_ORG Primitive UPDATE 2025-08
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2015-10-11 [PTadmin] Official Update 2015-01
+0 !HISTORY 2025-08-13 [OrionP] Fix comments
+0 !HISTORY 2025-08-31 [OrionP] Official Update 2025-08
+
+0 // Tool MLCad cannot handle really empty files. This file is used as a workaround.
+0 // It exceptionally contains forbidden non-LDRAW standard syntax to satisfy MLCad
+0 // until it is fixed OR a different editor has become the de-facto LDRAW standard.
+0 // The line being used here is an "impossible" conditional line which never should be visible,
+0 // additionally hidden by a syntax explicitly hiding it from displaying.
+
+0 MLCAD HIDE 5 24 0 0 0 0.0001 0 0 0.0001 -0.0001 0 0 0 0
+0 FILE axl5hol8.dat
+0 Technic Axle Hole Rounded Perimeter
+0 Name: axl5hol8.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-01-14 [PTadmin] Official Update 2022-01
+
+
+4 16 6 1 0 6 0 0 5.6023 0 2 5.6023 1 2
+4 16 4 1 2 5.6023 1 2 5.6023 0 2 4 0 2
+4 16 4 1 2 4 0 2 2.5 0 2.5 2.5 1 2.5
+4 16 2.5 1 2.5 2.5 0 2.5 2 0 4 2 1 4
+4 16 2 1 4 2 0 4 2 0 5.6023 2 1 5.6023
+4 16 2 0 5.6023 0 0 6 0 1 6 2 1 5.6023
+4 16 0 1 6 0 0 6 -2 0 5.6023 -2 1 5.6023
+4 16 -2 1 4 -2 1 5.6023 -2 0 5.6023 -2 0 4
+4 16 -2 1 4 -2 0 4 -2.5 0 2.5 -2.5 1 2.5
+4 16 -2.5 1 2.5 -2.5 0 2.5 -4 0 2 -4 1 2
+4 16 -4 1 2 -4 0 2 -5.6023 0 2 -5.6023 1 2
+4 16 -5.6023 1 2 -5.6023 0 2 -6 0 0 -6 1 0
+4 16 -6 1 0 -6 0 0 -5.6023 0 -2 -5.6023 1 -2
+4 16 -5.6023 1 -2 -5.6023 0 -2 -4 0 -2 -4 1 -2
+4 16 -4 1 -2 -4 0 -2 -2.5 0 -2.5 -2.5 1 -2.5
+4 16 -2.5 1 -2.5 -2.5 0 -2.5 -2 0 -4 -2 1 -4
+4 16 -2 1 -4 -2 0 -4 -2 0 -5.6023 -2 1 -5.6023
+4 16 -2 0 -5.6023 0 0 -6 0 1 -6 -2 1 -5.6023
+4 16 0 1 -6 0 0 -6 2 0 -5.6023 2 1 -5.6023
+4 16 2 1 -5.6023 2 0 -5.6023 2 0 -4 2 1 -4
+4 16 2 1 -4 2 0 -4 2.5 0 -2.5 2.5 1 -2.5
+4 16 2.5 1 -2.5 2.5 0 -2.5 4 0 -2 4 1 -2
+4 16 4 1 -2 4 0 -2 5.6023 0 -2 5.6023 1 -2
+4 16 5.6023 1 -2 5.6023 0 -2 6 0 0 6 1 0
+
+2 24 5.6023 1 2 5.6023 0 2
+2 24 2 1 5.6023 2 0 5.6023
+2 24 -2 1 5.6023 -2 0 5.6023
+2 24 -5.6023 1 2 -5.6023 0 2
+2 24 -5.6023 1 -2 -5.6023 0 -2
+2 24 -2 1 -5.6023 -2 0 -5.6023
+2 24 2 1 -5.6023 2 0 -5.6023
+2 24 5.6023 1 -2 5.6023 0 -2
+
+5 24 6 1 0 6 0 0 5.6023 1 2 5.6023 1 -2
+5 24 4 1 2 4 0 2 5.6023 1 2 2.5 1 2.5
+5 24 2.5 1 2.5 2.5 0 2.5 2 1 4 4 1 2
+5 24 2 1 4 2 0 4 2.5 1 2.5 2 1 5.6023
+5 24 0 1 6 0 0 6 2 1 5.6023 -2 1 5.6023
+5 24 -2 1 4 -2 0 4 -2 1 5.6023 -2.5 1 2.5
+5 24 -2.5 1 2.5 -2.5 0 2.5 -2 1 4 -4 1 2
+5 24 -4 1 2 -4 0 2 -2.5 1 2.5 -5.6023 1 2
+5 24 -6 1 0 -6 0 0 -5.6023 1 2 -5.6023 1 -2
+5 24 -4 1 -2 -4 0 -2 -5.6023 1 -2 -2.5 1 -2.5
+5 24 -2.5 1 -2.5 -2.5 0 -2.5 -4 1 -2 -2 1 -4
+5 24 -2 1 -4 -2 0 -4 -2.5 1 -2.5 -2 1 -5.6023
+5 24 0 1 -6 0 0 -6 -2 1 -5.6023 2 1 -5.6023
+5 24 2 1 -4 2 0 -4 2 1 -5.6023 2.5 1 -2.5
+5 24 2.5 1 -2.5 2.5 0 -2.5 4 1 -2 2 1 -4
+5 24 4 1 -2 4 0 -2 5.6023 1 -2 2.5 1 -2.5
+0 FILE axl5ho10.dat
+0 Technic Axle Hole Rounded Tooth Surface
+0 Name: axl5ho10.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-01-14 [PTadmin] Official Update 2022-01
+
+
+1 16 0 0 0 5.54328 0 -2.2961 0 1 0 2.2961 0 5.54328 1-8chrd.dat
+1 16 0 0 0 -2.2961 0 -5.54328 0 1 0 5.54328 0 -2.2961 1-8chrd.dat
+1 16 0 0 0 -5.54328 0 2.2961 0 1 0 -2.2961 0 -5.54328 1-8chrd.dat
+1 16 0 0 0 2.2961 0 5.54328 0 1 0 -5.54328 0 2.2961 1-8chrd.dat
+3 16 5.5433 0 2.2961 2.2961 0 5.5433 2.5 0 2.5
+4 16 2.5 0 2.5 4 0 2 5.6023 0 2 5.5433 0 2.2961
+4 16 2 0 4 2.5 0 2.5 2.2961 0 5.5433 2 0 5.6023
+3 16 -2.5 0 2.5 -2.2961 0 5.5433 -5.5433 0 2.2961
+4 16 -2.5 0 2.5 -2 0 4 -2 0 5.6023 -2.2961 0 5.5433
+4 16 -5.6023 0 2 -4 0 2 -2.5 0 2.5 -5.5433 0 2.2961
+4 16 -4 0 -2 -5.6023 0 -2 -5.5433 0 -2.2961 -2.5 0 -2.5
+3 16 -5.5433 0 -2.2961 -2.2961 0 -5.5433 -2.5 0 -2.5
+4 16 -2.2961 0 -5.5433 -2 0 -5.6023 -2 0 -4 -2.5 0 -2.5
+3 16 2.2961 0 -5.5433 5.5433 0 -2.2961 2.5 0 -2.5
+4 16 2 0 -5.6023 2.2961 0 -5.5433 2.5 0 -2.5 2 0 -4
+4 16 4 0 -2 2.5 0 -2.5 5.5433 0 -2.2961 5.6023 0 -2
+0 FILE 1-8chrd.dat
+0 Chord 0.125
+0 Name: 1-8chrd.dat
+0 Author: Orion Pobursky [OrionP]
+0 !LDRAW_ORG Primitive UPDATE 2023-05
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2004-04-22 [PTadmin] Official Update 2004-02
+0 !HISTORY 2007-06-22 [PTadmin] Header formatted for Contributor Agreement
+0 !HISTORY 2008-07-01 [PTadmin] Official Update 2008-01
+0 !HISTORY 2023-10-27 [OrionP] Rebuilt with PrimGen2, original author westrate
+0 !HISTORY 2023-10-31 [OrionP] Official Update 2023-05
+
+3 16 1 0 0 0.9239 0 0.3827 0.7071 0 0.7071
+0 FILE axl5hol9.dat
+0 Technic Axle Hole Rounded Tooth Outer Edges
+0 Name: axl5hol9.dat
+0 Author: Magnus Forsberg [MagFors]
+0 !LDRAW_ORG Primitive UPDATE 2022-01
+0 !LICENSE Licensed under CC BY 4.0 : see CAreadme.txt
+
+0 BFC CERTIFY CCW
+
+0 !HISTORY 2022-01-14 [PTadmin] Official Update 2022-01
+
+
+2 24 5.6023 0 2 4 0 2
+2 24 4 0 2 2.5 0 2.5
+2 24 2.5 0 2.5 2 0 4
+2 24 2 0 4 2 0 5.6023
+2 24 -2 0 5.6023 -2 0 4
+2 24 -2 0 4 -2.5 0 2.5
+2 24 -2.5 0 2.5 -4 0 2
+2 24 -4 0 2 -5.6023 0 2
+2 24 -5.6023 0 -2 -4 0 -2
+2 24 -4 0 -2 -2.5 0 -2.5
+2 24 -2.5 0 -2.5 -2 0 -4
+2 24 -2 0 -4 -2 0 -5.6023
+2 24 2 0 -5.6023 2 0 -4
+2 24 2 0 -4 2.5 0 -2.5
+2 24 2.5 0 -2.5 4 0 -2
+2 24 4 0 -2 5.6023 0 -2

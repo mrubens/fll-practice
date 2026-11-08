@@ -2,7 +2,7 @@
 // with its body, parts on the drive axle turn with motor E (the attachment's moving frame), and parts hung on pins
 // follow their physics bodies.
 import * as THREE from 'three';
-import { loadLego, buildOf } from './lego.js';
+import { loadLego, buildOf, parseLdr } from './lego.js';
 import { ldToRobot, loadRaw, flatten, partTemplates, partMesh } from './lego3d.js';
 import { customPoses } from './legophysics.js';
 
@@ -21,7 +21,7 @@ export function drawCustom(sim, body, attachment) {
   const LD_TO_ROBOT = ldToRobot(sim.robot.geom.axleFwd);
   sim.ldToRobot = LD_TO_ROBOT;
   loadLego().then(async (D) => {
-    const [tpl, bracket] = await Promise.all([partTemplates(D), loadRaw('models/attach/arm-fixed.mpd')]);
+    const [tpl, bracket] = await Promise.all([partTemplates(D, parseLdr(ldr).map((q) => q.f)), loadRaw('models/attach/arm-fixed.mpd')]);
     if (gen !== sim.robotBuildGen || !sim.armPivot || !sim.armPivot.parent) { done(); return; }
     if (bracket && attachment.bracket) {   // the arm bracket on the hub, with the drive axle running through it
       const b = flatten(bracket); b.matrixAutoUpdate = false; b.matrix.copy(LD_TO_ROBOT); body.add(b);

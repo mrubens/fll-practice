@@ -173,7 +173,7 @@ export class InstructionsViewer {
     this.plan = plan;
     // the parts' meshes, in the robot's LDraw frame
     this.meshes = [];
-    this.tpl = await partTemplates(D);
+    this.tpl = await partTemplates(D, build.qs.map((q) => q.f));
     if (build.file) {
       const g = await loadRaw(`models/attach/${build.file}.mpd`);
       const kids = g ? [...g.children] : [];

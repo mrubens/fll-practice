@@ -11,7 +11,8 @@ import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { PRESETS, defaultBuild, advancedBuild, normalizeBuild } from './build.js';
 import { TOOL_PRESETS, EXAMPLE_ARM } from './tools.js';
-import { parseLdr } from './lego.js';
+import { parseLdr, loadLego } from './lego.js';
+import { partTemplates } from './lego3d.js';
 import { TOOL_DEMOS, ARM_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
@@ -213,6 +214,7 @@ function placeEquipment(keep = false, items = null) {
   return items;
 }
 let equipmentShown = false;
+let partsPrefetch = false;
 /** The equipment where it is now, as items placeEquipment can put back (a replay starts from them). */
 function equipmentNow() {
   if (!world.physics || !world.season) return null;
@@ -952,6 +954,11 @@ async function frame(now) {
   hub.update(now);
   updateCalReadout();
   updateMatchBar();
+  // once the field has drawn, the robot builder's parts box loads in the background, part by part
+  if (!partsPrefetch && (performance.now() > 30000 || (world.matReady && world.obstacles.every((o) => !o.model || o.hasModel)))) {
+    partsPrefetch = true;
+    setTimeout(() => loadLego().then((D) => partTemplates(D)).catch(() => {}), 1500);
+  }
   sim.lostModels = world.season ? scoring.lostGuards() : null;
   if (!equipmentShown && world.season && world.matReady && world.physics && !runtime.running && !replay.active) { equipmentShown = true; placeEquipment(true); }      // M10's habitats glow red while knocked out of place
   if (!replay.active && !document.body.classList.contains('lego-building')) { sim.update(dt); sim.render(); }   // a replay draws nothing until it is back where it should be; the attachment builder covers the table

@@ -173,9 +173,19 @@ export class Scoring {
   /** Models whose "leave it as it was" task (guard) is lost right now: M10's habitats knocked out of place. */
   lostGuards() {
     const out = new Set();
+    this._guardCtx = null;
     for (const m of MISSIONS) {
       if (!this.inPlay(m)) continue;
-      for (const t of m.tasks) if (t.guard && t.model && !this.isDone(m.id, t.id)) out.add(t.model);
+      for (const t of m.tasks) {
+        if (!t.guard || !t.model) continue;
+        // judged live from the model itself, and only once its pieces exist (not while the field is still loading)
+        const c = this._guardCtx || (this._guardCtx = this.ctx());
+        const pieces = c.p(t.model);
+        if (!pieces || !Object.keys(pieces).length) continue;
+        let ok = true;
+        try { ok = !!t.met(c); } catch { ok = true; }
+        if (!ok) out.add(t.model);
+      }
     }
     return out;
   }
