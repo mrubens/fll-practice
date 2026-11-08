@@ -103,7 +103,7 @@ export const TOOL_PRESETS = {
 1 322 -140 -169.76 191 0 1 0 -1 0 0 0 0 1 60483.dat
 1 71 -150 -169.76 211 -1 0 0 0 -1 0 0 0 1 3673.dat
 ` },
-    { id: 'rake', port: 'D', label: 'Rake', note: 'A long arm out the front on LEGO\'s tool base (motor D) whose tip reaches the mat ahead of the robot: lower it behind a handle or lever and drive back to pull it',
+    { id: 'rake', port: 'D', label: 'Rake', note: 'A long arm out the front on LEGO\'s tool base (motor D), with a crossbar at its tip that reaches the mat ahead of the robot: lower it behind a handle or lever and drive back to pull it, or slide it under something and lift',
       ldr: `1 0 0 -168.7646 -120 0 0 1 0 1 0 -1 0 0 64179.dat
 1 26 -20 -168.7646 -120 1 0 0 0 1 0 0 0 1 39793.dat
 1 0 10 -168.7646 -140 1 0 0 0 1 0 0 0 1 61332.dat
@@ -130,6 +130,9 @@ export const TOOL_PRESETS = {
 1 14 0 -160.7646 -256 1 0 0 0 1 0 0 0 1 4519.dat
 1 1 0 -176.7646 -244 1 0 0 0 1 0 0 0 1 6558.dat
 1 0 0 -112.7646 -292 0 1 0 0.6 0 0.8 0.8 0 -0.6 40490.dat
+1 71 0 -48.7646 -340 1 0 0 0 1 0 0 0 1 60485.dat
+1 71 -20 -48.7646 -340 0 0 1 0 1 0 -1 0 0 3713.dat
+1 71 20 -48.7646 -340 0 0 1 0 1 0 -1 0 0 3713.dat
 ` },
   ],
 };
