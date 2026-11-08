@@ -12,8 +12,8 @@ import { EXAMPLE_ARM, TOOL_PRESETS } from './tools.js';
 
 /** A placement's rotation (LDraw's row-major 3x3) as a THREE.Matrix4. */
 /** How near a way of putting a part on must be to how it is held (100 x trace of the relative turn: 300 the same,
- * about 230 for 50 degrees off, 100 a quarter turn). */
-const HELD_LIKE = 225;
+ * 100 a quarter turn, -100 turned round). */
+const HELD_LIKE = 95;          // within a quarter turn: it may square up onto a hole, never turn round
 
 /** The nearest square turn (a quarter-turn orientation) to a rotation: the part squares up when you let go of it. */
 function squareUp(m) {
@@ -1357,7 +1357,7 @@ export class AttachmentBuilder {
     cands.sort((p, q) => p.dist - q.dist || p.z - q.z);
     let found = null, near = null, turnIt = null;
     // the part keeps the way it is held: of every way it can go on (each hole of it, each flip and quarter turn), only
-    // those within about 50 degrees of how it is turned now count, nearest first, so it never jumps round over a hole;
+    // those within a quarter turn of how it is turned now count, nearest first, so it never turns round over a hole;
     // dragging it, R and F turn it
     const like = (r) => { const e = g.rot.elements; let sum = 0; for (let i = 0; i < 3; i++) for (let j = 0; j < 3; j++) sum += r[i * 3 + j] * e[j * 4 + i]; return Math.round(sum * 100); };
     for (const cand of cands.slice(0, 8)) {
@@ -1373,10 +1373,14 @@ export class AttachmentBuilder {
         }
       });
       if (!all.length) continue;
-      const close = all.filter((w) => w.like >= HELD_LIKE);
+      // the drive axle is where every attachment starts, so there the part turns to fit whichever way it is held,
+      // with a + hole (one that grips the axle) first
+      const drive = cand.it.role === 'drive';
+      const close = drive ? all.slice() : all.filter((w) => w.like >= HELD_LIKE);
       if (!close.length) { if (!turnIt) turnIt = cand; continue; }
       all.length = 0; all.push(...close);
-      all.sort((p, q) => q.like - p.like || p.kRank - q.kRank || Math.round(q.o.eng) - Math.round(p.o.eng) || Math.abs(p.o.mid - cand.at) - Math.abs(q.o.mid - cand.at));
+      const grip = (w) => (drive ? gripsAxle(g.own[w.k]) : 0);
+      all.sort((p, q) => grip(q) - grip(p) || q.like - p.like || p.kRank - q.kRank || Math.round(q.o.eng) - Math.round(p.o.eng) || Math.abs(p.o.mid - cand.at) - Math.abs(q.o.mid - cand.at));
       const best = all.find((w) => this.scene.check(w.o.q).ok);
       if (!best) { if (!near) near = { q: all[0].o.q, why: this.scene.check(all[0].o.q).why, c: cand.c }; continue; }
       // the same way, slid along the axle or pin ([ and ])
