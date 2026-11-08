@@ -64,11 +64,6 @@ export const ARM_DEMOS = [
   { name: 'Arm robot: M03 Flip the Rock', robot: 'guided-mission', launch: { x: -91.2, y: 50.9, heading: -90 },
     blocks: [motorSpeed('E', 20), turnSeconds('E', 0.5), motorSpeed('E', 75), turn('E', 115), move(49), turn('E', -47), speed(10), move(-3),
       motorSpeed('E', 5), startMotor('E', 'counterclockwise'), move(-2.5), stopMotor('E'), speed(50), motorSpeed('E', 75), move(-43)] },
-  // the arm, half raised, runs into the seed pod from the south-west and lifting it pushes the seeds out (all three).
-  // From the left launch area aimed north-east at the pod; driving in 38 to 44 cm works, 1.5 cm sideways and 4 degrees
-  { name: 'Arm robot: M02 Exploding Seeds', robot: 'guided-mission', launch: { x: -71.75, y: 38.35, heading: -44 },
-    blocks: [motorSpeed('E', 20), turnSeconds('E', 0.5), motorSpeed('E', 40), turn('E', 45), speed(30), move(41), motorSpeed('E', 25), turn('E', 70), wait(1),
-      motorSpeed('E', 75), speed(50), move(-41)] },
   // the robot's own back (the ball caster beam) pushes the red marker east: the bars fold up and lift the drone.
   // From the left launch area facing west; backing 35 to 45 cm works. Then back home
   { name: 'Arm robot: M01 Drone Survey', robot: 'guided-mission', launch: { x: -70, y: 46, heading: 180 },

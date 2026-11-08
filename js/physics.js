@@ -1238,16 +1238,19 @@ export class Physics {
     // a model (or piece) the robot pushes that is pressed into another model jams: the robot stops, as it would on
     // the real table, instead of shoving thin parts through the other model with its unlimited push
     const jam = this._jammed(touched, robot.time);
-    if (jam.jammed) {
-      const len = Math.hypot(move.x, move.z);
-      if (len > 0) this.jam = { x: move.x / len, z: move.z / len };
+    const armDepth = this._armDepth();
+    // the arm driven into a piece that will not give (a hinged part at the end of its swing, M05's extension):
+    // the robot stops there, as the real one would, instead of sliding its arm through the part
+    const moveLen = Math.hypot(move.x, move.z);
+    const armPressed = moveLen > 0 && armDepth > 0.4 * S && armDepth > (this.armDepth || 0) + 0.01 * S;
+    if (jam.jammed || armPressed) {
+      if (moveLen > 0) this.jam = { x: move.x / moveLen, z: move.z / moveLen };
       body.setTranslation(cur, true);
       body.setRotation(yawQuat(robot.heading), true);
       heading = robot.heading;
-    } else if (jam.depth < 0.15 * S) this.jam = null;
+    } else if (jam.depth < 0.15 * S && armDepth < 0.15 * S) this.jam = null;
     // the attachment pressing a loose piece that cannot get out of its way (pinned to the mat, a model or the robot):
     // the motor stalls there, as a real one does, instead of turning the arm through it
-    const armDepth = this._armDepth();
     if (angle !== a0 && armDepth > 0.3 * S && armDepth > (this.armDepth || 0)) {
       this.armJam = { angle: a0, dir: Math.sign(angle - a0) };
       const m = robot.config.attachment && robot.motors[robot.config.attachment];

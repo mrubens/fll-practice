@@ -517,7 +517,7 @@ function renderProjects() {
     // one project per demo (an existing one of the same name is replaced), then open the first
     const set = btn.dataset.set === 'arm' ? ARM_DEMOS : TOOL_DEMOS;
     const ids = set.map((d) => {
-      for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform' || p.name === 'Arm robot: M06 Leafcutter Frenzy (back pusher)') delete store.projects[p.id];
+      for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform' || p.name === 'Arm robot: M06 Leafcutter Frenzy (back pusher)' || p.name === 'Arm robot: M02 Exploding Seeds') delete store.projects[p.id];
       return createProject(d.name, demoProgram(d), demoBuild(d.front, d.robot), d.launch);
     });
     panel.hidden = true;
