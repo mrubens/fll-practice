@@ -442,6 +442,7 @@ export class AttachmentBuilder {
         </div>
         <div class="lb-tools">
           <button type="button" class="tb" data-act="steps" title="Step-by-step pictures to build this attachment with the real LEGO parts">Instructions</button>
+          <a class="tb" href="tools.html" target="_blank" rel="noopener" title="Which missions each Advanced Driving Base tool scores, where to put the robot and the moves">Tool guide</a>
           <button type="button" class="tb" data-act="clear" data-custom title="Take your attachment's parts off">Clear</button>
           <button type="button" class="tb" data-act="load" data-custom>Open .ldr</button>
           <button type="button" class="tb" data-act="save" data-custom>Save .ldr</button>

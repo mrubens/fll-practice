@@ -442,3 +442,4 @@ body.building #hubPanel { display: none; }
   .ins-print .ins-callout { position: static; display: inline-flex; box-shadow: none; max-width: none; }
   .ins-print section > img { display: block; width: 100%; max-height: 60vh; object-fit: contain; }
 }
+.lb-tools a.tb { text-decoration: none; display: inline-flex; align-items: center; color: var(--fg); }

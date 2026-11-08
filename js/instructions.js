@@ -55,7 +55,9 @@ export function planSteps(D, chassis, qs, { useDrive = true } = {}) {
 
   // on the robot at the end: axles that go through it, and what hangs only on those (a gear, a bush)
   // (and a part held only by the robot, like a bush on the bracket's axle)
-  const late = new Set(items.map((_, i) => i).filter((i) => onRobot[i] && (kinds[i] === 'axle' || !adj[i].size)));
+  // (on the Advanced Driving Base a tool is built whole and dropped into its frame: only what hangs on the robot alone)
+  const dropIn = chassis !== 'driving-base';
+  const late = new Set(items.map((_, i) => i).filter((i) => onRobot[i] && ((kinds[i] === 'axle' && !dropIn) || !adj[i].size)));
   for (let grew = true; grew;) {
     grew = false;
     for (let i = 0; i < n; i++) if (!late.has(i) && adj[i].size && [...adj[i]].every((j) => late.has(j))) { late.add(i); grew = true; }
@@ -89,7 +91,8 @@ export function planSteps(D, chassis, qs, { useDrive = true } = {}) {
     while (left.size) {
       const adjacent = [...left].filter(touches);
       if (!adjacent.length) {                                    // a new piece to start: its biggest part
-        const start = [...left].sort((a, b) => (kinds[a] === 'part') - (kinds[b] === 'part') || volume(items[a]) - volume(items[b])).pop();
+        // the part that sits on the robot first (a tool's frame), else the biggest
+        const start = [...left].sort((a, b) => onRobot[a] - onRobot[b] || (kinds[a] === 'part') - (kinds[b] === 'part') || volume(items[a]) - volume(items[b])).pop();
         steps.push({ parts: [start] }); left.delete(start); built.add(start);
         continue;
       }

@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tool Guide</title>
+<style>
+  :root { --fg: #1E2430; --muted: #5B6474; --line: #D9DDE5; --paper: #FFFFFF; --bg: #F5F2EA; --accent: #0B5FC4; --ok: #1B7A3E; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 Nunito, "Segoe UI", Arial, sans-serif; }
+  main { max-width: 900px; margin: 0 auto; padding: 24px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 4px; }
+  h2 { font-size: 20px; margin: 30px 0 8px; padding-top: 8px; border-top: 2px solid var(--line); }
+  h3 { font-size: 16px; margin: 0 0 4px; }
+  p, li { max-width: 74ch; }
+  .lead { color: var(--muted); margin: 0 0 16px; }
+  .card { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 10px 0; }
+  .grid { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .pts { display: inline-block; background: var(--ok); color: #fff; border-radius: 999px; padding: 0 9px; font-size: 12.5px; font-weight: 800; margin-left: 6px; }
+  .prog { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 12.5px; background: #F3F5F9; border-radius: 8px; padding: 8px 10px; margin: 6px 0; white-space: pre-wrap; }
+  .tip { color: var(--muted); font-size: 13.5px; }
+  table { width: 100%; border-collapse: collapse; background: var(--paper); font-size: 13.5px; }
+  th, td { border: 1px solid #B9C0CC; padding: 6px 8px; text-align: left; vertical-align: top; }
+  th { background: #EEF1F6; }
+  .noprint a { color: var(--accent); }
+  @media print { body { background: #fff; font-size: 12px; } main { padding: 0; max-width: none; } .card { break-inside: avoid; } .noprint { display: none; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>Tool guide</h1>
+  <p class="lead">The Advanced Driving Base's tools for the BIOGLOW table: which missions each one scores, where to put the
+    robot and the exact moves. Every move here was checked in FLL Practice's simulator. Build the tools with the robot
+    builder's <b>Instructions</b> button, try the moves in the simulator, then do the same on the real table and compare.</p>
+
+  <h2>The tools</h2>
+  <div class="grid">
+    <div class="card"><h3>Rake <span class="tip">front frame, motor D</span></h3>
+      <p>Built on LEGO's tool base (the same frame, red pins and gears as the Lift Arm). Two white bent liftarms carry a
+        9-hole beam down to the mat ahead of the robot, with a crossbar at its tip. Lower it behind something and back up
+        to pull, or slide it under something and lift.</p>
+      <p><b>Scores:</b> M03 flag, M07, M09 (all three tasks), M11 cover: <b>90 points</b>.</p></div>
+    <div class="card"><h3>Dozer Blade <span class="tip">back frame, motor C (LEGO's)</span></h3>
+      <p>LEGO's own tool from the Competition Ready lessons. The robot backs into things with it.</p>
+      <p><b>Scores:</b> M06 (all four leaves), M01 drone: <b>60 points</b>.</p></div>
+    <div class="card"><h3>Lift Arm <span class="tip">front frame, motor D (LEGO's)</span></h3>
+      <p>LEGO's own tool from the Competition Ready lessons. Swap it with the Rake on the front frame.</p>
+      <p class="tip">Not yet checked against this season's missions.</p></div>
+  </div>
+  <p class="tip">Swap tools by pulling the two red pins, lifting the tool out of the frame and dropping the next one in:
+    its gear meshes with the motor's 28-tooth gear by itself.</p>
+
+  <h2>How to read the moves</h2>
+  <ul>
+    <li><b>Wheel axles</b> means the line between the middles of the two big wheels. On the Advanced Driving Base the
+      front of the robot is 11.6 cm ahead of it.</li>
+    <li>Distances from a wall are measured on the table, at a right angle to that wall. The table is 236 × 114 cm
+      inside its walls; the mat is pushed against the south (home) wall and centred.</li>
+    <li>Motor degrees are the motor's own: the tools turn about half as far (the gears are 28:36 then 12:20).
+      <b>Clockwise lowers</b> a front tool, <b>counterclockwise raises</b> it.</li>
+    <li>Each mission says how far the start spot can be off and still score: that is the room you have on the real table.</li>
+  </ul>
+
+  <h2>Rake</h2>
+  <div class="card"><h3>M07 Humongous Fungus <span class="pts">20</span></h3>
+    <p><b>Start:</b> facing north, the middle of the robot lined up with the red handle (57.5 cm from the east wall), the
+      rake at rest, the wheel axles <b>25.5 cm from the north wall</b> (works from 24.5 to 26.5).</p>
+    <div class="prog">D run clockwise for 40 degrees          (the crossbar drops behind the red bar)
+move back for 4 cm                      (the handle slides out and the trap flips over)
+D run counterclockwise for 40 degrees
+move back for 10 cm                     (let go of the model: M07 scores nothing while touching it)</div></div>
+  <div class="card"><h3>M09 Research Platform <span class="pts">30</span></h3>
+    <p><b>Start:</b> facing north, centred on the tree trunk (75.4 cm from the west wall), the wheel axles <b>35.3 cm from
+      the north wall</b> (works from 34.8 to 35.8), so the crossbar is 3.5 to 4.5 cm under the platform's front edge.</p>
+    <div class="prog">D run clockwise for 6 degrees           (the tip just above the mat, under the platform)
+D set speed to 30 %
+D run counterclockwise for 140 degrees  (lifts the platform to the top: the camera trap falls out, the branch tips
+                                         and the pinecone slides off)
+D set speed to 75 %
+move back for 12 cm</div>
+    <p class="tip">Lift slowly: the platform ratchets at each notch and stays there.</p></div>
+  <div class="card"><h3>M03 Flip the Rock <span class="pts">20</span></h3>
+    <p><b>Start:</b> facing north, lined up with the middle of the rock model (25.3 cm from the west wall, within 2.5 cm
+      either way), the wheel axles <b>64 cm from the north wall</b> (works from 63 to 65).</p>
+    <div class="prog">D run counterclockwise for 86 degrees   (rake up, over the levers; do this before driving in)
+move forward to the start spot
+D set speed to 25 %
+D run clockwise for 86 degrees          (the crossbar comes down behind the levers)
+move back for 6 cm                      (pulls the rock over: the flag drops)
+D set speed to 75 %
+D run counterclockwise for 60 degrees
+move back for 10 cm</div>
+    <p class="tip">Sometimes the rock tips past 60 degrees and falls back by itself: then the return bonus scores too (30).</p></div>
+  <div class="card"><h3>M11 Window to the Past <span class="pts">20</span></h3>
+    <p><b>Start:</b> facing north-west (45 degrees, toward the model), on the diagonal through the middle of the cover,
+      with the rake raised (D counterclockwise 86 degrees); the wheel axles <b>13 to 17 cm from the cover</b> along that
+      diagonal, within 3 cm either side of it.</p>
+    <div class="prog">D set speed to 25 %
+D run clockwise for 86 degrees          (the crossbar comes down behind the cover's top edge)
+move back for 8 cm                      (the cover falls open toward you)
+D set speed to 75 %
+D run counterclockwise for 86 degrees
+move back for 8 cm</div></div>
+
+  <h2>Dozer Blade</h2>
+  <div class="card"><h3>M06 Leafcutter Frenzy <span class="pts">40</span></h3>
+    <p><b>Start:</b> backing toward the nest: the robot faces south-west (its back to the ant rack, at 45 degrees), on the
+      line through the ant rack's middle, the wheel axles <b>30 cm from the ant</b> (up to 2.5 cm to the south-east of
+      that line still works).</p>
+    <div class="prog">set movement speed to 20 %
+move back for 20 cm                     (pushes the rack in until it stops; slowly, or the leaves fly out)
+set movement speed to 50 %
+move forward for 10 cm</div>
+    <p class="tip">The distance matters: 2 cm too far and the push launches leaves. Practise it on the calibration strip first.</p></div>
+  <div class="card"><h3>M01 Drone Survey <span class="pts">20</span></h3>
+    <p><b>Start:</b> facing west (the blade toward the drone), the wheel axles <b>11 cm from the south wall</b> and
+      <b>48 cm from the west wall</b>.</p>
+    <div class="prog">set movement speed to 30 %
+move back for 35 cm                     (30 to 40 works: the blade pushes the red marker east)
+set movement speed to 50 %
+move forward for 8 cm</div>
+    <p class="tip">The bars fold up and lift the drone 15 to 20 cm. The bonus (map flipped and the marker in the survey
+      square) is not covered yet.</p></div>
+
+  <h2>Not covered yet</h2>
+  <p>M02, M04, M05, M08, M12, M13, M14 and M15. M13 (the keystone species) and M14 (seeds) need a tool that carries
+    things; M12's cane sits 0.5 cm off the mat and needs a thinner fork than the kit's beams make.</p>
+</main>
+</body>
+</html>
