@@ -885,8 +885,9 @@ export class Physics {
           if (pc.lastPhi === undefined || Math.abs(phi - pc.lastPhi) > 0.05) { pc.lastPhi = phi; pc.joint.configureMotorPosition(-phi * DEG, c.k ?? 1500, c.d ?? 80); }   // acceleration-based: stiff enough to follow
           const slope = (c.map(th + 1) - c.map(th - 1)) / 2;
           const e = pc.angle - phi;
-          if (Math.abs(e) > 1.5 && Math.abs(slope) > 0.1 && pc.touched >= 0 && time - pc.touched < 0.3) {
-            const rate = Math.max(-8, Math.min(8, (e / slope) * (c.gain ?? 20) * DEG));   // rad/s along the driver's axis
+          const held = !!this.grab && this.grab.pc === pc;    // a hand on it pushes the driver round too
+          if (Math.abs(e) > 1.5 && Math.abs(slope) > 0.1 && (held || (pc.touched >= 0 && time - pc.touched < 0.3))) {
+            const rate = Math.max(-8, Math.min(8, (e / slope) * (held ? 60 : c.gain ?? 20) * DEG));   // rad/s along the driver's axis
             const ax = new THREE.Vector3(...src.def.axis).applyQuaternion(src.q0).normalize();
             const w = src.body.angvel(), wv = new THREE.Vector3(w.x, w.y, w.z);
             const now = wv.dot(ax);
