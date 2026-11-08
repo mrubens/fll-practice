@@ -364,7 +364,8 @@ nameInput.addEventListener('change', () => {
 $('#btnNew').addEventListener('click', async () => {
   const name = await modal({ message: 'Name for the new project', defaultValue: `Project ${Object.keys(store.projects).length + 1}`, input: true, cancel: true });
   if (name === null) return;
-  createProject(name.trim() || 'Untitled', emptyState());
+  const build = defaultBuild();
+  createProject(name.trim() || 'Untitled', emptyState(build), build);
 });
 
 // Projects list popover.
@@ -388,7 +389,7 @@ function renderProjects() {
       delete store.projects[row.dataset.id];
       if (store.current === row.dataset.id) {
         const next = Object.values(store.projects).sort((a, b) => b.updated - a.updated)[0];
-        if (next) loadProject(next.id); else createProject('Project 1', emptyState());
+        if (next) loadProject(next.id); else { const build = defaultBuild(); createProject('Project 1', emptyState(build), build); }
       }
       saveStore();
       renderProjects();
@@ -466,9 +467,9 @@ sim.renderer.domElement.addEventListener('pointerdown', () => sim.endChase(), { 
 const legoBuilder = new AttachmentBuilder({
   normalize: normalizeBuild,
   presets: {
+    advanced: { ...defaultBuild(), label: 'Advanced Driving Base', name: 'Advanced Driving Base with LEGO\'s Lift Arm and Dozer Blade' },
     'guided-mission': { ...PRESETS['guided-mission'], label: 'Guided Mission robot' },
     'training-camp': { ...PRESETS['training-camp'], label: 'Training Camp robot' },
-    advanced: { ...PRESETS.advanced, label: 'Advanced Driving Base' },
   },
   onChange: (b, customLdr) => {
     if (customLdr !== null && customLdr !== undefined) store.lastCustom = { module: 'custom', ldr: customLdr };
@@ -845,7 +846,7 @@ async function frame(now) {
 
 // ---------- start ----------
 if (store.current && store.projects[store.current]) loadProject(store.current);
-else createProject(SAMPLE_NAME, SAMPLE_STATE);
+else createProject(SAMPLE_NAME, SAMPLE_STATE, normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }));   // LEGO's Training Camp lesson uses the Driving Base
 // First visit: start from FIRST's official Guided Mission program (Mission 11) with the robot it was written for.
 // First visit: open FIRST's published Guided Mission for Mission 11 with the robot it was written for.
 // Hosts that cannot serve a .llsp3 archive (the artifact copy) get the same file base64-encoded as text.

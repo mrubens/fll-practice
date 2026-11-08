@@ -1,3 +1,4 @@
+import { defaultTools } from './tools.js';
 // Robot build: the Driving Base, its ports, the sensors placed on it (LEGO parts) and its attachment, from which the
 // robot's geometry is derived. Saved with the project and inside exported .llsp3 files.
 
@@ -96,6 +97,7 @@ export const PRESETS = {
   },
   advanced: {
     name: 'Advanced Driving Base (drive motors A and E, color sensors on B and F, tool motors D and C)', chassis: 'advanced',
+    label: 'Advanced Driving Base',
     ports: { left: 'A', right: 'E', attachment: null },
     body: advancedBody(),
     attachment: { module: 'none', mount: 'front' },
@@ -109,7 +111,8 @@ export const PRESETS = {
   },
 };
 
-export function defaultBuild() { return normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }); }
+/** A new robot: the Advanced Driving Base with LEGO's Lift Arm and Dozer Blade (LEGO's competition robot). */
+export function defaultBuild() { return normalizeBuild({ ...PRESETS.advanced, attachment: defaultTools(), preset: 'advanced' }); }
 
 export function normalizeBuild(b) {
   const src = b || {};

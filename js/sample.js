@@ -44,6 +44,10 @@ const stack4 = chain([
 export const SAMPLE_NAME = 'Training Camp 1';
 export const SAMPLE_STATE = { blocks: { languageVersion: 0, blocks: [stack1, stack2, stack3, stack4] } };
 
-export function emptyState() {
-  return { blocks: { languageVersion: 0, blocks: [{ type: 'flipperevents_whenProgramStarts', x: 40, y: 40 }] } };
+/** A new program: "when program starts", with the movement motors set to the robot's wheels when it has a build. */
+export function emptyState(build) {
+  const p = build && build.ports;
+  const start = { type: 'flipperevents_whenProgramStarts', x: 40, y: 40 };
+  if (p && p.left && p.right) start.next = { block: { type: 'flippermove_setMovementPair', inputs: { PAIR: sel('flippermove_movement-port-selector', p.left + p.right) } } };
+  return { blocks: { languageVersion: 0, blocks: [start] } };
 }

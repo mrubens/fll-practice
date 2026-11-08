@@ -45,7 +45,7 @@ export class Robot {
     // build again once it is here
     if (this.geom.partsLdr && !legoReady()) { const b = this.build; loadLego().then(() => { if (this.build === b) this.applyBuild(b); }).catch(() => {}); }
     this.config = portsOf(this.build);
-    for (const p of [this.config.attachment, ...(this.config.tools || [])]) if (p && this.motors[p]) Object.assign(this.motors[p], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment (or tool) starts at rest
+    for (const p of [this.config.attachment, ...(this.config.tools || [])]) if (p && this.motors && this.motors[p]) Object.assign(this.motors[p], { angle: 0, velocity: 0, target: 0, goal: null, stalled: false });   // a new attachment (or tool) starts at rest
     if (this.movement) this.movement.cmPerRotation = this.geom.calibration;
     this.world.robot = this;
     if (this.world.physics && this.x !== undefined) this.world.physics.rebuildRobot(this);
