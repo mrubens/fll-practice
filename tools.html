@@ -41,13 +41,14 @@
       <p>Built on LEGO's tool base (the same frame, red pins and gears as the Lift Arm). Two white bent liftarms carry a
         9-hole beam down to the mat ahead of the robot, with a crossbar at its tip. Lower it behind something and back up
         to pull, or slide it under something and lift.</p>
-      <p><b>Scores:</b> M03 flag, M07, M09 (all three tasks), M11 cover: <b>90 points</b>.</p></div>
+      <p><b>Scores:</b> M03 flag, M07, M11 cover (and M09, but the Lift Arm does that one better): <b>60 points</b>.</p></div>
     <div class="card"><h3>Dozer Blade <span class="tip">back frame, motor C (LEGO's)</span></h3>
       <p>LEGO's own tool from the Competition Ready lessons. The robot backs into things with it.</p>
       <p><b>Scores:</b> M06 (all four leaves), M01 drone: <b>60 points</b>.</p></div>
     <div class="card"><h3>Lift Arm <span class="tip">front frame, motor D (LEGO's)</span></h3>
       <p>LEGO's own tool from the Competition Ready lessons. Swap it with the Rake on the front frame.</p>
-      <p class="tip">Not yet checked against this season's missions.</p></div>
+      <p><b>Scores:</b> M09 (all three tasks, more reliably than the Rake) and M11 cover (the same moves as the Rake):
+        <b>50 points</b>. It doesn't catch M03's levers or M07's handle: that's what the Rake is for.</p></div>
   </div>
   <p class="tip">Swap tools by pulling the two red pins, lifting the tool out of the frame and dropping the next one in:
     its gear meshes with the motor's 28-tooth gear by itself.</p>
@@ -74,20 +75,6 @@ wait 0.5 seconds
 move back for 4 cm                      (the handle slides out and the trap flips over)
 D run counterclockwise for 40 degrees
 move back for 10 cm                     (let go of the model: M07 scores nothing while touching it)</div></div>
-  <div class="card"><h3>M09 Research Platform <span class="pts">30</span></h3>
-    <p><b>Start:</b> facing north, centred on the tree trunk (75.4 cm from the west wall), the wheel axles <b>40.3 cm from
-      the north wall</b>. (Not further back: the Dozer Blade behind the robot would hit M02.)</p>
-    <div class="prog">D run clockwise for 6 degrees           (the tip just above the mat)
-move forward for 6 cm                   (the crossbar slides under the platform's front edge)
-D set speed to 30 %
-D run counterclockwise for 70 degrees   (lift halfway)
-move forward for 2 cm                   (creep in, so the crossbar stays under the platform as it rises)
-D run counterclockwise for 70 degrees   (to the top: the camera trap falls out, the branch tips, the pinecone slides off)
-wait 1.5 seconds
-D set speed to 75 %
-move back for 12 cm</div>
-    <p class="tip">This one is touchy: half a centimetre either way and the platform stops at a lower notch (20 points
-      instead of 30). Lift slowly; the platform ratchets at each notch and stays there.</p></div>
   <div class="card"><h3>M03 Flip the Rock <span class="pts">20</span></h3>
     <p><b>Start:</b> facing north, lined up with the middle of the rock model (25.3 cm from the west wall, within 2.5 cm
       either way), the wheel axles <b>77 cm from the north wall</b>. The program raises the rake and drives in 13 cm, to 64
@@ -116,6 +103,23 @@ D set speed to 75 %
 D run counterclockwise for 86 degrees
 move back for 8 cm</div></div>
 
+  <h2>Lift Arm</h2>
+  <div class="card"><h3>M09 Research Platform <span class="pts">30</span></h3>
+    <p><b>Start:</b> facing north, centred on the tree trunk (75.4 cm from the west wall), the wheel axles <b>40.3 cm from
+      the north wall</b>. (Not further back: the Dozer Blade behind the robot would hit M02.)</p>
+    <div class="prog">D run clockwise for 6 degrees           (the tip just above the mat)
+move forward for 6 cm                   (the rack slides under the platform's front edge)
+D set speed to 30 %
+D run counterclockwise for 70 degrees   (lift halfway)
+move forward for 2 cm                   (creep in, so the rack stays under the platform as it rises)
+D run counterclockwise for 70 degrees   (to the top: the camera trap falls out, the branch tips, the pinecone slides off)
+wait 1.5 seconds
+D set speed to 75 %
+move back for 12 cm</div>
+    <p class="tip">Driving in anywhere from 4 to 8 cm works. (The Rake can do it too, but only from exactly the right spot:
+      half a centimetre off and the platform stops at a lower notch.) Lift slowly; the platform ratchets at each notch.</p></div>
+  <p class="tip">M11 works with the Lift Arm too: the same moves as the Rake's, above.</p>
+
   <h2>Dozer Blade</h2>
   <div class="card"><h3>M06 Leafcutter Frenzy <span class="pts">40</span></h3>
     <p><b>Start:</b> backing toward the nest: the robot faces south-west (its back to the ant rack, at 45 degrees), on the
@@ -139,7 +143,9 @@ move forward for 8 cm</div>
 
   <h2>Not covered yet</h2>
   <p>M02, M04, M05, M08, M12, M13, M14 and M15. M13 (the keystone species) and M14 (seeds) need a tool that carries
-    things; M12's cane sits 0.5 cm off the mat and needs a thinner fork than the kit's beams make.</p>
+    things; M12's cane sits 0.5 cm off the mat and needs a thinner fork than the kit's beams make. The Dozer Blade, raised
+    (motor C 60 degrees counterclockwise), pushes M15's skylight to within 0.4 cm of fully in, but the building stops the
+    robot just short of the last 2 mm.</p>
 </main>
 </body>
 </html>

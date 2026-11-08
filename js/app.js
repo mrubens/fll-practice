@@ -383,8 +383,8 @@ function renderProjects() {
   panel.querySelector('.demos').addEventListener('click', () => {
     // one project per demo (an existing one of the same name is replaced), then open the first
     const ids = TOOL_DEMOS.map((d) => {
-      for (const p of Object.values(store.projects)) if (p.name === d.name) delete store.projects[p.id];
-      return createProject(d.name, demoProgram(d), demoBuild(), d.launch);
+      for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform') delete store.projects[p.id];
+      return createProject(d.name, demoProgram(d), demoBuild(d.front), d.launch);
     });
     panel.hidden = true;
     if (ids[0]) loadProject(ids[0]);
