@@ -361,7 +361,7 @@ const attachmentKey = (a) => JSON.stringify(a ? { m: a.module, l: a.module === '
 /** The robot's standard attachments: always on the shelf, whatever the projects use. */
 function standardAttachments(chassis) {
   if (chassis === 'advanced') return [advancedBuild().attachment, demoBuild('rake').attachment];
-  if (chassis === 'driving-base') return [{ module: 'arm', mount: 'front' }, demoBuild(undefined, 'guided-mission-pusher').attachment];
+  if (chassis === 'driving-base') return [{ module: 'arm', mount: 'front' }];
   return [];
 }
 /** Remember every attachment the robot has had (per chassis), so the shelf never loses one. */
@@ -385,6 +385,8 @@ function shelfItems() {
   add(robot.build.attachment);
   ((store.shelf || {})[chassis] || []).forEach(add);
   for (const p of Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name))) if (p.build && (p.build.chassis || 'driving-base') === chassis) add(p.build.attachment);
+  // the back pusher was taken out of the app: builds saved with it stay as they are but are not offered
+  for (const [k, a] of [...seen]) if (a && a.module === 'custom' && /32278\.dat/.test(a.ldr || '') && /6558\.dat/.test(a.ldr || '') && /\b(100|120)\b.*32278/.test(a.ldr || '')) seen.delete(k);
   const names = new Map();
   return [...seen.entries()].map(([k, a]) => {
     let n = attachmentName(a, chassis); const c = (names.get(n) || 0) + 1; names.set(n, c);
@@ -515,7 +517,7 @@ function renderProjects() {
     // one project per demo (an existing one of the same name is replaced), then open the first
     const set = btn.dataset.set === 'arm' ? ARM_DEMOS : TOOL_DEMOS;
     const ids = set.map((d) => {
-      for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform') delete store.projects[p.id];
+      for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform' || p.name === 'Arm robot: M06 Leafcutter Frenzy (back pusher)') delete store.projects[p.id];
       return createProject(d.name, demoProgram(d), demoBuild(d.front, d.robot), d.launch);
     });
     panel.hidden = true;

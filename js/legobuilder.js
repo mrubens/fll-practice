@@ -340,7 +340,7 @@ export class AttachmentBuilder {
     const was = this.mode === 'custom';
     if (!was) this.setModule('custom');
     // it replaces what is on its own tool frame and keeps the other frame's tool (a lift arm in front, a dozer behind);
-    // a tool with no motor (the Driving Base's back pusher) goes on next to what is there (the arm comes along)
+    // a tool with no motor goes on next to what is there (the arm comes along)
     const own = new Set(parseLdr(t.ldr).map(partKey));
     const keep = !t.port ? this.parts.filter((q) => !own.has(partKey(q))) : was ? this.parts.filter((q) => toolSide(this.build.chassis, q) !== t.port) : [];
     this.parts = keep.concat(parseLdr(t.ldr).filter((q) => this.D.parts.parts[q.f]));
