@@ -373,13 +373,20 @@ function shelfItems() {
 }
 let matchBarKey = '';
 function updateMatchBar() {
-  const show = !!(world.season && scoring.match.launched && !scoring.match.ended);
+  const inMatch = !!(scoring.match.launched && !scoring.match.ended);
+  const show = !!world.season;
   const busy = runtime.running || replay.active;
-  const key = [show, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length].join('|');
+  const key = [show, inMatch, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length].join('|');
   if (key === matchBarKey) return;
   matchBarKey = key;
+  const launchBtn = $('#btnLaunch');
+  launchBtn.textContent = inMatch ? 'End match' : 'Start match';
+  launchBtn.title = inMatch ? 'End the match now and keep its score (Run is free practice again)'
+    : 'A match like the competition: the field is reset, 2:30 on the clock, each run launched from a launch area with Run, and attachments swapped in home';
+  launchBtn.classList.toggle('ending', inMatch);
   matchBar.hidden = !show;
   if (!show) return;
+  matchBar.querySelector('label').firstChild.textContent = inMatch ? 'Next run ' : 'Program ';
   const list = Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name));
   nextRun.innerHTML = list.map((p) => `<option value="${p.id}">${p.name.replace(/[<&]/g, (c) => (c === '<' ? '&lt;' : '&amp;'))}</option>`).join('');
   nextRun.value = store.current;
@@ -393,6 +400,7 @@ nextRun.addEventListener('change', () => {
   if (runtime.running || replay.active) return;
   loadProject(nextRun.value);                        // its program, its robot and attachment, the robot on its start spot
   replay.start = null; replay.snaps.clear(); updateRunState();   // step back can't cross a program change
+  if (!scoring.match.launched || scoring.match.ended) return;
   if (!scoring.fit().area) toast('Put the robot in a launch area before the next launch.', 'warn');
   else toast(`Next run: ${currentProject().name}. Press Run to launch it.`);
 });
@@ -400,9 +408,11 @@ shelf.addEventListener('click', (e) => {
   const b = e.target.closest('button[data-i]');
   if (!b || runtime.running || replay.active) return;
   const it = shelf.items[Number(b.dataset.i)];
-  robot.applyBuild({ ...robot.build, attachment: it.attachment });   // swapped in home: the project keeps its own
-  hub.updatePortTypes();
-  robot.setPose(robot.x, robot.y);
+  if (scoring.match.launched && !scoring.match.ended) {
+    robot.applyBuild({ ...robot.build, attachment: it.attachment });   // swapped in home mid-match: the project keeps its own
+    hub.updatePortTypes();
+    robot.setPose(robot.x, robot.y);
+  } else applyBuildFromUi({ ...robot.build, attachment: it.attachment });   // outside a match it's this project's attachment now
   replay.start = null; replay.snaps.clear(); updateRunState();
   toast(`Attachment: ${it.name}.`);
 });
@@ -605,8 +615,15 @@ $('#btnRedo').addEventListener('click', () => workspace.undo(true));
 // ---------- sim view tools ----------
 // a running program stops first, as you'd stop the real robot before picking it up
 $('#btnResetPos').addEventListener('click', () => { stopRun(); runtime.setStepMode(false); robot.resetPose(); robot.homeTools(); world.resetObstacles(); if (world.season) placeEquipment(true); });
+// Start match / End match: a match is the competition (2:30 on the clock, launches from a launch area, precision
+// tokens); outside one, Run is free practice
 $('#btnLaunch').addEventListener('click', () => {
-  if (scoring.match.launched && !scoring.match.ended && !runtime.running) { if (relaunch()) toast('Relaunched.'); return; }
+  if (scoring.match.launched && !scoring.match.ended) {
+    runtime.stop();
+    scoring.endMatch();
+    hub.matchLeft = null;          // the scoring's own "Match over" message reports the score
+    return;
+  }
   startMatch();
 });
 // ---------- boards (tables) ----------
