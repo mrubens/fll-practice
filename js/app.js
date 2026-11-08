@@ -44,6 +44,14 @@ function saveStore() {
   }
 }
 const store = loadStore();
+if (store.shelf && !store.shelfTidy) {
+  // the shelf used to remember every step of a build made in the builder: keep only the latest build of the team's own
+  for (const list of Object.values(store.shelf)) {
+    let kept = false;
+    for (let i = 0; i < list.length; i++) if (list[i] && list[i].module === 'custom') { if (kept) list.splice(i--, 1); else kept = true; }
+  }
+  store.shelfTidy = 1;
+}
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 // ---------- toasts ----------
@@ -383,9 +391,11 @@ function standardAttachments(chassis) {
   return [];
 }
 /** Remember every attachment the robot has had (per chassis), so the shelf never loses one. */
+const builderOpen = () => !!(window.legoBuilder && window.legoBuilder.root && !window.legoBuilder.root.hidden);
 function rememberAttachment() {
   const chassis = robot.build.chassis, a = robot.build.attachment;
   if (!a || a.module === 'none') return;
+  if (builderOpen()) return;          // only what the builder ends with, not every step on the way
   store.shelf = store.shelf || {};
   const list = store.shelf[chassis] || (store.shelf[chassis] = []);
   const k = attachmentKey(a);
@@ -394,6 +404,14 @@ function rememberAttachment() {
   saveStore();
 }
 /** The attachments the team has for this robot: none, the standard ones, any it has had, and every project's. */
+// the back pusher LEGO-style build that used to be offered (two 15L beams across the robot's back on four long pins)
+const OLD_BACK_PUSHER = `1 1 -40 -90 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 40 -90 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 -40 -70 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 1 40 -70 100 0 0 -1 0 1 0 1 0 0 6558.dat
+1 0 0 -90 120 0 0 1 1 0 0 0 1 0 32278.dat
+1 0 0 -70 120 0 0 1 1 0 0 0 1 0 32278.dat
+`;
 function shelfItems() {
   const chassis = robot.build.chassis;
   const seen = new Map();
@@ -403,8 +421,14 @@ function shelfItems() {
   add(robot.build.attachment);
   ((store.shelf || {})[chassis] || []).forEach(add);
   for (const p of Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name))) if (p.build && (p.build.chassis || 'driving-base') === chassis) add(p.build.attachment);
-  // the back pusher was taken out of the app: builds saved with it stay as they are but are not offered
-  for (const [k, a] of [...seen]) if (a && a.module === 'custom' && /32278\.dat/.test(a.ldr || '') && /6558\.dat/.test(a.ldr || '') && /\b(100|120)\b.*32278/.test(a.ldr || '')) seen.delete(k);
+  // the back pusher was taken out of the app: the old arm + pusher builds are not offered (a build of the team's own
+  // that has more on it is, pusher beams and all)
+  const pusher = partKeys(OLD_BACK_PUSHER), arm = partKeys(EXAMPLE_ARM);
+  for (const [k, a] of [...seen]) {
+    if (!a || a.module !== 'custom') continue;
+    const have = partKeys(a.ldr);
+    if ([...pusher].every((x) => have.has(x)) && [...have].every((x) => pusher.has(x) || arm.has(x))) seen.delete(k);
+  }
   const names = new Map();
   return [...seen.entries()].map(([k, a]) => {
     let n = attachmentName(a, chassis); const c = (names.get(n) || 0) + 1; names.set(n, c);
@@ -416,7 +440,7 @@ function updateMatchBar() {
   const inMatch = !!(scoring.match.launched && !scoring.match.ended);
   const show = !!world.season;
   const busy = runtime.running || replay.active;
-  const key = [show, inMatch, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length].join('|');
+  const key = [show, inMatch, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length, builderOpen()].join('|');
   if (key === matchBarKey) return;
   matchBarKey = key;
   rememberAttachment();
