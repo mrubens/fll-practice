@@ -552,7 +552,13 @@ function renderProjects() {
     <div class="proj${p.id === store.current ? ' current' : ''}" data-id="${p.id}">
       <button type="button" class="open"><span class="pn"></span><span class="pd">${new Date(p.updated).toLocaleString()}</span></button>
       <button type="button" class="del" aria-label="Delete project">&times;</button>
-    </div>`).join('');
+    </div>`).join('')
+    + `<button type="button" class="tb add-sample" title="LEGO's Training Camp 1 lesson program, on the Training Camp robot">Add Training Camp 1</button>`;
+  panel.querySelector('.add-sample').addEventListener('click', () => {
+    createProject(SAMPLE_NAME, structuredClone(SAMPLE_STATE), normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }));
+    panel.hidden = true;
+    toast(`Added ${SAMPLE_NAME} (My projects).`);
+  });
   panel.querySelectorAll('.proj').forEach((row, i) => {
     row.querySelector('.pn').textContent = list[i].name;
     row.querySelector('.open').addEventListener('click', () => { loadProject(row.dataset.id); panel.hidden = true; });
