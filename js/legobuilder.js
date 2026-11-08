@@ -1084,6 +1084,12 @@ export class AttachmentBuilder {
         : from !== 'none' ? 'Now building your own attachment (My own). ' : '';
     }
     this._dropGhost();
+    // parts go on with the motors at 0 (the way the build is stored), so trying the motor stops when you pick one up
+    if (this._turned()) {
+      this.setMotor(0);
+      for (const p of Object.keys(this.tools || {})) this.setTool(p, 0);
+      switched += 'Motor set back to 0 to build. ';
+    }
     this.selected = null;
     this._selBar();
     const tpl = this.tpl.get(f);
