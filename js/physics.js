@@ -9,6 +9,8 @@ import { MECHANISMS, partInfo, pieceOfPart } from './mechanisms.js';
 import { buildCustom, removeCustom, customStep, placeCustom, restoreCustom, driveGeared } from './legophysics.js';
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
+const GRAB_K = 500;             // the mouse hand: spring stiffness (N/m) to the point held
+const GRAB_LEAD = 2 * S;        // and how far it leads that point (m): at most 500 * 0.02 = 10 N of pull
 const DEG = Math.PI / 180;
 const SKIN = 0.25;              // cm the controller keeps between the robot and whatever it touches
 const STALL_MARGIN = 0.35;      // cm the attachment shape is shrunk by for "would this motor move hit something" tests
@@ -749,33 +751,50 @@ export class Physics {
    * limits and weight still apply. grabTo moves the target; grabEnd lets go.
    */
   grabStart(obstacleId, name, at) {
+    this.grabEnd();
     const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name);
     if (!pc) return;
-    const t = pc.body.translation(), r = pc.body.rotation();
+    // a piece held only by friction or balance (a vine on its branch, the folded web trap) comes free in a hand
+    if (pc.locked && pc.def.handFrees) for (const q of this.pieces) if (q.o === pc.o && q.locked && q.def.handFrees) this.releasePiece(q);
+    const R = this.R, t = pc.body.translation(), r = pc.body.rotation();
     const inv = new THREE.Quaternion(r.x, r.y, r.z, r.w).invert();
     const local = new THREE.Vector3(at.x * S - t.x, at.h * S - t.y, at.y * S - t.z).applyQuaternion(inv);
-    this.grab = { pc, local, target: new THREE.Vector3(at.x * S, at.h * S, at.y * S) };
+    // the hand is a body of its own on a stiff spring to the point held: the solver shares its pull through the
+    // model's joints, so a hand can push as hard as a real one (up to about 10 N) whatever the piece weighs
+    const hand = this.world.createRigidBody(R.RigidBodyDesc.kinematicPositionBased().setTranslation(at.x * S, at.h * S, at.y * S));
+    const d = 2 * Math.sqrt(GRAB_K * pc.body.mass());
+    const joint = this.world.createImpulseJoint(R.JointData.spring(0, GRAB_K, d, { x: 0, y: 0, z: 0 }, { x: local.x, y: local.y, z: local.z }), hand, pc.body, true);
+    this.grab = { pc, local, hand, joint, target: new THREE.Vector3(at.x * S, at.h * S, at.y * S) };
     pc.body.wakeUp();
   }
   grabTo(at) { if (this.grab) this.grab.target.set(at.x * S, at.h * S, at.y * S); }
-  grabEnd() { this.grab = null; }
+  grabEnd() {
+    const g = this.grab;
+    if (!g) return;
+    this.grab = null;
+    try {                                    // the world may have been rebuilt under the hand (a reset)
+      if (g.joint && this.world.getImpulseJoint(g.joint.handle)) this.world.removeImpulseJoint(g.joint, true);
+      if (g.hand && this.world.getRigidBody(g.hand.handle)) this.world.removeRigidBody(g.hand);
+      g.pc.body.wakeUp();
+    } catch { /* already gone */ }
+  }
   _applyGrab(dt) {
     const g = this.grab;
     if (!g) return;
     const b = g.pc.body;
-    if (b.bodyType() !== 0) { this.grab = null; return; }
+    if (b.bodyType() !== 0 || !this.world.getImpulseJoint(g.joint.handle)) { this.grabEnd(); return; }
     const t = b.translation(), r = b.rotation();
-    const arm = g.local.clone().applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w));
-    const p = new THREE.Vector3(t.x, t.y, t.z).add(arm);
-    const lv = b.linvel(), av = b.angvel();
-    const v = new THREE.Vector3(lv.x, lv.y, lv.z).add(new THREE.Vector3(av.x, av.y, av.z).cross(arm));
-    // head for the target at up to 40 cm/s, like a steady hand; the push is capped so a joint at its stop holds
-    const want = g.target.clone().sub(p).divideScalar(0.12);
-    if (want.length() > 40 * S) want.setLength(40 * S);
-    const imp = want.sub(v).multiplyScalar(b.mass() * 0.6);
-    const cap = b.mass() * 2 * S * 100 * dt * 60;
-    if (imp.length() > cap) imp.setLength(cap);
-    b.applyImpulseAtPoint({ x: imp.x, y: imp.y, z: imp.z }, { x: p.x, y: p.y, z: p.z }, true);
+    const p = g.local.clone().applyQuaternion(new THREE.Quaternion(r.x, r.y, r.z, r.w)).add(new THREE.Vector3(t.x, t.y, t.z));
+    // the hand leads the point held by at most GRAB_LEAD, so the pull grows to k * lead and no further (a joint at
+    // its stop holds); it closes in on the pointer at up to 60 cm/s, like a quick hand
+    const h = g.hand.translation(), hp = new THREE.Vector3(h.x, h.y, h.z);
+    const step = g.target.clone().sub(hp);
+    if (step.length() > 60 * S * dt) step.setLength(60 * S * dt);
+    hp.add(step);
+    const lead = hp.clone().sub(p);
+    if (lead.length() > GRAB_LEAD) hp.copy(p).add(lead.setLength(GRAB_LEAD));
+    g.hand.setNextKinematicTranslation({ x: hp.x, y: hp.y, z: hp.z });
+    b.wakeUp();
   }
 
   /** Before a physics step: releases, latches, driven lifts. */

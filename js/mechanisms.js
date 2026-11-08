@@ -188,7 +188,7 @@ export const MECHANISMS = {
         parts: (p) => p.file === 'm07-handle.ldr' },
       // the web trap: pivots on the tan pin at the bar's top; released by the pull, it swings 175 degrees over the top
       // and latches out (completely extended)
-      mycelium: { kind: 'hinge', axis: [-0.7071, 0, -0.7071], anchor: [5.95, 11.03, -0.06], range: [0, 175], locked: true, releaseWhen: (s) => s.handle.ext > 0.8,
+      mycelium: { kind: 'hinge', axis: [-0.7071, 0, -0.7071], anchor: [5.95, 11.03, -0.06], range: [0, 175], locked: true, handFrees: true, releaseWhen: (s) => s.handle.ext > 0.8,
         spring: { target: 175, k: 150, d: 18 }, latch: true, gravity: false, mass: 0.05, friction: 0.5,
         shape: [{ box: [7.2, 1.4, 5.4], at: [-5.97, -4.78, 5.97], rot: [0, -45, 0] }, { box: [4, 8, 1], at: [-2.07, -2.73, 2.07], rot: [123.4, 28.83, 36.18] }],
         parts: (p) => p.file === 'm07-trap.ldr' },
@@ -207,9 +207,9 @@ export const MECHANISMS = {
       // lime vine arm, then the vine itself) and is hooked over the little angled branch with the flower. Lift it off
       // the branch and it swings forward onto the mat. Held on the branch until something touches it.
       vineArm: { kind: 'hinge', axis: [-1, 0, 0], anchor: [4.0, 0.4, -0.8], range: [-170, 170], mass: 0.004, drag: 3,
-        locked: true, releaseWhen: (s) => s.vine.touched || s.vineArm.touched, parts: (p) => p.i === 362 },
+        locked: true, handFrees: true, releaseWhen: (s) => s.vine.touched || s.vineArm.touched, parts: (p) => p.i === 362 },
       vine: { kind: 'hinge', parent: 'vineArm', axis: [-1, 0, 0], anchor: [4.0, 2.904, 1.192], range: [-170, 170], mass: 0.02,
-        locked: true, releaseWhen: (s) => s.vine.touched || s.vineArm.touched, parts: (p) => p.i >= 363 && p.i <= 402 },
+        locked: true, handFrees: true, releaseWhen: (s) => s.vine.touched || s.vineArm.touched, parts: (p) => p.i >= 363 && p.i <= 402 },
       // M09 (build book 7, missions video 332-341 s): the research platform is a collar round the trunk that slides up;
       // its back bar ratchets over pairs of red stud pins on the trunk, so it stays at the height it was lifted to.
       // Its left extension holds the camera trap upright (a red L-liftarm on a free pin): raise the platform 3 cm and the
