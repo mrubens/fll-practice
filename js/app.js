@@ -10,7 +10,7 @@ import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
 import { PRESETS, defaultBuild, advancedBuild, normalizeBuild } from './build.js';
-import { TOOL_DEMOS, demoBuild, demoProgram } from './demos.js';
+import { TOOL_DEMOS, ARM_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
@@ -379,17 +379,20 @@ function renderProjects() {
     <div class="proj${p.id === store.current ? ' current' : ''}" data-id="${p.id}">
       <button type="button" class="open"><span class="pn"></span><span class="pd">${new Date(p.updated).toLocaleString()}</span></button>
       <button type="button" class="del" aria-label="Delete project">&times;</button>
-    </div>`).join('') + `<button type="button" class="tb demos" title="One project per move in the tool guide: the Advanced Driving Base with the Rake and the Dozer Blade, starting on the spot that scores">Add the tool demos</button>`;
-  panel.querySelector('.demos').addEventListener('click', () => {
+    </div>`).join('')
+    + `<button type="button" class="tb demos" data-set="arm" title="One project per mission in the tool guide for the Driving Base with LEGO's arm, starting on the spot that scores">Add the arm robot demos</button>`
+    + `<button type="button" class="tb demos" data-set="tools" title="One project per move in the tool guide: the Advanced Driving Base with the Rake and the Dozer Blade, starting on the spot that scores">Add the Advanced Driving Base demos</button>`;
+  panel.querySelectorAll('.demos').forEach((btn) => btn.addEventListener('click', () => {
     // one project per demo (an existing one of the same name is replaced), then open the first
-    const ids = TOOL_DEMOS.map((d) => {
+    const set = btn.dataset.set === 'arm' ? ARM_DEMOS : TOOL_DEMOS;
+    const ids = set.map((d) => {
       for (const p of Object.values(store.projects)) if (p.name === d.name || p.name === 'Rake: M09 Research Platform') delete store.projects[p.id];
-      return createProject(d.name, demoProgram(d), demoBuild(d.front), d.launch);
+      return createProject(d.name, demoProgram(d), demoBuild(d.front, d.robot), d.launch);
     });
     panel.hidden = true;
     if (ids[0]) loadProject(ids[0]);
-    toast('Added the tool demos (My projects). Press Run to watch each one score; tools.html says where to put the real robot.');
-  });
+    toast('Added the demos (My projects). Press Run to watch each one score; the Tool guide says where to put the real robot.');
+  }));
   panel.querySelectorAll('.proj').forEach((row, i) => {
     row.querySelector('.pn').textContent = list[i].name;
     row.querySelector('.open').addEventListener('click', () => { loadProject(row.dataset.id); panel.hidden = true; });

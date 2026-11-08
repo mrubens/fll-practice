@@ -29,13 +29,45 @@
 <body>
 <main>
   <h1>Tool guide</h1>
-  <p class="lead">The Advanced Driving Base's tools for the BIOGLOW table: which missions each one scores, where to put the
+  <p class="lead">LEGO's Driving Base with its arm, and the Advanced Driving Base's tools, on the BIOGLOW table: which missions each one scores, where to put the
     robot and the exact moves. Every move here was checked in FLL Practice's simulator. Build the tools with the robot
-    builder's <b>Instructions</b> button. In FLL Practice, <b>My projects → Add the tool demos</b> adds one project per
+    builder's <b>Instructions</b> button. In FLL Practice, <b>My projects → Add the Advanced Driving Base demos</b> (or <b>Add the arm robot demos</b>) adds one project per
     move below (the robot starts on its spot): press Run to watch it score, then put the real robot on the same spot and
     run the same program.</p>
 
-  <h2>The tools</h2>
+  <h2>Driving Base with LEGO's arm</h2>
+  <p>The robot from LEGO's Driving Base 2 instructions with its arm ("Tools and Accessories"): wheels on C (left) and
+    D (right), the arm's motor on E. In FLL Practice it is the <b>Guided Mission robot</b>; <b>My projects → Add the arm
+    robot demos</b> adds the program below. Without a table, put the mat on a hard floor, tape it flat and lay a straight
+    board along its bottom edge for the south wall.</p>
+  <div class="card"><h3>M11 Window to the Past <span class="pts">20</span> (FIRST's Guided Mission)</h3>
+    <p><b>Start:</b> the <b>Guided Mission (M11)</b> project, FIRST's own program. The robot faces east (along the south
+      wall), the back of the robot <b>4 cm in from the mat's left edge</b>, its right side <b>29.5 cm from the south
+      wall</b>, the arm down on the mat.</p></div>
+  <div class="card"><h3>M03 Flip the Rock <span class="pts">20</span></h3>
+    <p><b>Start:</b> facing north, the back of the robot <b>against the south wall</b>, its left side <b>1 cm in from the
+      mat's left edge</b> (0.8 to 1.6 cm works). The program presses the arm down onto the mat first, so it doesn't
+      matter where the arm was left.</p>
+    <div class="prog">set movement motors to C+D
+E set speed to 20 %
+E run counterclockwise for 0.5 seconds  (presses the arm onto the mat: a known start)
+E set speed to 75 %
+E run clockwise for 115 degrees         (arm up)
+move forward for 49 cm                  (48.4 to 49.8 works: the crossbar is over the levers)
+E run counterclockwise for 47 degrees
+set movement speed to 10 %
+move back for 3 cm
+E set speed to 5 %
+E start motor counterclockwise          (the arm comes down slowly behind a lever...)
+move back for 2.5 cm                    (...while the robot pulls the rock over: the flag drops)
+E stop motor
+set movement speed to 50 %
+E set speed to 75 %
+move back for 43 cm                     (back home, so picking it up costs no precision token)</div>
+    <p class="tip">The window is narrow: 1 cm sideways. Line the robot up the same way every time (a LEGO beam laid
+      against the mat's edge makes a good stop for its left side).</p></div>
+
+  <h2>Advanced Driving Base: the tools</h2>
   <div class="grid">
     <div class="card"><h3>Rake <span class="tip">front frame, motor D</span></h3>
       <p>Built on LEGO's tool base (the same frame, red pins and gears as the Lift Arm). Two white bent liftarms carry a
@@ -58,7 +90,10 @@
     <li><b>Wheel axles</b> means the line between the middles of the two big wheels. On the Advanced Driving Base the
       front of the robot is 11.6 cm ahead of it.</li>
     <li>Distances from a wall are measured on the table, at a right angle to that wall. The table is 236 × 114 cm
-      inside its walls; the mat is pushed against the south (home) wall and centred.</li>
+      inside its walls; the mat (200 × 114 cm) is pushed against the south (home) wall and centred, so the west and
+      east walls are 18 cm past the mat's edges: 25 cm from the west wall is 7 cm in from the mat's left edge.</li>
+    <li>The robot must start completely inside a launch area (the quarter circles at the mat's bottom corners). Square
+      its back against the south wall when you can: that is the one wall in the launch area.</li>
     <li>Motor degrees are the motor's own: the tools turn about half as far (the gears are 28:36 then 12:20).
       <b>Clockwise lowers</b> a front tool, <b>counterclockwise raises</b> it.</li>
     <li>Each mission says how far the start spot can be off and still score: that is the room you have on the real table.</li>
