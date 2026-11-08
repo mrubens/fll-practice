@@ -167,7 +167,8 @@ sim.onMatPoint = (p) => {
   matReadout.hidden = false;
 };
 // dragging the keystone species with the mouse (between runs): set it down on the robot, in a carrier, anywhere
-sim.onDragEquipment = (id, pos) => { if (world.physics) world.physics.dragEquipment(id, pos); };
+let dropSettle = 0;            // after a drop the referee watches for two seconds, so a keystone set on M13 by hand scores
+sim.onDragEquipment = (id, pos) => { if (world.physics) world.physics.dragEquipment(id, pos); if (!pos) dropSettle = 2; };
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
   if (!world.season) return;                 // only the season table has mission cards
@@ -946,6 +947,7 @@ async function frame(now) {
     if (world.physics) world.physics.idleStep(Math.min(dt, 0.05));
     // between programs in a match: the clock keeps running and the referee keeps watching pieces settle
     if (scoring.match.launched && !scoring.match.ended) { scoring.update(dt); matchTick(dt); }
+    else if (dropSettle > 0) { scoring.update(dt); dropSettle -= dt; }
   }
   hub.update(now);
   updateCalReadout();

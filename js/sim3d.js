@@ -953,7 +953,8 @@ export class Sim3D {
         // set it on whatever is under the pointer (the robot, a model, the mat), a hair above it
         toNdc(e);
         const node = this.equipmentNodes.find((q) => q.id === this.eqDrag.id);
-        const targets = [this.robotGroup, this.matMesh, ...this.obstacleExtras, ...this.obstacleMeshes.filter((m) => m.visible), ...this.equipmentNodes.filter((q) => q !== node).map((q) => q.node)];
+        const targets = [this.robotGroup, this.matMesh, ...this.obstacleExtras, ...this.obstacleMeshes.filter((m) => m.visible), ...this.pieceNodes.map((pn) => pn.node),   // the models' moving parts too: M13's platform
+          ...this.equipmentNodes.filter((q) => q !== node).map((q) => q.node)];
         const h = ray.intersectObjects(targets, true)[0];
         const p = h ? h.point : (ray.ray.intersectPlane(plane, hit) ? hit : null);
         if (p && this.onDragEquipment) this.onDragEquipment(this.eqDrag.id, { x: p.x, y: p.z, h: p.y + this.eqDrag.half + 0.15, yaw: this.eqDrag.yaw });
