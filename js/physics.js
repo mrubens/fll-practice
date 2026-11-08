@@ -10,6 +10,7 @@ import { buildCustom, removeCustom, customStep, placeCustom, restoreCustom, driv
 
 const S = 0.01;                 // cm -> m (Rapier's defaults are tuned for meters)
 const GRAB_K = 2000;            // the mouse hand: spring stiffness (N/m) to the point held
+const PIN_SLIP = 0.6 * Math.PI / 180;   // how far a gripping pin gives before it slips (rad)
 const GRAB_LEAD = 2 * S;        // and how far it leads that point (m): at most 2000 * 0.02 = 40 N of pull
 const DEG = Math.PI / 180;
 const SKIN = 0.25;              // cm the controller keeps between the robot and whatever it touches
@@ -441,6 +442,17 @@ export class Physics {
         const parent = this.pieces.find((q) => q.o === o && q.name === pc.def.parent);
         if (parent) this._hingeJoint(pc, parent.body, pc.locked, parent);
       }
+      // a second pin that closes a linkage loop (the M03 levers' short arms in the rock): another hinge, between two
+      // pieces, at a point given in the model frame
+      if (pc.def.kind === 'hinge' && pc.def.pinTo) {
+        const other = this.pieces.find((q) => q.o === o && q.name === pc.def.pinTo.piece);
+        if (other) {
+          const at = pc.def.pinTo.at, ax = pc.def.axis;
+          const a1 = at.map((v, i) => (v - pc.def.anchor[i]) * S), a2 = at.map((v, i) => (v - other.def.anchor[i]) * S);
+          pc.loopJoint = this.world.createImpulseJoint(R.JointData.revolute({ x: a1[0], y: a1[1], z: a1[2] }, { x: a2[0], y: a2[1], z: a2[2] }, { x: -ax[0], y: -ax[1], z: -ax[2] }), pc.body, other.body, true);
+          pc.loopJoint.setContactsEnabled(false);
+        }
+      }
       // a piece that leans on chosen pieces of its own model
       for (const n of pc.def.collidesWith || []) {
         const other = this.pieces.find((q) => q.o === o && q.name === n);
@@ -502,7 +514,13 @@ export class Physics {
     pc.joint = j;
     this._jointLimits(pc, collapsed);
     if (pc.def.spring) j.configureMotorPosition(-pc.def.spring.target * DEG, pc.def.spring.k, pc.def.spring.d);   // driven towards an angle (mirrored like the limits)
-    else if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 4e-6);
+    else if (pc.def.pinFriction && !parent) {
+      // a pin that grips a little (N m): it holds the piece wherever it is left until the load is more than that, then
+      // slips, still dragging (a held position that follows the joint, like the builder's pins)
+      j.configureMotorModel(R.MotorModel.ForceBased);
+      const k = pc.def.pinFriction / PIN_SLIP;
+      pc.pin = { k, d: 1.4 * Math.sqrt(k * 1e-4), hold: null };
+    } else if (pc.def.damp) j.configureMotorVelocity(0, pc.def.damp * 4e-6);
   }
   _sliderJoint(pc, base, collapsed = false) {
     const { R } = this;
@@ -518,6 +536,7 @@ export class Physics {
   _jointLimits(pc, collapsed = false, latched = false) {
     if (!pc.joint) return;
     const r = pc.range || pc.def.range;
+    if (!r) return;                       // a pin in a linkage that turns all the way round
     if (pc.def.kind === 'hinge') {
       if (collapsed) pc.joint.setLimits(-r[0] * DEG, -r[0] * DEG);
       else if (latched) { const at = pc.def.latchAt ?? r[1]; pc.joint.setLimits(-at * DEG, -at * DEG); }
@@ -644,6 +663,7 @@ export class Physics {
       pc.body.setRotation(rq, false);
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, false); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, false);
       pc.lastDrive = undefined; pc.lastPhi = undefined;
+      if (pc.pin) pc.pin.hold = null;
       pc.latched = false; pc.touched = -1; pc.angle = 0; pc.ext = 0; pc.height = 0; pc.floor = 0; pc.propped = false; pc.range = null;
       if (pc.easing && pc.joint) pc.joint.configureMotorVelocity(0, (pc.def.damp || 0) * 4e-6);
       pc.easing = false;
@@ -875,6 +895,17 @@ export class Physics {
         const floor = Math.max(0, ...pc.def.ratchet.filter((r) => pc.ext >= r));
         if (floor > (pc.floor || 0)) { pc.floor = floor; pc.joint.setLimits(floor * S, pc.def.range[1] * S); }
       }
+      if (pc.pin && pc.joint && !pc.freed) {
+        const r = pc.body.rotation();
+        const rel = pc.q0.clone().invert().multiply(new THREE.Quaternion(r.x, r.y, r.z, r.w));
+        if (rel.w < 0) { rel.x = -rel.x; rel.y = -rel.y; rel.z = -rel.z; rel.w = -rel.w; }
+        const ax = new THREE.Vector3(...pc.def.axis).normalize();
+        const th = 2 * Math.atan2(rel.x * ax.x + rel.y * ax.y + rel.z * ax.z, rel.w);    // rad
+        const p = pc.pin;
+        if (p.hold === null) p.hold = th;
+        if (p.hold - th > PIN_SLIP) p.hold = th + PIN_SLIP; else if (th - p.hold > PIN_SLIP) p.hold = th - PIN_SLIP;
+        pc.joint.configureMotorPosition(-p.hold, p.k, p.d);
+      }
       if (pc.def.couple && pc.joint) {
         // geared to another hinge both ways (the M03 levers and the rock): the piece is held where the driver puts it,
         // and pushing it ahead (or behind) of that turns the driver to catch up
@@ -963,7 +994,9 @@ export class Physics {
         if (rel.w < 0) { rel.x = -rel.x; rel.y = -rel.y; rel.z = -rel.z; rel.w = -rel.w; }   // same rotation, short arc
         const ax = new THREE.Vector3(...pc.def.axis).normalize();
         const dot = rel.x * ax.x + rel.y * ax.y + rel.z * ax.z;
-        pc.angle = (2 * Math.atan2(dot, rel.w)) / DEG;
+        // unwrapped: a piece that turns past half a turn (the M03 rock landing flipped) reads on past 180
+        const raw = (2 * Math.atan2(dot, rel.w)) / DEG;
+        pc.angle = Number.isFinite(pc.angle) ? pc.angle + ((((raw - pc.angle) % 360) + 540) % 360 - 180) : raw;
       } else if (pc.axisW && pc.def.kind === 'slider') {
         const ext = pos.clone().sub(pc.anchor).dot(pc.axisW);
         const dt = time - (pc.extTime ?? time);

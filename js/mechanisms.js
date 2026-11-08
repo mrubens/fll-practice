@@ -19,7 +19,6 @@ const near = (p, x, y, z, r) => Math.hypot(p.c[0] - x, p.c[1] - y, p.c[2] - z) <
 /** Piecewise-linear lookup in [[x, y], ...] (x ascending), clamped at the ends. */
 const table = (x, t) => { if (x <= t[0][0]) return t[0][1]; for (let i = 1; i < t.length; i++) if (x <= t[i][0]) { const [x0, y0] = t[i - 1], [x1, y1] = t[i]; return y0 + ((y1 - y0) * (x - x0)) / (x1 - x0); } return t[t.length - 1][1]; };
 // M03: lever angle for each platform angle, from the four-bar of the real build (book 3, steps 16-26)
-const M03_LEVER = [[0, 0], [2, 10], [10, 24], [27, 46], [52, 70.5], [74, 89], [89, 97.5], [99, 100], [106, 99], [116, 91], [124, 79], [132, 65], [137, 56], [143, 46], [152, 32.5], [160, 23], [178, 7]];
 
 export const FIELD = {
   // Launch areas: quarter circles at the mat's bottom corners (sim coords: x east, y south, mat spans x ±100, y ±57).
@@ -106,19 +105,22 @@ export const MECHANISMS = {
   },
   // ---- M03 (build book 3, missions video): the rock is a platform with a scene on each face. Pushing the red levers
   // back stands it up and over so the brown underside shows; pushing its top forward flips it back. The research flag
-  // (the lime L at the front right) starts raised and drops flat once the rock goes over. The real platform swings on
-  // two links; here it turns about one axis through its middle, which lands it back on the base like the real one,
-  // and it rests on either face (its weight sits off the axis).
-  // The real linkage is a four-bar: the platform hangs from the lime 5L links (base pin (1.2, 0) to the platform's back
+  // (the lime L at the front right) starts raised and drops flat once the rock goes over.
+  // The linkage is a four-bar: the platform hangs from the lime 5L links (base pin (1.2, 0) to the platform's back
   // pin) and from the levers' short arms (the levers turn on their corner pins at (4.4, -2.4)). Solved from those pin
   // positions, a lever peaks at 100 degrees when the platform is just past upright (99) and comes back to about 5 as
   // the platform lands flipped, so pulling the levers all the way carries the rock over.
   'M03 Flip the Rock': {
     pieces: {
-      rock: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 4.15, -0.6], range: [0, 178], mass: 0.15, com: [0, 4.15, 1.4], damp: 0.3, friction: 0.6,
+      // the four-bar itself: the lime 5L links turn on the base's pins and carry the platform's back pins; the levers'
+      // short arms carry its front pins (tan axle-pins), so the rock goes exactly where the levers and links put it.
+      // The levers' stop at 0 holds it down at the start and again once it has landed flipped
+      link: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 1.2, 0], range: null, mass: 0.006, damp: 0.1,
+        parts: (p) => [45, 56].includes(p.i) },
+      rock: { kind: 'hinge', parent: 'link', axis: [-1, 0, 0], anchor: [0, 2.9, -2.71], range: null, mass: 0.15, com: [0, 4.15, 1.4], damp: 0.3, friction: 0.6,
         parts: (p) => (p.i >= 21 && p.i <= 44) || p.i >= 66 },
-      levers: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 4.4, -2.4], range: [-5, 102], mass: 0.03, gravity: false,
-        couple: { piece: 'rock', map: (th) => table(th, M03_LEVER) },
+      levers: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 4.4, -2.4], range: [0, 102], mass: 0.03, damp: 0.1,
+        pinTo: { piece: 'rock', at: [0, 3.19, -0.33] },
         parts: (p) => [46, 47, 48, 59, 60, 61].includes(p.i) },
       flag: { kind: 'hinge', axis: [-1, 0, 0], anchor: [4.8, 0.6, 1.6], start: 50, range: [0, 50], mass: 0.02, damp: 0.2,
         locked: true, releaseWhen: (s) => s.rock.angle > 60,
@@ -151,7 +153,7 @@ export const MECHANISMS = {
   // extended. Free pins everywhere, gravity holds every end state.
   'M05 Reaching Roots': {
     pieces: {
-      extension: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 8.4, 1.6], range: [0, 170], mass: 0.02, damp: 0.05,
+      extension: { kind: 'hinge', axis: [-1, 0, 0], anchor: [0, 8.4, 1.6], range: [0, 170], mass: 0.02, damp: 0.05, pinFriction: 0.008,
         parts: (p) => [18, 19, 20, 21, 22, 23, 24, 74, 75, 76, 77].includes(p.i) },
       // the lever and claw ride on the arm (their own swing on the tan pin does not matter for the mission). The arm
       // folds up against the extension's bent liftarm (its far crossbar meets it at -52) and the other way swings over
