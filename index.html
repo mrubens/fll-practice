@@ -65,18 +65,15 @@
       <div class="view-tools">
         <button type="button" id="btnLaunch" class="vt launch" title="A match like the competition">Start match</button>
         <button type="button" id="btnResetPos" class="vt" title="Put the robot back in the start box">Reset position</button>
-        <button type="button" id="btnTurnL" class="vt" title="Turn the robot left 15°">&#8634;</button>
-        <button type="button" id="btnTurnR" class="vt" title="Turn the robot right 15°">&#8635;</button>
+        <span class="match-bar" id="matchBar" hidden>
+          <label class="vt">Program <select id="nextRun" title="The program to run (in a match, each run can start a different one)"></select></label>
+          <span class="shelf vt" id="shelf" role="group" aria-label="Attachment"></span>
+        </span>
         <button type="button" id="btnFollow" class="vt" title="Camera follows the robot">Follow</button>
-        <button type="button" id="btnCamera" class="vt" title="Reset the camera">Camera</button>
         <select id="boardSelect" class="vt" title="Which table to practice on"></select>
         <button type="button" id="btnModels" class="vt" title="Choose which mission models are on the table">Models</button>
         <a id="btnGuide" class="vt" href="calibration.html" target="_blank" rel="noopener" title="How to tape this table onto the floor, the tests to run and a sheet to write the results on" hidden>How to build it</a>
         <button type="button" class="score-chip" id="scoreChip" title="Points so far. Click for the whole sheet."><b class="pts">0 pts</b></button>
-      </div>
-      <div class="match-bar" id="matchBar" hidden>
-        <label>Program <select id="nextRun" title="The program to run (in a match, each run can start a different one)"></select></label>
-        <span class="shelf" id="shelf" role="group" aria-label="Attachment"></span>
       </div>
       <div class="score-sheet" id="scoreSheet" hidden></div>
       <div class="models-panel" id="modelsPanel" hidden></div>

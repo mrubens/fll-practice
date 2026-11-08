@@ -356,14 +356,34 @@ function attachmentName(a, chassis) {
   if (chassis === 'driving-base' && [...partKeys(EXAMPLE_ARM)].every((k) => have.has(k))) names.unshift('Arm');
   return names.length ? names.join(' + ') : 'My own';
 }
-const attachmentKey = (a) => JSON.stringify(a ? { m: a.module, l: a.module === 'custom' ? a.ldr || '' : '' } : null);
-/** The attachments the team has for this robot: every project's (same chassis), plus none. */
+// the same parts in the same places are the same attachment, however the file is spaced or ordered
+const attachmentKey = (a) => JSON.stringify(a ? { m: a.module, l: a.module === 'custom' ? [...partKeys(a.ldr)].sort().join(';') : '' } : null);
+/** The robot's standard attachments: always on the shelf, whatever the projects use. */
+function standardAttachments(chassis) {
+  if (chassis === 'advanced') return [advancedBuild().attachment, demoBuild('rake').attachment];
+  if (chassis === 'driving-base') return [{ module: 'arm', mount: 'front' }, demoBuild(undefined, 'guided-mission-pusher').attachment];
+  return [];
+}
+/** Remember every attachment the robot has had (per chassis), so the shelf never loses one. */
+function rememberAttachment() {
+  const chassis = robot.build.chassis, a = robot.build.attachment;
+  if (!a || a.module === 'none') return;
+  store.shelf = store.shelf || {};
+  const list = store.shelf[chassis] || (store.shelf[chassis] = []);
+  const k = attachmentKey(a);
+  if (list.some((x) => attachmentKey(x) === k)) return;
+  list.unshift(a); list.length = Math.min(list.length, 8);
+  saveStore();
+}
+/** The attachments the team has for this robot: none, the standard ones, any it has had, and every project's. */
 function shelfItems() {
   const chassis = robot.build.chassis;
   const seen = new Map();
   const add = (a) => { const k = attachmentKey(a); if (!seen.has(k)) seen.set(k, a); };
   add({ module: 'none', mount: 'front' });
+  standardAttachments(chassis).forEach(add);
   add(robot.build.attachment);
+  ((store.shelf || {})[chassis] || []).forEach(add);
   for (const p of Object.values(store.projects).sort((x, y) => x.name.localeCompare(y.name))) if (p.build && (p.build.chassis || 'driving-base') === chassis) add(p.build.attachment);
   const names = new Map();
   return [...seen.entries()].map(([k, a]) => {
@@ -379,6 +399,7 @@ function updateMatchBar() {
   const key = [show, inMatch, busy, store.current, attachmentKey(robot.build.attachment), Object.keys(store.projects).length].join('|');
   if (key === matchBarKey) return;
   matchBarKey = key;
+  rememberAttachment();
   const launchBtn = $('#btnLaunch');
   launchBtn.textContent = inMatch ? 'End match' : 'Start match';
   launchBtn.title = inMatch ? 'End the match now and keep its score (Run is free practice again)'
@@ -708,10 +729,7 @@ async function switchBoard(id, quiet) {
 }
 boardSelect.addEventListener('change', () => switchBoard(boardSelect.value));
 switchBoard(store.board || 'season', true);
-$('#btnTurnL').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading - 15));
-$('#btnTurnR').addEventListener('click', () => robot.setPose(robot.x, robot.y, robot.heading + 15));
 $('#btnFollow').addEventListener('click', (e) => { sim.endChase(); sim.follow = !sim.follow; e.currentTarget.classList.toggle('active', sim.follow); });
-$('#btnCamera').addEventListener('click', () => { sim.endChase(); sim.follow = false; $('#btnFollow').classList.remove('active'); sim.camera.position.set(-40, 210, 150); sim.controls.target.set(0, 0, 0); });
 
 // ---------- Python view ----------
 function currentPython() {
