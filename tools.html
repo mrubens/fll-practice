@@ -66,6 +66,25 @@ E set speed to 75 %
 move back for 43 cm                     (back home, so picking it up costs no precision token)</div>
     <p class="tip">The window is narrow: 1 cm sideways. Line the robot up the same way every time (a LEGO beam laid
       against the mat's edge makes a good stop for its left side).</p></div>
+  <div class="card"><h3>M02 Exploding Seeds <span class="pts">30</span></h3>
+    <p><b>Start:</b> in the left launch area, the middle of the wheel axles <b>28 cm in from the mat's left edge</b> and
+      <b>18.5 cm from the south wall</b>, turned to face <b>north-east</b> (45 degrees right of straight up the mat), aimed
+      at the seed pod. The arm drives into the pod half raised, then lifts: all three seeds pop out.</p>
+    <div class="prog">set movement motors to C+D
+E set speed to 20 %
+E run counterclockwise for 0.5 seconds  (presses the arm onto the mat: a known start)
+E set speed to 40 %
+E run clockwise for 45 degrees
+set movement speed to 30 %
+move forward for 41 cm                  (38 to 44 works)
+E set speed to 25 %
+E run clockwise for 70 degrees          (lifts against the pod: the seeds pop out)
+wait 1 seconds
+E set speed to 75 %
+set movement speed to 50 %
+move back for 41 cm                     (back home)</div>
+    <p class="tip">Aim matters more than distance: 1.5 cm sideways or 4 degrees of turn still scores. A cardboard
+      triangle against the south wall makes the 45 degrees easy to repeat.</p></div>
   <div class="card"><h3>M01 Drone Survey <span class="pts">20</span></h3>
     <p><b>Start:</b> in the left launch area facing west (toward the mat's left edge), the wheel axles <b>30 cm in from
       the mat's left edge</b>, the robot's left side <b>3.5 cm from the south wall</b>. No attachment needed: the
@@ -216,7 +235,10 @@ move forward for 8 cm</div>
       square) is not covered yet.</p></div>
 
   <h2>Not covered yet</h2>
-  <p>M02, M04, M05, M08, M12, M13, M14 and M15. M13 (the keystone species) and M14 (seeds) need a tool that carries
+  <p>With the Driving Base's arm: M07 (the crossbar reaches 11.5 cm ahead of the wheels, a few centimetres short of
+    getting behind the red handle before the robot's front meets the model), and M09 (from a perfect start the arm lifts
+    the platform for all 30, but half a degree off it only gets the camera trap). With the Advanced Driving Base: M02, M04, M05, M08, M12, M13, M14 and M15.</p>
+  <p>M13 (the keystone species) and M14 (seeds) need a tool that carries
     things; M12's cane sits 0.5 cm off the mat and needs a thinner fork than the kit's beams make. The Dozer Blade, raised
     (motor C 60 degrees counterclockwise), pushes M15's skylight to within 0.4 cm of fully in, but the building stops the
     robot just short of the last 2 mm.</p>
