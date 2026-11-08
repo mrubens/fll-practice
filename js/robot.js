@@ -324,7 +324,10 @@ export class Robot {
   _attachmentStop(angle) {
     const module = this.geom.attachment.module;
     if (module === 'lift') { const top = ((LIFT.high - LIFT.low) / LIFT.cmPerRotation) * 360; return angle < 0 ? 0 : angle > top ? top : null; }
-    const s = module === 'custom' ? this.geom.attachment.stops || [-180, 180] : MODULE_STOPS[module];   // custom: where it meets the robot itself
+    // custom: where it meets the robot itself (the robot builder works that out); one saved without them stops where
+    // LEGO's arm does, rather than swinging through the hub
+    const own = this.geom.attachment.stops, unknown = !own || (own[0] === -180 && own[1] === 180);   // ±180: never worked out
+    const s = module === 'custom' ? (unknown && this.build.chassis === 'driving-base' ? MODULE_STOPS.arm : own || [-180, 180]) : MODULE_STOPS[module];
     if (!s) return null;
     return angle < s[0] ? s[0] : angle > s[1] ? s[1] : null;
   }
