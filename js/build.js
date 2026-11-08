@@ -111,8 +111,11 @@ export const PRESETS = {
   },
 };
 
-/** A new robot: the Advanced Driving Base with LEGO's Lift Arm and Dozer Blade (LEGO's competition robot). */
-export function defaultBuild() { return normalizeBuild({ ...PRESETS.advanced, attachment: defaultTools(), preset: 'advanced' }); }
+/** A new robot: LEGO's Driving Base from Training Camp (what the team's kits are built as for now). */
+export function defaultBuild() { return normalizeBuild({ ...PRESETS['training-camp'], preset: 'training-camp' }); }
+
+/** The Advanced Driving Base with LEGO's Lift Arm and Dozer Blade (LEGO's competition robot), in the robot builder. */
+export function advancedBuild() { return normalizeBuild({ ...PRESETS.advanced, attachment: defaultTools(), preset: 'advanced' }); }
 
 export function normalizeBuild(b) {
   const src = b || {};

@@ -9,7 +9,7 @@ import { exportLlsp3, importLlsp3 } from './llsp3.js';
 import { SAMPLE_STATE, SAMPLE_NAME, emptyState } from './sample.js';
 import { compile as compilePython } from './python.js';
 import { SpikeHub, isSupported as bleSupported } from './ble.js';
-import { PRESETS, defaultBuild, normalizeBuild } from './build.js';
+import { PRESETS, defaultBuild, advancedBuild, normalizeBuild } from './build.js';
 import { TOOL_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
@@ -365,7 +365,7 @@ nameInput.addEventListener('change', () => {
 $('#btnNew').addEventListener('click', async () => {
   const name = await modal({ message: 'Name for the new project', defaultValue: `Project ${Object.keys(store.projects).length + 1}`, input: true, cancel: true });
   if (name === null) return;
-  const build = defaultBuild();
+  const build = normalizeBuild(store.lastBuild || defaultBuild());   // the robot last used (the Training Camp robot at first)
   createProject(name.trim() || 'Untitled', emptyState(build), build);
 });
 
@@ -400,7 +400,7 @@ function renderProjects() {
       delete store.projects[row.dataset.id];
       if (store.current === row.dataset.id) {
         const next = Object.values(store.projects).sort((a, b) => b.updated - a.updated)[0];
-        if (next) loadProject(next.id); else { const build = defaultBuild(); createProject('Project 1', emptyState(build), build); }
+        if (next) loadProject(next.id); else { const build = normalizeBuild(store.lastBuild || defaultBuild()); createProject('Project 1', emptyState(build), build); }
       }
       saveStore();
       renderProjects();
@@ -478,9 +478,9 @@ sim.renderer.domElement.addEventListener('pointerdown', () => sim.endChase(), { 
 const legoBuilder = new AttachmentBuilder({
   normalize: normalizeBuild,
   presets: {
-    advanced: { ...defaultBuild(), label: 'Advanced Driving Base', name: 'Advanced Driving Base with LEGO\'s Lift Arm and Dozer Blade' },
-    'guided-mission': { ...PRESETS['guided-mission'], label: 'Guided Mission robot' },
     'training-camp': { ...PRESETS['training-camp'], label: 'Training Camp robot' },
+    'guided-mission': { ...PRESETS['guided-mission'], label: 'Guided Mission robot' },
+    advanced: { ...advancedBuild(), label: 'Advanced Driving Base', name: 'Advanced Driving Base with LEGO\'s Lift Arm and Dozer Blade' },
   },
   onChange: (b, customLdr) => {
     if (customLdr !== null && customLdr !== undefined) store.lastCustom = { module: 'custom', ldr: customLdr };
