@@ -7,6 +7,7 @@ import { loadLego, usable, Scene, DRIVE_AXLE, DRIVE_PARTS, CHASSIS_DRIVES, parse
 import { LD_TO_ROBOT, ldToRobot, loadRaw, flatten, partTemplates, partMesh, placementMatrix } from './lego3d.js';
 import { MODULE_STOPS, PORT_LETTERS } from './robot.js';
 import { SENSOR_PARTS, MODULES, CHASSIS, validateBuild, FREE_STOP } from './build.js';
+import { InstructionsViewer } from './instructions.js';
 
 const DEG = Math.PI / 180;
 const P = [0, 0, -1, 0, -1, 0, -1, 0, 0];                 // LDraw axes -> robot axes (a proper rotation, its own inverse)
@@ -485,6 +486,27 @@ export class AttachmentBuilder {
     });
   }
 
+  /** LEGO-style steps to build the attachment on the robot now (a built-in one from its model, or the child's own). */
+  async instructions() {
+    if (!this.D) return;
+    const chassis = this.build.chassis;
+    let build = null;
+    const b = BUILT_IN.find((x) => x.module === this.mode);
+    if (b && b.file) {
+      // the model's own parts, in the robot's frame (the file's origin is on the drive axle)
+      const text = await (await fetch(`models/attach/${b.file}.mpd`)).text();
+      const main = text.split(/^0 FILE /m).filter(Boolean)[0] || '';
+      const at = b.at || DRIVE_AXLE.at;
+      build = { title: `${b.label}`, chassis, file: b.file, at, qs: parseLdr(main).map((q) => ({ ...q, p: add(q.p, at) })) };
+    } else if (this.mode === 'custom' && this.parts.length) {
+      const tools = (TOOL_PRESETS[chassis] || []).filter((t) => this.root.querySelector(`.lb-preset.on[data-tool="${t.id}"]`));
+      build = { title: tools.length === 1 && !this.root.querySelector('.lb-preset.on[data-module="custom"]') ? tools[0].label : 'My attachment', chassis, qs: this.parts.slice() };
+    }
+    if (!build) { this.message('Pick an attachment first (or build your own): the instructions are for the one on the robot.'); return; }
+    if (!this.viewer) this.viewer = new InstructionsViewer({ names: NAMES });
+    await this.viewer.open(this.D, build);
+  }
+
   /** Done: everything is on the robot already. */
   done() { this.close(); }
 
@@ -522,6 +544,7 @@ export class AttachmentBuilder {
           <button type="button" class="lb-preset" data-module="custom">My own</button>
         </div>
         <div class="lb-tools">
+          <button type="button" class="tb" data-act="steps" title="Step-by-step pictures to build this attachment with the real LEGO parts">Instructions</button>
           <button type="button" class="tb" data-act="clear" data-custom title="Take your attachment's parts off">Clear</button>
           <button type="button" class="tb" data-act="load" data-custom>Open .ldr</button>
           <button type="button" class="tb" data-act="save" data-custom>Save .ldr</button>
@@ -614,6 +637,7 @@ export class AttachmentBuilder {
       else if (act === 'clear') { if (this.parts.length) { this._push(); this.parts = []; this._rebuild(true); } }
       else if (act === 'load') file.click();
       else if (act === 'save') this._download();
+      else if (act === 'steps') this.instructions();
       else if (act === 'done') this.done();
     });
     this._keys = (e) => this._key(e);

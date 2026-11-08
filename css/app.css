@@ -410,3 +410,35 @@ body.building #hubPanel { display: none; }
   .lb-keys { display: none; }
   .lb-side { width: auto; max-height: 30%; border-left: 0; border-top: 1px solid var(--line); }
 }
+
+/* building instructions */
+.ins { position: fixed; inset: 0; z-index: 90; background: var(--bg); display: flex; flex-direction: column; font-family: var(--font); color: var(--fg); }
+.ins[hidden] { display: none; }
+.ins-head { display: flex; align-items: center; gap: 14px; padding: 10px 14px; background: var(--panel); border-bottom: 1px solid var(--line); }
+.ins-head h3 { margin: 0; font-size: 16px; }
+.ins-count { font-weight: 800; color: var(--muted); }
+.ins-tools { margin-left: auto; display: flex; gap: 6px; }
+.ins-view { flex: 1; position: relative; min-height: 0; }
+.ins-view canvas { display: block; width: 100%; height: 100%; }
+.ins-callout { position: absolute; left: 14px; top: 14px; display: flex; flex-wrap: wrap; gap: 6px; max-width: min(520px, 70%); background: #fff; border: 2px solid #9fb7d8; border-radius: 12px; padding: 8px; box-shadow: 0 4px 14px rgba(30,36,48,.12); }
+.ins-callout[hidden] { display: none; }
+.ins-callout.whole { max-width: min(760px, 92%); max-height: 70%; overflow: auto; }
+.ins-callout figure { margin: 0; display: flex; flex-direction: column; align-items: center; width: 64px; }
+.ins-callout img { width: 60px; height: 60px; object-fit: contain; }
+.ins-callout figcaption { font-weight: 800; font-size: 14px; }
+.ins-note { position: absolute; left: 14px; bottom: 60px; margin: 0; font-size: 16px; font-weight: 800; }
+.ins-note:empty, .ins-status:empty { display: none; }
+.ins-status { position: absolute; left: 50%; top: 40%; transform: translateX(-50%); color: var(--muted); font-weight: 700; }
+.ins-nav { position: absolute; right: 14px; bottom: 14px; display: flex; gap: 8px; }
+.ins-nav .tb { font-size: 15px; padding: 9px 16px; }
+.ins-print { display: none; }
+@media print {
+  body.printing-instructions > *:not(.ins-print) { display: none !important; }
+  body.printing-instructions .ins-print { display: block; font-family: var(--font); color: #000; }
+  .ins-print h1 { font-size: 22px; margin: 0 0 8px; }
+  .ins-print section { page-break-inside: avoid; break-inside: avoid; margin: 0 0 18px; position: relative; }
+  .ins-print h2 { font-size: 18px; margin: 0 0 4px; }
+  .ins-print img { max-width: 100%; }
+  .ins-print .ins-callout { position: static; display: inline-flex; box-shadow: none; max-width: none; }
+  .ins-print section > img { display: block; width: 100%; max-height: 60vh; object-fit: contain; }
+}

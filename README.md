@@ -79,6 +79,10 @@ Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO L
   a touch, more the harder the robot drives into it, up to 10 N ("hard pressed" from 8 N); its blocks are SPIKE's
   ("is pressed?", "pressure in newtons / %", "when pressed") and export to Python. Two color sensors for line following work; a sensor hung on a single
   pin is flagged, since it would swing. The sensors stay when you change the attachment.
+- **Build it for real.** The robot builder's Instructions button shows LEGO-style steps for the attachment on the robot
+  (a built-in one or your own): a parts list first, then a step at a time in 3D with the parts that step needs and the
+  new parts outlined in orange; the attachment is built on the table, then goes onto the robot. Print makes a page per
+  step (or a PDF). The step order comes from how the parts connect (js/instructions.js).
 - **Build your own attachment.** In the robot builder pick "My own" and build on the Driving Base's arm bracket:
   a parts box with the Technic parts of the SPIKE Prime set and its expansion set, checked against LEGO's parts lists
   (beams, frames, pins, axles, connectors, bushes, gears, turntables whose top turns on its base, the 56 and 88 mm
