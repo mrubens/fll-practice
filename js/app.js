@@ -148,7 +148,9 @@ sim.onMatPoint = (p) => {
     const fromLeft = p.x + world.innerHalfW, fromNear = world.innerHalfH - p.y;
     const dist = Math.hypot(p.x - robot.x, p.y - robot.y);
     const bearing = ((Math.atan2(p.y - robot.y, p.x - robot.x) / DEG - robot.heading + 540) % 360) - 180;
-    parts.push(`${fromLeft.toFixed(1)} cm from the left wall · ${fromNear.toFixed(1)} cm from the near wall<small>${dist.toFixed(1)} cm from the robot, ${Math.abs(bearing) < 0.5 ? 'straight ahead' : `${Math.abs(bearing).toFixed(0)}° to the ${bearing > 0 ? 'right' : 'left'}`}</small>`);
+    // the yaw the hub would read with the robot turned to face the spot (yaw counts from where it was last set to 0)
+    const yawTo = Math.round(((robot.yaw() + bearing + 540) % 360) - 180);
+    parts.push(`${fromLeft.toFixed(1)} cm from the left wall · ${fromNear.toFixed(1)} cm from the near wall<small>${dist.toFixed(1)} cm from the robot, ${Math.abs(bearing) < 0.5 ? 'straight ahead' : `${Math.abs(bearing).toFixed(0)}° to the ${bearing > 0 ? 'right' : 'left'}`} · facing it: yaw ${yawTo}°</small>`);
   }
   matReadout.innerHTML = parts.join('');
   matReadout.hidden = false;
