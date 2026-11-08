@@ -924,11 +924,25 @@ export class Sim3D {
       toNdc(e);
       // the keystone species (or other loose equipment) picks up first: drag it onto the robot
       const eqHits = (this.equipmentNodes || []).length ? ray.intersectObjects(this.equipmentNodes.map((q) => q.node), true) : [];
+      // loose field pieces in home (seeds knocked free and brought back) can be picked up too
+      const loose = this.canDragPiece ? this.pieceNodes.filter((pn) => this.canDragPiece(pn.o.id, pn.name)) : [];
+      const pHits = loose.length ? ray.intersectObjects(loose.map((pn) => pn.node), true) : [];
       const robotHits = ray.intersectObject(this.robotGroup, true);
+      if (pHits.length && (!robotHits.length || pHits[0].distance <= robotHits[0].distance + 0.5) && (!eqHits.length || pHits[0].distance < eqHits[0].distance)) {
+        const pn = loose.find((q) => { let o = pHits[0].object; while (o && o !== q.node) o = o.parent; return !!o; });
+        if (pn) {
+          const b = new THREE.Box3().setFromObject(pn.node);
+          this.eqDrag = { oid: pn.o.id, id: pn.name, node: pn.node, half: pn.node.position.y - b.min.y };
+          this.controls.enabled = false;
+          el.setPointerCapture(e.pointerId);
+          el.style.cursor = 'grabbing';
+          return;
+        }
+      }
       if (eqHits.length && (!robotHits.length || eqHits[0].distance <= robotHits[0].distance + 0.5)) {
         let o = eqHits[0].object; while (o && !o.userData.equipment) o = o.parent;
         if (o) {
-          this.eqDrag = { id: o.userData.equipment.id, half: o.userData.equipment.box[1] / 2, yaw: 0 };
+          this.eqDrag = { oid: null, id: o.userData.equipment.id, node: o, half: o.userData.equipment.box[1] / 2, yaw: 0 };
           const r0 = o.quaternion; this.eqDrag.yaw = 2 * Math.atan2(r0.y, r0.w);
           this.controls.enabled = false;
           el.setPointerCapture(e.pointerId);
@@ -952,12 +966,12 @@ export class Sim3D {
       if (this.eqDrag) {
         // set it on whatever is under the pointer (the robot, a model, the mat), a hair above it
         toNdc(e);
-        const node = this.equipmentNodes.find((q) => q.id === this.eqDrag.id);
-        const targets = [this.robotGroup, this.matMesh, ...this.obstacleExtras, ...this.obstacleMeshes.filter((m) => m.visible), ...this.pieceNodes.map((pn) => pn.node),   // the models' moving parts too: M13's platform
-          ...this.equipmentNodes.filter((q) => q !== node).map((q) => q.node)];
+        const node = this.eqDrag.node;
+        const targets = [this.robotGroup, this.matMesh, ...this.obstacleExtras, ...this.obstacleMeshes.filter((m) => m.visible), ...this.pieceNodes.map((pn) => pn.node).filter((n) => n !== node),   // the models' moving parts too: M13's platform
+          ...this.equipmentNodes.map((q) => q.node).filter((n) => n !== node)];
         const h = ray.intersectObjects(targets, true)[0];
         const p = h ? h.point : (ray.ray.intersectPlane(plane, hit) ? hit : null);
-        if (p && this.onDragEquipment) this.onDragEquipment(this.eqDrag.id, { x: p.x, y: p.z, h: p.y + this.eqDrag.half + 0.15, yaw: this.eqDrag.yaw });
+        if (p && this.onDragLoose) this.onDragLoose(this.eqDrag.oid, this.eqDrag.id, { x: p.x, y: p.z, h: p.y + this.eqDrag.half + 0.15, yaw: this.eqDrag.yaw });
         this.frameForced = true;
         return;
       }
@@ -987,7 +1001,7 @@ export class Sim3D {
       }
       this.pressAt = null;
       if (this.eqDrag) {
-        if (this.onDragEquipment) this.onDragEquipment(this.eqDrag.id, null);
+        if (this.onDragLoose) this.onDragLoose(this.eqDrag.oid, this.eqDrag.id, null);
         this.eqDrag = null;
         this.controls.enabled = true;
         el.style.cursor = '';

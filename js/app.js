@@ -17,7 +17,7 @@ import { TOOL_DEMOS, ARM_DEMOS, demoBuild, demoProgram } from './demos.js';
 import { Scoring } from './scoring.js';
 import { BOARDS, boardById } from './boards.js';
 import { MISSIONS } from './missions.js';
-import { EQUIPMENT_PIECES, FIELD, inHome } from './mechanisms.js';
+import { EQUIPMENT_PIECES, FIELD, FIELD_SEEDS, inHome } from './mechanisms.js';
 import { ModelCard } from './missionsui.js';
 import { AttachmentBuilder } from './legobuilder.js';
 
@@ -169,7 +169,14 @@ sim.onMatPoint = (p) => {
 };
 // dragging the keystone species with the mouse (between runs): set it down on the robot, in a carrier, anywhere
 let dropSettle = 0;            // after a drop the referee watches for two seconds, so a keystone set on M13 by hand scores
-sim.onDragEquipment = (id, pos) => { if (world.physics) world.physics.dragEquipment(id, pos); if (!pos) dropSettle = 2; };
+sim.onDragLoose = (oid, name, pos) => { if (world.physics) world.physics.dragPiece(oid, name, pos); if (!pos) dropSettle = 2; };
+sim.onDragEquipment = (id, pos) => sim.onDragLoose(null, id, pos);
+// a field piece may be picked up by hand only when it's loose and completely in home, as the rules allow
+sim.canDragPiece = (oid, name) => {
+  if (!world.physics || !world.season || !FIELD_SEEDS.some(([m, n]) => m === oid && n === name)) return false;
+  const at = world.physics.loosePiece(oid, name);
+  return !!at && inHome(at.x, at.y);
+};
 sim.onPick = (obstacle) => {
   if (!obstacle) { if (!modelCard.card.hidden) modelCard.close(); return; }
   if (!world.season) return;                 // only the season table has mission cards

@@ -703,18 +703,30 @@ export class Physics {
   }
 
   /** Hold an equipment piece at `pos` (table cm: x, y, h of its middle), upright, while the mouse drags it; null lets it go. */
-  dragEquipment(id, pos) {
-    const pc = this.pieces.find((q) => q.equipment && q.name === id);
+  dragEquipment(id, pos) { this.dragPiece(null, id, pos); }
+
+  /** The same for a loose field piece (a seed knocked free and brought home): obstacleId null means equipment. */
+  dragPiece(obstacleId, name, pos) {
+    const pc = this.pieces.find((q) => (obstacleId === null ? q.equipment : q.o && q.o.id === obstacleId) && q.name === name);
     if (!pc) return;
     if (pos) {
       if (pc.body.bodyType() !== 2) pc.body.setBodyType(2, true);          // kinematic: it goes where the mouse is
       pc.body.setTranslation({ x: pos.x * S, y: pos.h * S, z: pos.y * S }, true);
+      pc.handPlaced = true;
       if (pos.yaw !== undefined) pc.body.setRotation({ x: 0, y: Math.sin(pos.yaw / 2), z: 0, w: Math.cos(pos.yaw / 2) }, true);
     } else {
       pc.body.setBodyType(0, true);                                          // dynamic again: it settles where it was set down
       pc.body.setLinvel({ x: 0, y: 0, z: 0 }, true); pc.body.setAngvel({ x: 0, y: 0, z: 0 }, true);
     }
     this.readPieces(this.robot ? this.robot.time : 0);
+  }
+
+  /** Whether a field piece is loose and may be picked up by hand: knocked free, not hooked on the robot, on a joint or held. */
+  loosePiece(obstacleId, name) {
+    const pc = this.pieces.find((q) => q.o && q.o.id === obstacleId && q.name === name);
+    if (!pc || !pc.freed || pc.carried || pc.body.bodyType() === 1) return null;
+    const t = pc.body.translation();
+    return { x: t.x / S, y: t.z / S };
   }
 
   /** Before a physics step: releases, latches, driven lifts. */
