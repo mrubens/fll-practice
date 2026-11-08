@@ -1054,6 +1054,15 @@ export class AttachmentBuilder {
   /** Take a part in hand to place it; `carry`: a part being moved ({port, inBody, from}). */
   pick(f, carry = null) {
     if (!carry && this.ghost && this.ghost.f === f && !this.ghost.carry) { this._dropGhost(); return; }   // its button again: put it down
+    // a part that isn't a sensor goes on the child's own attachment: picking one switches to "My own" (from the arm,
+    // its parts come along to build on)
+    let switched = '';
+    if (!carry && !SENSOR_PARTS[f] && this.mode !== 'custom' && (CHASSIS[this.build.chassis] || {}).custom) {
+      const from = this.mode;
+      this.setModule('custom', true);
+      switched = from === 'arm' ? 'Now building your own attachment, starting from the arm\'s parts. '
+        : from !== 'none' ? 'Now building your own attachment (My own). ' : '';
+    }
     this._dropGhost();
     this.selected = null;
     this._selBar();
@@ -1070,10 +1079,10 @@ export class AttachmentBuilder {
     this._handBar();
     const sp = SENSOR_PARTS[f];
     const name = sp ? sp.label : shortName(this.D.parts.parts[f].d);
-    this.message(sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
+    this.message(switched + (sp ? `${name}: snap it onto a hole or pin of the robot.${sp.type === 'color' ? ' Point it down at the mat, close to it.' : ''}`
       : this.mode === 'custom' && this._toolPorts().length ? `${name}: snap it onto the tool frame or another part. A gear that meshes with a tool motor's 28-tooth gear turns with that motor.`
       : this.mode === 'custom' ? `${name}: move it onto the orange axle (motor E turns it), or onto a hole or pin.`
-      : `${name}: snap it onto the robot (to hold a sensor, say). To build an attachment, pick "My own" above.`);
+      : `${name}: snap it onto the robot.`));
     this._guide();
   }
 
