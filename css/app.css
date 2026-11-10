@@ -47,10 +47,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 
 /* ---- main layout ---- */
 .layout { flex: 1; display: flex; min-height: 0; }
-.editor { flex: 1 1 60%; min-width: 0; position: relative; }
-#blocklyDiv { position: absolute; inset: 0; }
-.editor-bar { position: absolute; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 18px 16px 18px; pointer-events: none; z-index: 5; }
-.editor-bar > * { pointer-events: auto; }
+/* The workspace tools and run buttons get their own row under Blockly, not a layer over it: Blockly's toolbox,
+   flyout and scrollbars carry their own z-index and would otherwise sit on top of (and swallow clicks on) them. */
+.editor { flex: 1 1 60%; min-width: 0; display: flex; flex-direction: column; }
+#blocklyDiv { position: relative; flex: 1 1 auto; min-height: 0; }
+.editor-bar { flex: 0 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 8px 18px; background: var(--panel); border-top: 1px solid var(--line); }
 .ws-tools { display: flex; gap: 6px; }
 .wt { width: 38px; height: 38px; border-radius: 10px; border: 1px solid var(--line); background: rgba(255,255,255,.95); font-size: 18px; font-weight: 700; display: grid; place-items: center; box-shadow: 0 2px 8px rgba(30,36,48,.08); }
 .wt:hover { background: #fff; border-color: #B9C0CC; }
