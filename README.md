@@ -215,3 +215,19 @@ Where LEGO parts connect (`models/lego/snaps.json`, `models/lego/base.json`, mad
 [LDCad shadow library](https://github.com/RolandMelkert/LDCadShadowLibrary) by Roland Melkert and contributors
 (CC BY-SA 4.0), so those derived files are CC BY-SA 4.0 too.
 See `models/ATTRIBUTION.md` for the details. The `.llsp3` format and block shapes were verified against files written by the SPIKE App.
+
+## License
+
+The project's own code and documentation are under the [MIT License](LICENSE). Files from elsewhere keep their own
+terms:
+
+- `models/`: LDraw part geometry (CC BY 4.0, the LDraw contributors); `models/lego/snaps.json` and
+  `models/lego/base.json` (CC BY-SA 4.0, from the LDCad shadow library); the mission models, driving bases and
+  attachments come from the fll-sim project. See `models/ATTRIBUTION.md`.
+- `mat/`: the BIOGLOW mat artwork belongs to FIRST.
+- `samples/`: FIRST's Guided Mission program, redistributed unchanged.
+- `media/`: Blockly's media files (Apache License 2.0, Google).
+- Mission text in `js/missions.js` quotes the FIRST LEGO League BIOGLOW rulebook.
+
+LEGO® and SPIKE™ are trademarks of the LEGO Group; FIRST® and FIRST® LEGO® League are trademarks of FIRST. Neither
+sponsors or endorses this project.
