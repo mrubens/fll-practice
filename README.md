@@ -1,233 +1,98 @@
 # FLL Practice
 
-BIOGLOW practice simulator for SPIKE Prime teams.
+A browser simulator for FIRST® LEGO® League Challenge teams using LEGO® Education SPIKE™ Prime, set up for the
+BIOGLOW (2026-27) season. Kids write programs with the same Word Blocks as the SPIKE App, run them on a to-scale
+field with all fifteen mission models, see what scores, then take the same program to the real robot.
 
-<img width="1080" height="648" alt="image" src="https://github.com/user-attachments/assets/afcd0404-a1b2-4c84-a2f7-19342ca51e63" />
+**Use it at <https://mrubens.github.io/fll-practice/>.** It runs on any laptop or tablet with nothing to install.
 
-A browser simulator for FIRST® LEGO® League Challenge teams using LEGO® Education SPIKE™ Prime. The team
-writes programs with the same Word Blocks as the SPIKE App, runs them on a to-scale BIOGLOW (2026-27) field
-with the real mission models, sees what scores, and then takes the exact same program to the real robot.
+<img width="1080" height="648" alt="FLL Practice: the block editor beside the BIOGLOW field" src="https://github.com/user-attachments/assets/afcd0404-a1b2-4c84-a2f7-19342ca51e63" />
 
-**Use it here: <https://mrubens.github.io/fll-practice/>** (any laptop or tablet, nothing to install).
+Not affiliated with FIRST or the LEGO Group.
 
-Not affiliated with FIRST or the LEGO Group. LEGO, SPIKE, FIRST and FIRST LEGO League are their trademarks.
+## What it does
 
-## For the team
-
-- **Code it like the SPIKE App.** The block palette (Movement, Motors, Light, Sound, Events, Control, Sensors,
-  Operators, Variables, My Blocks) has the same blocks, names, dropdowns and defaults as SPIKE App 3, so nothing
-  has to be relearned on the real tablet.
-- **Run it on the BIOGLOW field.** The table is 236 x 114 cm with the 200 cm season mat, the launch areas and
-  all 15 mission models as real LEGO geometry, placed where the field setup guide puts them. Drag the robot to
-  position it, orbit and zoom the camera, or press **Follow** to ride along.
-- **Launch like a match.** **Launch** puts the robot in the left launch area, resets the field and runs the
-  program with the 2:30 match clock in the hub strip.
-- **See what scores.** Click a mission model and the camera flies to it with a card: the mission's rulebook
-  points, its tasks, and how the simulator detects each one (drive into it, lower the attachment onto it, lower
-  then lift, or keep away). When the robot does it the model pulses green, the task ticks off and the points
-  chip in the view updates. The models are physical: every mission has real moving parts (hinges, sliders,
-  loose pieces, things that drop when touched) built on Rapier physics, and points come from where those parts
-  end up, worded like the Robot Game Rulebook. The rock flips over on its hinge and drops the flag; the seeds
-  pop off the pod when the stalk is pushed; the leaves lift out of the nest by their loops; the vine falls when
-  touched; the root and mycelium slide; the platform, cane, canopy and camera trap latch when raised; the
-  hatch and root cover swing down; the ant cart rolls to the nest (ram it and the leaf fragments fly out); the
-  habitats are only standing on the mat, so bumping them costs the points. Collisions are real too: the robot
-  and its attachment stop at walls and models, a motor pressing the arm into something stalls (its "run for"
-  block gives up after a moment, like the hub), and the whole thing runs at 200 Hz with substeps.
-- **The robot is real LEGO.** The Training Camp and Guided Mission presets show the FIRST robot guide's Driving Base
-  (drive motors on C and D, the accessory motor E at the front with its 12-tooth bevel gear, the color sensor hung
-  at the front right as in Driving Base 3) built from the LDraw part library, and the arm is the Driving Base 2 arm
-  from the same guide: its bracket pins to the hub, its bevel gear meshes with the motor's, and it swings on a real
-  axle between resting on the mat and its elbows meeting the hub. Pan the 3D view with a two-finger scroll on a touchpad
-  (pinch or mouse wheel zooms, drag orbits, shift-drag pans).
-- **Start from FIRST's own Guided Mission.** On the first visit the app opens FIRST's published Guided Mission for
-  Mission 11 with the robot it was written for (Driving Base, color sensor on B, arm motor on E). Press Launch and
-  it drives from the left launch area, lifts the seed, pulls the root cover down and backs into the right launch area.
-- **Play a match like a referee scores it.** Launch starts a 2:30 match: the robot must be completely inside a
-  launch area (the quarter circles in home), the equipment inspection bonus (20) is awarded if it fits there, and
-  the team's loose equipment (the keystone species and four seeds) is loaded into the robot's basket attachment,
-  or left in home when there is none. Stop while the robot is outside home and a precision token is lost (six
-  tokens are worth 50, then 50/35/25/15/10). Relaunching needs the robot back in a launch area. When time is up
-  the sheet freezes, and missions marked with the no-equipment constraint score nothing if their model is
-  touching the robot. Run (the play button) is free practice with no match rules.
-- **Runs on slow tablets too.** The 3D view picks a graphics tier from the device (full detail on desktops; lighter
-  shadows and a smaller mat texture on touch devices and small CPUs) and steps down on its own, with a note, if
-  frames get slow: lower pixel ratio, no shadows, fewer physics substeps. The robot's program and scoring never change.
-- **Two robots.** The robot builder starts from the Guided Mission robot or the Training Camp robot (the LEGO
-  Driving Base) or the **Advanced Driving Base**: large motors on A (left) and E (right) with 88 mm wheels, two color
-  sensors at the front on B and F, ball casters in front, and two tool motors, D at the front and C at the back, that
-  programs can run. The built-in attachments are made for the Driving Base's arm bracket; on the Advanced Driving Base
-  "My own" builds tools on its front and back frames, and two ready-made ones can be used as they are or changed:
-  **Lift arm**, LEGO's own Lift Arm rebuilt part by part from its building instructions (a frame dropped into the front
-  tool frame, where a 36-tooth gear meshes with motor D's 28-tooth gear and a 12-tooth gear on the same upright axle
-  turns two 20-tooth gears on the arm's axle, so the arm turns about half as far as the motor; it lifts from just over
-  the mat to straight up and over), **Dozer blade**, LEGO's Dozer Blade the same way (the same gear train on the back
-  tool frame turns a 15-long axle carrying two doubled curved gear racks down to a blade of an azure panel on an 11- and a
-  15-long beam behind the robot; it rests on the mat and lifts up and over), and "Back lift arm" (a 12-long axle across the back frame with a 20-tooth gear
-  meshing over motor C's 28-tooth gear, and a 9-long beam out behind the robot). A ready-made tool replaces only what is
-  on its own frame, so a lift arm in front and a dozer behind go on together. Parts keep the colours they are built in. Each tool motor turns a 28-tooth gear lying flat under its frame:
-  parts locked to it turn with it, and any gear placed so it meshes with it (side by side, or at a right angle like
-  real bevel gears) turns at the ratio the teeth make, the other way round, and so on down a gear train. Gears locked
-  against the robot or each other are flagged. The builder has a "Try motor" slider per tool motor and works out where
-  each tool stops against the robot; on the table Q and E run motor D and Z and X run motor C, and programs run both.
-- **Place your sensors.** The robot builder's parts box starts with the SPIKE color, distance and force sensors: snap one
-  onto any hole or pin of the robot (add beams to hold it where you want it), and it plugs into the next free hub
-  port; the Hub ports panel on the right (or the bar over a selected part) changes ports, and Move and Remove take it
-  elsewhere or off. Readings come from where each sensor really is: a color sensor reads the mat where it looks, so it
-  has to look down from close by (full strength up to 2 cm, nothing past 4.5 cm, like the real one), and a distance
-  sensor measures along the way its eyes look. A force sensor's button reads when something is against it: 2.5 N for
-  a touch, more the harder the robot drives into it, up to 10 N ("hard pressed" from 8 N); its blocks are SPIKE's
-  ("is pressed?", "pressure in newtons / %", "when pressed") and export to Python. Two color sensors for line following work; a sensor hung on a single
-  pin is flagged, since it would swing. The sensors stay when you change the attachment.
-- **Tools that score.** The Advanced Driving Base (the default robot) carries LEGO's Lift Arm and Dozer Blade, and the
-  Rake (a new tool on LEGO's tool base, kit pieces only). tools.html lists the missions each scores in the simulator, where
-  to put the robot (measured from the walls) and the exact moves, to repeat on the real table.
-- **Build it for real.** The robot builder's Instructions button shows LEGO-style steps for the attachment on the robot
-  (a built-in one or your own): a parts list first, then a step at a time in 3D with the parts that step needs and the
-  new parts outlined in orange; the attachment is built on the table, then goes onto the robot. Print makes a page per
-  step (or a PDF). The step order comes from how the parts connect (js/instructions.js).
-- **Build your own attachment.** In the robot builder pick "My own" and build on the Driving Base's arm bracket:
-  a parts box with the Technic parts of the SPIKE Prime set and its expansion set, checked against LEGO's parts lists
-  (beams, frames, pins, axles, connectors, bushes, gears, turntables whose top turns on its base, the 56 and 88 mm
-  wheels, the big panels)
-  and the Driving Base with its arm bracket, whose axle motor E turns. Parts snap only where real LEGO connects (a pin
-  into a pin hole, an axle into an axle hole or through a round hole, from the LDCad shadow library's connector
-  data): click a part, point at a hole, axle or pin and click to place it; R turns it about the axle, F flips it,
-  Tab uses another of its holes or pins, [ and ] slide it along. "Try motor E" turns the drive in the preview. The
-  simulator works out what the build is made of: parts locked onto the drive axle turn with motor E, parts locked
-  to the robot stay put, and anything hung on a single pin line swings on a hinge, held by friction pins (black,
-  blue) and loose on smooth ones (grey, tan). It is saved with the project and as an `.ldr` that LDCad or Studio
-  open in the Driving Base's frame.
-- **Carry things.** The robot builder has a basket attachment that tips forward over its front lip, so the
-  keystone species can be dumped onto the restoration platform, and seeds collected from the field (the seed pod,
-  the research platform and M11's tree) can be carried to the replantation station.
-- **Practice one mission.** **Models** over the 3D view lists the fifteen missions with a checkbox each: untick
-  the rest and their models leave the table and the scoresheet, so a kid can drive at one model without the others
-  in the way. The choice is remembered.
-- **Measure on the mat.** Hovering the mat shows where the cursor is, measured the way teams measure on the real
-  table (from the left wall and from the near wall) and how far and which way it is from the robot. Shift-drag lays
-  a ruler and shows its length and its angle to the robot's heading.
-- **Step through a program.** The step button between Stop and Run starts the program paused before its first
-  block and runs one block per press; the robot and the match clock stand still between steps, and the block
-  about to run is outlined. Press Step while a program is running to pause it before its next block, and Run to
-  let it continue at full speed. The mirrored button steps back instantly: every pause keeps a snapshot of the
-  physics world, the robot, the referee and the program's position, and going back puts it all back (shift-click
-  goes back to the start).
-- **Drive by hand.** With no program running, W A S D drive the robot (W with A or D arcs, A or D alone pivots)
-  and Q and E raise and lower the attachment. Physics, pushing and scoring work as in a free run; during a launched
-  match the keys are ignored, since only the robot may act.
-- **Models that push back.** M10's habitats stand free: a shove on the long side slides them, on the narrow side
-  tips them over. M01's winch tower and M08-09's leafy canopy are solid, so the robot stops at the tower and a
-  raised arm snags in the canopy.
-- **Pick a table.** The dropdown over the 3D view switches between the BIOGLOW season table, a line practice
-  table (a loop, a wiggly line, a stop line and four color tiles) and a Training Camp table in the spirit of the
-  SPIKE Prime Competition Ready lessons: a black line to drive to, a brick marker to stop at with the distance
-  sensor, and two open-frame Technic cubes to collect and bring to the goal square. The calibration strip is three printed letter sheets and a
-  tape measure on any table about 1.2 m long, to check distances and turns against the real robot:
-  [calibration.html](calibration.html) shows how to set it up, five short tests and a results sheet
-  ([calibration-mat.pdf](calibration-mat.pdf) is the sheets, made by tools/calibration_mat.py). Sheet 2 is a fan
-  with a line for every degree from the start point, so after a turn and a short drive the robot's front shows the
-  angle it really turned to; sheet 3 is a distance ruler for where the wheels stop after 70 to 87 cm. A box on the 3D view gives the same readings (where the wheels are on the tape
-  measure, which fan line the front is on, which way the robot points, how long the program took). The arm has a fork: lower it
-  about 12 degrees, drive into a cube, lift a little (lift too far and it dangles), carry, lower, back out. Match rules and scoring only apply on the
-  season table.
-- **One scrolling palette.** Like the SPIKE app, the block palette is one continuous list with a header per
-  category: click a category to scroll to it, and the highlighted category follows as you scroll.
-- **Build your robot.** Every robot is the LEGO Driving Base from Training Camp (5.6 cm wheels, 11.2 cm track,
-  hub flat), drawn from its real bricks. **Robot builder** places the sensors and sets the hub ports, and picks
-  an attachment: arm, sweeper, forklift, plow or basket, each built from the medium motor and Technic liftarms.
-  The side scoop (the Driving Base 2 arm's axle with a 15-long beam reaching out to the left and a 2x14 plate lying on
-  the mat) is built for M12: park beside the cane facing north, sweep the plate under its claw with a spin, lift
-  until it tips onto the trunk; the plate's tip also hooks the support tie out of its slot and drags it to the post.
-  Attachments always mount on the front with their motor on port E, like the Guided Mission robot. Presets: the Guided Mission robot and the plain Training Camp base.
-- **Save for the real robot.** Projects autosave in the browser (My projects). **Save .llsp3** writes a file
-  the SPIKE App opens unchanged (verified against the SPIKE web app, including My Blocks). The robot build
-  travels inside the file.
+- **Same blocks as the SPIKE App.** The palette matches SPIKE App 3: same categories, blocks, dropdowns and
+  defaults, including My Blocks.
+- **The BIOGLOW field.** The table, mat, launch areas and all fifteen mission models, built from real LEGO parts.
+  The models' moving parts have physics, and scoring follows the Robot Game Rulebook. Click a model to see its
+  mission and how it scores.
+- **Matches.** **Start match** runs a 2:30 match with referee rules: launch areas, equipment inspection,
+  precision tokens, and swapping programs and attachments in home. **Run** is free practice.
+- **Hands on the field.** In free practice, drag the robot to place it, or drag any moving part of a model to
+  try its mechanism.
+- **Robot builder.** Choose the Training Camp robot, the Guided Mission robot or the Advanced Driving Base, place
+  sensors and set hub ports. Pick a ready-made attachment, or build your own from the SPIKE Prime kit's parts:
+  parts only connect where real LEGO connects. **Instructions** shows LEGO-style building steps for whatever you
+  built.
+- **Debugging.** Step through a program one block at a time, step back, or drive by hand with W A S D (Q and E
+  move the attachment). Hover the mat to measure distances and angles from the robot.
+- **Practice tables.** Besides the season table: a line-following table, a Training Camp table, and a calibration
+  strip ([calibration.html](calibration.html)) for checking distances and turns against the real robot.
+- **To the real robot.** Projects save in the browser and as `.llsp3` files the SPIKE App opens.
 
 ## Getting a program onto the real robot
 
-1. **Save .llsp3** here, then **Open Project** in the SPIKE App (web/desktop) or share the file to the iPad app,
-   connect the hub and run it there. This is the reliable path.
-2. **Send to hub** over Bluetooth: **Connect hub** (hub on, not connected to anything else), pick it in the
-   browser dialog, then **Send to hub** compiles the program to SPIKE Python, uploads it to slot 0 and starts it.
-   Works in Chrome and Edge on laptops, Chromebooks and Android; not in Safari or on iPad. Written against
-   LEGO's published hub protocol (https://lego.github.io/spike-prime-docs/) but not yet tried on a physical hub.
-   **Python** shows the generated code for pasting into a SPIKE Python project.
+1. **Save .llsp3**, then open the file in the SPIKE App (web, desktop or iPad) and run it from there. This is the
+   reliable way.
+2. **Connect hub** and **Send to hub** compile the program to SPIKE Python and upload it over Bluetooth (Chrome
+   or Edge; not Safari or iPad). This hasn't been tried on a physical hub yet. **Python** shows the generated code.
 
-## How accurate is it
+## How accurate it is
 
-A practice tool, not a predictor: a program that works here is a good start, and the numbers still need tuning on
-the real table. What is modelled, and how well:
+It's a practice tool: a program that works here is a good start, but distances and turns still need tuning on the
+real table.
 
-| | Status |
+| | |
 |---|---|
-| Drive | Exact SPIKE math: wheel size, track, the hub's cm-per-rotation calibration, the steering rule; encoders and chassis move by the same wheel turns. No wheel slip, acceleration overshoot or battery sag, so real runs drift a few percent and a few degrees. |
-| Pushing and lifting | Approximated. The robot and its motors are as strong as they need to be (no torque or traction limit); pieces pressed into a model jam the robot, and an attachment stalls on what it cannot move. |
-| Collisions | Real-part colliders for the robot, attachments and mission models (Rapier physics), with a 2.5 mm skin round the robot. Turning checks the whole robot against walls and models. |
-| Mission models | Built from their LEGO models and articulated (hinges, sliders, latches, loose pieces), positioned from the FIRST field PDFs. Some releases are simplified: hanging seeds come off when touched rather than only when lifted along their bar. |
-| Scoring | The rulebook's tasks, bonuses and penalties, including FIRST's challenge updates (M04's katydid and shuffled nest), the equipment inspection (all of the robot in one launch area, under 30.5 cm), precision tokens, and the no-equipment constraint judged model by model at the end of the match. Zones are measured from the mat and approximate. |
-| Sensors | Ideal: color reads the mat image under the sensor, distance is one ray, the gyro is the true heading. No noise, latency or calibration error. |
-| Motors | A program start keeps the shafts where they are (home your attachment in your program); Launch and Reset position set them back by hand. Encoders are ideal (no backlash). |
-| Python export | Behaves like the simulator (same speed scale, color codes, event hats, random numbers); not yet tried on a physical hub. |
-| Not simulated | Pitch and roll (the table is flat), sound files, broadcasts, light-matrix pixel blocks, motor load and traction limits, sensor noise. |
+| Driving | SPIKE's own movement math (wheel size, track, steering). No wheel slip or battery sag, so real runs drift a few percent and a few degrees. |
+| Pushing and lifting | Motors and wheels are as strong as needed. An attachment stalls on what it can't move, and the robot stops at walls and models. |
+| Mission models | Real LEGO geometry with hinges, sliders and latches. A few mechanisms are simplified. |
+| Scoring | The rulebook's tasks, bonuses and penalties, including FIRST's challenge updates. Zones are measured from the mat and are approximate. |
+| Sensors | Ideal: no noise or lag. The color sensor reads the mat under it, the distance sensor casts one ray, the gyro is the true heading. |
+| Not simulated | Tilting, sound files, broadcasts, light matrix pixels, sensor noise. |
 
-## Run or host it yourself
+## Running it yourself
 
-It is a static site. The hosted copy is published from `main` by GitHub Pages. Locally:
+It's a static site; GitHub Pages publishes `main`. To run it locally:
 
 ```bash
 python3 serve.py 8794
 ```
 
-then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, Rapier, JSZip) and the
-Nunito font. For another season: replace `mat/season.jpg` (16 px/cm covering the whole table; the color sensor samples it at 8 px/cm, the 3D view shows it as is, and `mat/season-hi.jpg` is an optional 32 px/cm copy used on desktop GPUs), edit
-`mat/season.json` (model boxes, poses, launch pose) and add packed LDraw models to `models/` (see
-`models/ATTRIBUTION.md`); without a season file the simulator falls back to a plain practice mat.
+Then open <http://localhost:8794>. It needs internet for the CDN libraries (Blockly, three.js, Rapier, JSZip).
 
-## Files
+For another season, replace `mat/season.jpg` (16 px/cm) and `mat/season.json` (model poses and collision boxes),
+add LDraw models to `models/` (see `models/ATTRIBUTION.md`), and update `js/missions.js` and `js/mechanisms.js`.
 
-| File | Purpose |
+## Code
+
+| Files | What they do |
 |---|---|
-| `js/spec.js` | The block catalog: opcodes, inputs, fields and selector menus exactly as the SPIKE App stores them |
-| `js/blocks.js`, `js/myblocks.js` | Blockly setup, custom fields, theme, toolbox; My Blocks (Scratch procedures) |
-| `js/interpreter.js` | Runs the workspace: threads, event hats, every block's behavior |
-| `js/robot.js`, `js/build.js` | Robot and hub model (motors, kinematics, sensors, matrix, sound) and the build it derives from |
-| `js/world.js`, `js/physics.js`, `js/mechanisms.js` | The table: mat (also the color-sensor lookup), season loading, obstacles; Rapier layer (kinematic robot, collide-and-slide, arm stall) and the per-model mechanisms (pieces, joints, which LEGO parts move) |
-| `js/sim3d.js` | three.js scene, LDraw models, robot mesh, camera, drag-to-place, click-to-inspect |
-| `js/lego.js`, `js/legobuilder.js`, `js/lego3d.js`, `js/legophysics.js`, `js/legodraw.js` | The robot builder: connector matching and what a build is made of (bodies, hinges, friction), its UI (sensors, ports, attachment), part drawing, physics and drawing on the robot |
-| `js/missions.js`, `js/scoring.js`, `js/missionsui.js` | Missions with rulebook wording and points read from the physical state, the referee (match rules, tokens, end-of-match freeze), mission card |
-| `js/hub.js` | Hub strip UI and audio |
-| `js/llsp3.js` | `.llsp3` export/import (project.json <-> Blockly) |
-| `js/python.js`, `js/ble.js` | SPIKE Python compiler and the Web Bluetooth hub client |
-| `js/app.js` | Toolbar, project storage, builder UI, main loop |
-| `mat/season.json`, `mat/season.jpg` | Season field: mat image, mission models (collision boxes + model files), launch pose |
-| `models/*.mpd` | Self-contained LDraw models: the 15 BIOGLOW missions and the SPIKE driving bases |
-| `models/lego/` | The robot builder's parts box (sensors and Technic parts): geometry (`parts.mpd`), palette and collision boxes (`parts.json`), connectors (`snaps.json`, `base.json`), from `tools/snaps.py` |
-| `artifact.html`, `serve.py` | Inlined-stylesheet copy for publishing as a claude.ai artifact; tiny no-cache dev server |
+| `js/spec.js`, `js/blocks.js`, `js/myblocks.js` | The SPIKE block catalog and the Blockly editor |
+| `js/interpreter.js` | Runs programs |
+| `js/robot.js`, `js/build.js` | The robot, hub and motors |
+| `js/world.js`, `js/physics.js`, `js/mechanisms.js` | The table, Rapier physics and each model's moving parts |
+| `js/missions.js`, `js/scoring.js` | Missions, scoring and match rules |
+| `js/sim3d.js` | The 3D view |
+| `js/lego*.js`, `js/instructions.js` | The robot builder and building instructions |
+| `js/llsp3.js`, `js/python.js`, `js/ble.js` | `.llsp3` files, Python export and Bluetooth |
+| `js/app.js` | The app: toolbar, projects, main loop |
 
-## Credits
+## Credits and license
 
-The mission models, the driving bases and the robot attachments (the Driving Base arm, the lift arm and the
-dozer blade) are LDraw reconstructions from the official building instructions by
-[fll-sim](https://github.com/martijas/fll-sim) (Martijas), whose measurements of the FIRST wireframe PDF also
-place the models on the mat. Part geometry is the [LDraw Parts Library](https://library.ldraw.org) (CC BY).
-Where LEGO parts connect (`models/lego/snaps.json`, `models/lego/base.json`, made by `tools/snaps.py`) comes from the
-[LDCad shadow library](https://github.com/RolandMelkert/LDCadShadowLibrary) by Roland Melkert and contributors
-(CC BY-SA 4.0), so those derived files are CC BY-SA 4.0 too.
-See `models/ATTRIBUTION.md` for the details. The `.llsp3` format and block shapes were verified against files written by the SPIKE App.
+The project's own code and documentation are under the [MIT License](LICENSE). Some files come from elsewhere and
+keep their own terms (details in `models/ATTRIBUTION.md`):
 
-## License
-
-The project's own code and documentation are under the [MIT License](LICENSE). Files from elsewhere keep their own
-terms:
-
-- `models/`: LDraw part geometry (CC BY 4.0, the LDraw contributors); `models/lego/snaps.json` and
-  `models/lego/base.json` (CC BY-SA 4.0, from the LDCad shadow library); the mission models, driving bases and
-  attachments come from the fll-sim project. See `models/ATTRIBUTION.md`.
-- `mat/`: the BIOGLOW mat artwork belongs to FIRST.
-- `samples/`: FIRST's Guided Mission program, redistributed unchanged.
-- `media/`: Blockly's media files (Apache License 2.0, Google).
-- Mission text in `js/missions.js` quotes the FIRST LEGO League BIOGLOW rulebook.
+- **LEGO part geometry:** the [LDraw Parts Library](https://library.ldraw.org) (CC BY 4.0).
+- **Where parts connect** (`models/lego/snaps.json`, `models/lego/base.json`): derived from the
+  [LDCad shadow library](https://github.com/RolandMelkert/LDCadShadowLibrary) (CC BY-SA 4.0), so these two files
+  are CC BY-SA 4.0 too.
+- **Mission models, driving bases and arm models:** from [fll-sim](https://github.com/martijas/fll-sim), with its
+  measurements of where the models sit on the mat.
+- **FIRST's material:** the BIOGLOW mat artwork (`mat/`), the Guided Mission program (`samples/`) and the
+  rulebook wording in `js/missions.js`.
+- **Blockly's media files** (`media/`): Apache License 2.0.
 
 LEGO® and SPIKE™ are trademarks of the LEGO Group; FIRST® and FIRST® LEGO® League are trademarks of FIRST. Neither
 sponsors or endorses this project.
